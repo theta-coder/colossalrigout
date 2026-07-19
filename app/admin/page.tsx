@@ -360,7 +360,7 @@ export default function AdminDashboardPage() {
     checkAuth();
   }, [router]);
 
-  // Load orders from Firestore (or seed mock ones if empty)
+  // Load real orders from Firestore. Empty means there are no orders yet.
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
@@ -368,100 +368,7 @@ export default function AdminDashboardPage() {
       const snapshot = await getDocs(colRef);
       
       if (snapshot.empty) {
-        console.log("No orders found in Firestore. Seeding admin mock orders...");
-        // Let's create some beautiful demo orders for the admin to manage!
-        const demoOrders: Order[] = [
-          {
-            id: 'CR-9082',
-            customerName: 'Danish Khan',
-            customerEmail: 'who1sdanish011@gmail.com',
-            customerPhone: '+92 312 3456789',
-            shippingAddress: 'House 42, Block D, Model Town',
-            shippingCity: 'Lahore',
-            shippingPostalCode: '54700',
-            items: [
-              {
-                id: 1,
-                name: 'Premium Silk Resort Shirt',
-                price: 45.00,
-                quantity: 1,
-                size: 'L',
-                color: 'Navy',
-                img: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=600&q=80'
-              },
-              {
-                id: 3,
-                name: 'Pleated Smart Trousers',
-                price: 52.00,
-                quantity: 1,
-                size: '32',
-                color: 'Stone',
-                img: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?auto=format&fit=crop&w=600&q=80'
-              }
-            ],
-            subtotal: 97.00,
-            shippingCost: 5.00,
-            promoApplied: 'WELCOME10',
-            promoDiscount: 9.70,
-            total: 92.30,
-            status: 'Placed',
-            createdAt: '2026-07-18T06:14:42.000Z' // 2 hours ago
-          },
-          {
-            id: 'CR-8941',
-            customerName: 'Amna Ahmed',
-            customerEmail: 'amna.ahmed@example.com',
-            shippingAddress: 'Apartment 4B, Giga Heights, Clifton',
-            shippingCity: 'Karachi',
-            shippingPostalCode: '75600',
-            items: [
-              {
-                id: 11,
-                name: 'Oversized Waffle T-Shirt',
-                price: 28.00,
-                quantity: 2,
-                size: 'M',
-                color: 'Black',
-                img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80'
-              }
-            ],
-            subtotal: 56.00,
-            shippingCost: 5.00,
-            total: 61.00,
-            status: 'Processed',
-            createdAt: '2026-07-17T08:14:42.000Z' // 24 hours ago
-          },
-          {
-            id: 'CR-8822',
-            customerName: 'Zainab Fatima',
-            customerEmail: 'zainab@example.com',
-            shippingAddress: 'Villa 18, Street 5, Phase 6 DHA',
-            shippingCity: 'Islamabad',
-            shippingPostalCode: '44000',
-            items: [
-              {
-                id: 14,
-                name: 'Kids Smart Collar Shirt',
-                price: 24.00,
-                quantity: 1,
-                size: 'S',
-                color: 'Stone',
-                img: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?auto=format&fit=crop&w=600&q=80'
-              }
-            ],
-            subtotal: 24.00,
-            shippingCost: 0.00,
-            total: 24.00,
-            status: 'Shipped',
-            createdAt: '2026-07-16T08:14:42.000Z' // 2 days ago
-          }
-        ];
-
-        // Seed them to Firestore as well!
-        for (const o of demoOrders) {
-          await setDoc(doc(db, 'orders', o.id), o);
-        }
-        setOrders(demoOrders);
+        setOrders([]);
       } else {
         const loaded: Order[] = [];
         snapshot.forEach((docSnap) => {
@@ -1435,7 +1342,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-neutral-500 mt-1">
               {activeTab === 'overview' && 'Real-time sales telemetry, shop parameters, and incoming logs'}
               {activeTab === 'products' && `Viewing ${filteredProducts.length} dynamic items within the inventory`}
-              {activeTab === 'add-product' && 'Define metadata, pricing, image URLs, sizes, and collection tags'}
+              {activeTab === 'add-product' && 'Define pricing, imported images, variants, sizes, and collections'}
               {activeTab === 'orders' && `Manage, fulfill, and check status for ${filteredOrders.length} customer order requests`}
               {activeTab === 'promos' && `Manage, create, and inspect active customer checkout discount codes`}
               {activeTab === 'hero' && 'Customize, sequence, and manage background banners, CTA buttons, and promo slides'}
@@ -1449,17 +1356,6 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleResetDatabase}
-              disabled={actionLoading}
-              className="flex items-center gap-2 bg-white border border-neutral-300 text-neutral-800 hover:bg-neutral-100 transition px-4.5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider"
-              title="Reset Firestore products catalog back to default 19 standard products"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${actionLoading ? 'animate-spin' : ''}`} />
-              Reset Seeding
-            </button>
-          </div>
         </header>
 
         {/* 1. TAB: OVERVIEW */}
@@ -1645,7 +1541,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className="text-center py-20 text-neutral-500">
-                  No products found. Add some or click &quot;Reset Seeding&quot; to restore defaults!
+                  No products found. Create your first database-backed product from Add New Product.
                 </div>
               ) : (
                 <div className="overflow-x-auto">

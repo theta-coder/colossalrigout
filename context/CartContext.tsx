@@ -313,57 +313,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.error("Error looking up order from Firestore:", e);
     }
 
-    // Deterministic mock orders so standard lookup IDs from the original HTML work
-    const demoOrders: Record<string, { statusIndex: number; delivery: string; total: number; payMethod: string }> = {
-      'CR-482913': { statusIndex: 2, delivery: 'Fri, Jul 24', total: 139.70, payMethod: 'Cash on Delivery' },
-      'CR-100245': { statusIndex: 4, delivery: 'Delivered on Jul 15', total: 59.90, payMethod: 'Cash on Delivery' },
-      'CR-559812': { statusIndex: 0, delivery: 'Mon, Jul 27', total: 84.90, payMethod: 'Cash on Delivery' },
-    };
-
-    if (demoOrders[cleanId]) {
-      const details = demoOrders[cleanId];
-      return {
-        orderId: cleanId,
-        statusIndex: details.statusIndex,
-        delivery: details.delivery,
-        total: details.total,
-        payMethod: details.payMethod,
-        items: [
-          { id: 1, name: 'Casual Cotton Shirt', size: 'M', color: 'Stone', price: 29.90, qty: 1, img: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=300&q=80' }
-        ],
-        customer: {
-          name: 'Ali Ahmed',
-          address: 'House 12, Street 4, Model Town',
-          city: 'Lahore',
-          phone: '0300-1234567',
-          email: 'customer@example.com'
-        }
-      };
-    }
-
-    // Fallback CR-###### matching pattern so standard testing is friendly
-    if (/^CR-\d{4,6}$/.test(cleanId)) {
-      const hash = cleanId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const mockStatusIndex = hash % 5;
-      return {
-        orderId: cleanId,
-        statusIndex: mockStatusIndex,
-        delivery: `In ${(hash % 5) + 1} days`,
-        total: 29.90,
-        payMethod: 'Cash on Delivery',
-        items: [
-          { id: 1, name: 'Casual Cotton Shirt', size: 'M', color: 'Stone', price: 29.90, qty: 1, img: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=300&q=80' }
-        ],
-        customer: {
-          name: 'Guest Shopper',
-          address: 'Main Street Address',
-          city: 'Lahore',
-          phone: '0300-0000000',
-          email: 'guest@example.com'
-        }
-      };
-    }
-
     return undefined;
   };
 

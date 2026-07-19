@@ -40,6 +40,7 @@ function ShopContent() {
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [isFromHome, setIsFromHome] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCollection, setSelectedCollection] = useState<string>('');
 
   const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -76,6 +77,7 @@ function ShopContent() {
     const wishlistQuery = searchParams.get('wishlist');
     const fromHomeQuery = searchParams.get('fromHome') === 'true';
     const qQuery = searchParams.get('q');
+    const collectionQuery = searchParams.get('collection');
 
     setTimeout(() => {
       if (fromHomeQuery) {
@@ -89,6 +91,7 @@ function ShopContent() {
       } else {
         setSearchQuery('');
       }
+      setSelectedCollection(collectionQuery || '');
 
       if (catQuery) {
         const queryLower = catQuery.toLowerCase();
@@ -148,6 +151,21 @@ function ShopContent() {
   const [quickAddProduct, setQuickAddProduct] = useState<CatalogProduct | null>(null);
   const [quickSize, setQuickSize] = useState<string>('M');
   const [quickColor, setQuickColor] = useState<string>('');
+  const [inventoryVariants, setInventoryVariants] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/commerce/inventory').then(res => res.json()).then(payload => {
+      if (payload.success) setInventoryVariants(payload.data);
+    }).catch(() => setInventoryVariants([]));
+  }, []);
+
+  const quickVariant = quickAddProduct ? inventoryVariants.find(variant => {
+    const colorIndex = quickAddProduct.colors.indexOf(quickColor);
+    const sizeIndex = quickAddProduct.sizes.indexOf(quickSize);
+    return String(variant.productId) === String(quickAddProduct.id)
+      && variant.colorId === (quickAddProduct.colorIds?.[colorIndex] || quickColor)
+      && variant.sizeId === (quickAddProduct.sizeIds?.[sizeIndex] || quickSize);
+  }) : null;
 
   const dynamicCollections = Array.from(
     new Set(products.flatMap((p) => p.collections || []))
@@ -200,6 +218,10 @@ function ShopContent() {
         if (!product.collections?.includes(specialTag)) return false;
       }
 
+      if (selectedCollection && !(product.collectionIds || product.collections || []).includes(selectedCollection)) {
+        return false;
+      }
+
       // Size Match
       if (selectedSize && !product.sizes.includes(selectedSize)) {
         return false;
@@ -238,6 +260,7 @@ function ShopContent() {
     setSortBy('Featured');
     setIsFromHome(false);
     setSearchQuery('');
+    setSelectedCollection('');
     router.push('/shop');
   };
 
@@ -252,7 +275,7 @@ function ShopContent() {
       {/* PAGE HEADER BANNER */}
       <section className="relative h-48 sm:h-64 md:h-72 lg:h-80 overflow-hidden -mx-4 mb-4">
         <Image
-          src="https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?auto=format&fit=crop&w=1920&q=80"
+          src="/colossal-rigout-logo.png"
           alt="Men apparel banner"
           fill
           priority
@@ -943,6 +966,7 @@ function ShopContent() {
             
             <button
               onClick={() => {
+                if (!quickVariant || Number(quickVariant.stock || 0) < 1) return;
                 addToCart({
                   id: quickAddProduct.id,
                   name: quickAddProduct.name,
@@ -950,13 +974,15 @@ function ShopContent() {
                   size: quickSize,
                   color: quickColor,
                   img: quickAddProduct.img,
+                  variantId: quickVariant.id,
                 });
                 setQuickAddProduct(null);
                 alert(`Added ${quickAddProduct.name} (${quickSize}, ${quickColor}) to your Cart!`);
               }}
-              className="w-full bg-black text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
+              disabled={!quickVariant || Number(quickVariant.stock || 0) < 1}
+              className="w-full bg-black disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
             >
-              Add To Cart
+              {quickVariant && Number(quickVariant.stock || 0) > 0 ? `Add To Cart (${quickVariant.stock} available)` : 'Out of Stock'}
             </button>
           </div>
         </div>

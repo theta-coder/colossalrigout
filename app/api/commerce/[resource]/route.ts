@@ -33,7 +33,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
     const id = cleanId(String(record.id || record.slug || record.code || record.name || `${resource}-${Date.now()}`));
     if (!id) return NextResponse.json({ success: false, message: 'A valid name/code is required' }, { status: 400 });
     const now = new Date().toISOString();
-    const saved = { ...record, id, createdAt: record.createdAt || now, updatedAt: now };
+    const saved = {
+      ...record,
+      ...(resource === 'reviews' ? { status: 'pending', verifiedPurchase: false } : {}),
+      id,
+      createdAt: record.createdAt || now,
+      updatedAt: now
+    };
     await setDoc(doc(db, collectionName, id), saved);
     return NextResponse.json({ success: true, data: saved });
   } catch (error: any) {

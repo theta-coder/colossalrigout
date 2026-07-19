@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { Product } from '../lib/products';
@@ -26,12 +26,28 @@ interface QuickAddModalProps {
     color: string;
     img: string;
     qty: number;
+    variantId: string;
   }) => void;
 }
 
 export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAddModalProps) {
   const [quickSize, setQuickSize] = useState<string>(product.sizes[0] || 'M');
   const [quickColor, setQuickColor] = useState<string>(product.colors[0] || 'Default');
+  const [variants, setVariants] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/commerce/inventory').then(res => res.json()).then(payload => {
+      if (payload.success) setVariants(payload.data.filter((variant: any) => String(variant.productId) === String(product.id)));
+    }).catch(() => setVariants([]));
+  }, [product.id]);
+
+  const selectedVariant = useMemo(() => {
+    const colorIndex = product.colors.indexOf(quickColor);
+    const sizeIndex = product.sizes.indexOf(quickSize);
+    const colorId = product.colorIds?.[colorIndex] || quickColor;
+    const sizeId = product.sizeIds?.[sizeIndex] || quickSize;
+    return variants.find(variant => variant.colorId === colorId && variant.sizeId === sizeId);
+  }, [product, quickColor, quickSize, variants]);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -105,6 +121,7 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
         
         <button
           onClick={() => {
+            if (!selectedVariant || Number(selectedVariant.stock || 0) < 1) return;
             onAddToCart({
               id: product.id,
               name: product.name,
@@ -112,13 +129,15 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
               size: quickSize,
               color: quickColor,
               img: product.img,
-              qty: 1
+              qty: 1,
+              variantId: selectedVariant.id
             });
             onClose();
           }}
-          className="w-full bg-black text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
+          disabled={!selectedVariant || Number(selectedVariant.stock || 0) < 1}
+          className="w-full bg-black disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
         >
-          Add To Cart
+          {selectedVariant && Number(selectedVariant.stock || 0) > 0 ? `Add To Cart (${selectedVariant.stock} available)` : 'Out of Stock'}
         </button>
       </div>
     </div>

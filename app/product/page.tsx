@@ -436,47 +436,6 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
                 <table className="w-full text-xs sm:text-sm text-left border-collapse"><thead><tr className="border-b"><th className="py-2">Size</th>{(sizeGuide.columns || []).map((column:any)=><th key={column.key}>{column.label}</th>)}</tr></thead><tbody>{(sizeGuide.rows || []).map((row:any)=><tr key={row.sizeId} className="border-b"><td className="py-2 font-bold">{row.sizeName || row.sizeId}</td>{(sizeGuide.columns || []).map((column:any)=><td key={column.key}>{row.values?.[column.key] || '—'}</td>)}</tr>)}</tbody></table>
                 <p className="text-xs text-neutral-500 mt-4">{sizeGuide.instructions}</p>
               </> : <p className="text-sm text-neutral-500">No size guide is assigned to this product.</p>}
-              <div className="hidden">
-              <table className="w-full text-xs sm:text-sm text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-neutral-300">
-                    <th className="py-2 font-semibold">Size</th>
-                    <th className="py-2 font-semibold">Chest (in)</th>
-                    <th className="py-2 font-semibold">Waist (in)</th>
-                    <th className="py-2 font-semibold">Length (in)</th>
-                  </tr>
-                </thead>
-                <tbody className="text-neutral-600">
-                  <tr className="border-b border-neutral-200">
-                    <td className="py-2.5 font-semibold text-black">S</td>
-                    <td>36&ndash;38</td>
-                    <td>30&ndash;32</td>
-                    <td>27</td>
-                  </tr>
-                  <tr className="border-b border-neutral-200">
-                    <td className="py-2.5 font-semibold text-black">M</td>
-                    <td>39&ndash;41</td>
-                    <td>33&ndash;35</td>
-                    <td>28</td>
-                  </tr>
-                  <tr className="border-b border-neutral-200">
-                    <td className="py-2.5 font-semibold text-black">L</td>
-                    <td>42&ndash;44</td>
-                    <td>36&ndash;38</td>
-                    <td>29</td>
-                  </tr>
-                  <tr className="border-b border-neutral-200">
-                    <td className="py-2.5 font-semibold text-black">XL</td>
-                    <td>45&ndash;47</td>
-                    <td>39&ndash;41</td>
-                    <td>30</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p className="text-xs text-neutral-500 mt-4 leading-relaxed font-light">
-                Measure around the fullest part of your chest and across your natural waist. Sizes may vary by &plusmn; 0.5 inches. If between sizes, we recommend ordering one size larger.
-              </p>
-              </div>
             </div>
           </div>
         </div>

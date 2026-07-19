@@ -28,19 +28,7 @@ export default function WishlistPage() {
 
   const handleAddToCart = (product: CatalogProduct) => {
     setAddingId(product.id);
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      size: 'M', // default size
-      color: product.colors[0], // default color
-      img: product.img,
-    });
-    
-    // Smooth loader state
-    setTimeout(() => {
-      setAddingId(null);
-    }, 600);
+    window.location.href = `/product?id=${product.id}`;
   };
 
   return (
