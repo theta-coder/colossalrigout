@@ -1011,7 +1011,8 @@ function ShopContent() {
             
             <button
               onClick={() => {
-                if (!quickVariant || Number(quickVariant.stock || 0) < 1) return;
+                const stock = Number(quickVariant?.availableStock ?? quickVariant?.stock ?? quickVariant?.stockOnHand ?? 0);
+                if (!quickVariant || stock < 1) return;
                 addToCart({
                   id: quickAddProduct.id,
                   name: quickAddProduct.name,
@@ -1024,10 +1025,10 @@ function ShopContent() {
                 setQuickAddProduct(null);
                 alert(`Added ${quickAddProduct.name} (${quickSize}, ${quickColor}) to your Cart!`);
               }}
-              disabled={!quickVariant || Number(quickVariant.stock || 0) < 1}
+              disabled={!quickVariant || Number(quickVariant.availableStock ?? quickVariant.stock ?? quickVariant.stockOnHand ?? 0) < 1}
               className="w-full bg-black disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
             >
-              {quickVariant && Number(quickVariant.stock || 0) > 0 ? `Add To Cart (${quickVariant.stock} available)` : 'Out of Stock'}
+              {quickVariant && Number(quickVariant.availableStock ?? quickVariant.stock ?? quickVariant.stockOnHand ?? 0) > 0 ? `Add To Cart (${quickVariant.availableStock ?? quickVariant.stock ?? quickVariant.stockOnHand} available)` : 'Out of Stock'}
             </button>
           </div>
         </div>

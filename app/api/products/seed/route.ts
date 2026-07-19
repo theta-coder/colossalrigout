@@ -44,7 +44,14 @@ export async function POST() {
           batch.set(doc(db, 'product-variants', variantId), {
             id: variantId, productId, colorId, sizeId,
             sku: `CR-${productId}-${colorId.toUpperCase()}-${sizeId.toUpperCase()}`,
-            stock, reserved: 0, soldUnits: 0, active: true,
+            stock,
+            stockOnHand: stock,
+            reserved: 0,
+            reservedStock: 0,
+            availableStock: stock,
+            reorderLevel: 5,
+            soldUnits: 0,
+            active: true,
             createdAt: now, updatedAt: now
           });
         });

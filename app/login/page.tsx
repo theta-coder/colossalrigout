@@ -17,7 +17,7 @@ function LoginContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const redirectPath = searchParams.get('redirect') || '/order-history';
+  const redirectPath = searchParams.get('redirect') || searchParams.get('returnTo') || '/order-history';
 
   // If already logged in, redirect
   useEffect(() => {

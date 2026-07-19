@@ -62,7 +62,7 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
   const selectedColorIndex = product?.colors.indexOf(selectedColor) ?? -1;
   const selectedSizeIndex = product?.sizes.indexOf(selectedSize) ?? -1;
   const selectedVariant = variants.find(variant => variant.colorId === product?.colorIds?.[selectedColorIndex] && variant.sizeId === product?.sizeIds?.[selectedSizeIndex]);
-  const availableStock = Number(selectedVariant?.availableStock || 0);
+  const availableStock = Number(selectedVariant?.availableStock ?? selectedVariant?.stock ?? selectedVariant?.stockOnHand ?? 0);
 
   // Campaign eligibility check
   const checkCampaignEligibility = (p: any, camp: any) => {
@@ -115,7 +115,15 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
     addToCart({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: (() => {
+        const retail = Number(product.retailPrice || product.price || 0);
+        const manual = product.discountPrice && product.discountPrice < retail ? Number(product.discountPrice) : retail;
+        if (!productCampaign || productCampaign.discountMode !== 'automatic') return manual;
+        const campaignPrice = productCampaign.discountType === 'percentage'
+          ? retail * (1 - Number(productCampaign.discountValue || 0) / 100)
+          : Math.max(0.01, retail - Number(productCampaign.discountValue || 0));
+        return Number(Math.min(manual, campaignPrice).toFixed(2));
+      })(),
       size: selectedSize,
       color: selectedColor,
       qty: quantity,

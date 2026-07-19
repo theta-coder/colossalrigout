@@ -121,7 +121,8 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
         
         <button
           onClick={() => {
-            if (!selectedVariant || Number(selectedVariant.stock || 0) < 1) return;
+            const stock = Number(selectedVariant?.availableStock ?? selectedVariant?.stock ?? selectedVariant?.stockOnHand ?? 0);
+            if (!selectedVariant || stock < 1) return;
             onAddToCart({
               id: product.id,
               name: product.name,
@@ -134,10 +135,10 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
             });
             onClose();
           }}
-          disabled={!selectedVariant || Number(selectedVariant.stock || 0) < 1}
+          disabled={!selectedVariant || Number(selectedVariant.availableStock ?? selectedVariant.stock ?? selectedVariant.stockOnHand ?? 0) < 1}
           className="w-full bg-black disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"
         >
-          {selectedVariant && Number(selectedVariant.stock || 0) > 0 ? `Add To Cart (${selectedVariant.stock} available)` : 'Out of Stock'}
+          {selectedVariant && Number(selectedVariant.availableStock ?? selectedVariant.stock ?? selectedVariant.stockOnHand ?? 0) > 0 ? `Add To Cart (${selectedVariant.availableStock ?? selectedVariant.stock ?? selectedVariant.stockOnHand} available)` : 'Out of Stock'}
         </button>
       </div>
     </div>
