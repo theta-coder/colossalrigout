@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { Edit2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { adminApiFetch } from '../../lib/admin-api';
 
-type Module = 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory';
-const titles: Record<Module, string> = { colors: 'Color Library', sizes: 'Size Library', 'size-guides': 'Size Guides', collections: 'Collections', reviews: 'Review Moderation', inventory: 'Stock Inventory' };
+type Module = 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits';
+const titles: Record<Module, string> = { colors: 'Color Library', sizes: 'Size Library', 'size-guides': 'Size Guides', collections: 'Collections', reviews: 'Review Moderation', inventory: 'Stock Inventory', 'trust-benefits': 'Homepage Trust Benefits' };
 
 const emptyForm = (module: Module) => module === 'colors'
   ? { name: '', hex: '#000000', secondaryHex: '', active: true, order: 1 }
@@ -12,6 +13,7 @@ const emptyForm = (module: Module) => module === 'colors'
   : module === 'size-guides' ? { name: '', unit: 'in', instructions: '', columnsText: 'Chest, Waist, Length', rowsText: 'S | 36-38 | 30-32 | 27\nM | 39-41 | 33-35 | 28', columns: [], rows: [], active: true }
   : module === 'collections' ? { name: '', slug: '', subtitle: '', description: '', imageData: '', active: true, featuredOnHome: true, order: 1 }
   : module === 'inventory' ? { productId: '', colorId: '', sizeId: '', sku: '', stockOnHand: 0, reservedStock: 0, availableStock: 0, reorderLevel: 2, active: true }
+  : module === 'trust-benefits' ? { title: '', subtitle: '', icon: 'shield', order: 1, active: true }
   : { productId: '', customerName: '', rating: 5, title: '', body: '', status: 'pending' };
 
 async function prepareCollectionImage(file: File) {
@@ -31,12 +33,13 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
   const [editing, setEditing] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [message, setMessage] = React.useState('');
+  const endpoint = module === 'trust-benefits' ? '/api/trust-benefits' : `/api/commerce/${module}`;
 
   const load = React.useCallback(async () => {
     setLoading(true);
-    try { const response = await fetch(`/api/commerce/${module}`); const data = await response.json(); setRecords(data.data || []); }
+    try { const response = module === 'trust-benefits' ? await adminApiFetch(`${endpoint}?admin=true`) : await fetch(endpoint); const data = await response.json(); setRecords(data.data || []); }
     finally { setLoading(false); }
-  }, [module]);
+  }, [module, endpoint]);
   React.useEffect(() => { setForm(emptyForm(module)); setEditing(null); load(); }, [module, load]);
 
   const save = async (event: React.FormEvent) => {
@@ -57,7 +60,8 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
       }).filter((row: any) => row.sizeName);
     }
     if (module === 'inventory') prepared.availableStock = Math.max(0, Number(prepared.stockOnHand) - Number(prepared.reservedStock));
-    const response = await fetch(`/api/commerce/${module}`, { method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ record: prepared }) });
+    const request = { method: editing ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ record: prepared }) };
+    const response = module === 'trust-benefits' ? await adminApiFetch(endpoint, request) : await fetch(endpoint, request);
     const data = await response.json();
     setMessage(data.success ? 'Saved successfully.' : data.message || 'Save failed.');
     if (data.success) { setForm(emptyForm(module)); setEditing(null); load(); }
@@ -65,7 +69,8 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
 
   const remove = async (id: string) => {
     if (!confirm('Delete this record?')) return;
-    await fetch(`/api/commerce/${module}?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    if (module === 'trust-benefits') await adminApiFetch(`${endpoint}?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    else await fetch(`${endpoint}?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
     load();
   };
 
@@ -84,6 +89,7 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
       {module === 'size-guides' && <>{field('name','Guide Name *')}<label className="block text-[10px] font-bold uppercase">Unit<select value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})} className="mt-1 w-full border rounded-lg px-3 py-2"><option value="in">Inches</option><option value="cm">Centimeters</option></select></label>{field('columnsText','Measurement Columns (comma separated)')}<label className="block text-[10px] font-bold uppercase">Rows (Size | value | value)<textarea value={form.rowsText || ''} onChange={e=>setForm({...form,rowsText:e.target.value})} rows={5} className="mt-1 w-full border rounded-lg p-3 text-xs"/></label>{field('instructions','Measurement Instructions')}</>}
       {module === 'collections' && <>{field('name','Collection Name *')}{field('slug','Slug (auto if empty)')}{field('subtitle','Subtitle')}{field('description','Description')}<label className="block text-[10px] font-bold uppercase">Cover Image File<input type="file" accept="image/jpeg,image/png,image/webp" onChange={async e=>{const file=e.target.files?.[0];if(file)setForm({...form,imageData:await prepareCollectionImage(file)})}} className="mt-1 w-full border rounded-lg px-3 py-2"/></label>{form.imageData&&<img src={form.imageData} alt="Collection preview" className="h-24 w-full object-cover rounded-lg"/>}{field('order','Order','number')}<label className="text-xs font-bold flex gap-2"><input type="checkbox" checked={form.featuredOnHome} onChange={e=>setForm({...form,featuredOnHome:e.target.checked})}/> Featured on homepage</label></>}
       {module === 'inventory' && <>{field('productId','Product ID *')}{field('colorId','Color ID *')}{field('sizeId','Size ID *')}{field('sku','SKU *')}{field('stockOnHand','Stock on Hand','number')}{field('reservedStock','Reserved','number')}{field('reorderLevel','Low-stock Level','number')}</>}
+      {module === 'trust-benefits' && <>{field('title','Title *')}{field('subtitle','Subtitle *')}<label className="block text-[10px] font-bold uppercase">Icon<select value={form.icon} onChange={e=>setForm({...form,icon:e.target.value})} className="mt-1 w-full border rounded-lg px-3 py-2"><option value="truck">Shipping Truck</option><option value="returns">Easy Returns</option><option value="shield">Secure Shield</option><option value="store">Store Location</option><option value="support">Customer Support</option><option value="gift">Gift</option></select></label>{field('order','Display Order','number')}</>}
       {module === 'reviews' && <>{field('productId','Product ID')}{field('customerName','Customer')}{field('rating','Rating','number')}{field('title','Title')}{field('body','Review')}<label className="block text-[10px] font-bold uppercase">Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} className="mt-1 w-full border rounded-lg px-3 py-2"><option>pending</option><option>approved</option><option>rejected</option></select></label></>}
       {module !== 'reviews' && <label className="text-xs font-bold flex gap-2"><input type="checkbox" checked={form.active !== false} onChange={e=>setForm({...form,active:e.target.checked})}/> Active</label>}
       {message && <p className="text-xs text-neutral-500">{message}</p>}
@@ -93,7 +99,7 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
       <div className="p-5 border-b flex justify-between"><div><h3 className="font-display font-extrabold uppercase">{titles[module]}</h3><p className="text-xs text-neutral-400">{records.length} database records</p></div><button onClick={load}><RefreshCw className={`w-4 h-4 ${loading?'animate-spin':''}`}/></button></div>
       <div className="divide-y max-h-[680px] overflow-auto">{records.map(record => <div key={record.id} className="p-4 flex items-center gap-4 text-xs">
         {module === 'colors' && <span className="w-9 h-9 rounded-full border" style={{background: record.secondaryHex ? `linear-gradient(135deg,${record.hex} 50%,${record.secondaryHex} 50%)` : record.hex}}/>}
-        <div className="flex-1 min-w-0"><p className="font-bold text-sm">{record.name || record.sku || record.title || record.id}</p><p className="text-neutral-400 truncate">{record.hex || record.code || record.slug || `${record.productId || ''} ${record.status || ''}`}</p></div>
+        <div className="flex-1 min-w-0"><p className="font-bold text-sm">{record.name || record.sku || record.title || record.id}</p><p className="text-neutral-400 truncate">{record.subtitle || record.hex || record.code || record.slug || `${record.productId || ''} ${record.status || ''}`}</p></div>
         {module === 'inventory' && <span className={`font-bold ${record.availableStock <= record.reorderLevel?'text-red-600':'text-emerald-600'}`}>{record.availableStock} available</span>}
         {module === 'reviews' && <span className="uppercase font-bold">{record.status}</span>}
         <button onClick={()=>{setEditing(record.id);setForm(record)}} className="p-2 border rounded"><Edit2 className="w-3.5 h-3.5"/></button>

@@ -125,6 +125,8 @@ export interface CollectionDocument {
 export interface ReviewDocument {
   id: string;
   productId: string;
+  productNameSnapshot?: string;
+  productSlugSnapshot?: string;
   userId: string | null;
   orderId: string | null;
   customerName: string;
@@ -134,9 +136,12 @@ export interface ReviewDocument {
   body: string;
   status: 'pending' | 'approved' | 'rejected';
   verifiedPurchase: boolean;
+  source?: 'customer' | 'admin-seed';
   adminNote?: string;
-  createdAt: string;
+  moderatedBy?: string | null;
   moderatedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface InventoryTransactionDocument {

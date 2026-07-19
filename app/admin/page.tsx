@@ -14,6 +14,7 @@ const PromoCampaignsModule = dynamic(() => import('../../components/admin/PromoC
 const CampaignCardsModule = dynamic(() => import('../../components/admin/CampaignCardsModule'), { ssr: false });
 const PromotionsModule = dynamic(() => import('../../components/admin/PromotionsModule'), { ssr: false });
 const StoresModule = dynamic(() => import('../../components/admin/StoresModule'), { ssr: false });
+const ReviewsAdminModule = dynamic(() => import('../../components/admin/ReviewsAdminModule'), { ssr: false });
 import {
   LayoutDashboard,
   Package,
@@ -53,6 +54,7 @@ import {
   Megaphone,
   MapPin,
   CreditCard,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -184,7 +186,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts } = useProducts();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits'>('overview');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1320,6 +1322,7 @@ export default function AdminDashboardPage() {
             ['size-guides', 'Size Guides', Ruler],
             ['collections', 'Collections', Layers3],
             ['reviews', 'Reviews', Star],
+            ['trust-benefits', 'Trust Benefits', ShieldCheck],
             ['inventory', 'Stock Inventory', Boxes],
           ] as const).map(([tab, label, Icon]) => (
             <button
@@ -1391,6 +1394,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'size-guides' && 'Dynamic Size Guides'}
               {activeTab === 'collections' && 'Collections Management'}
               {activeTab === 'reviews' && 'Review Moderation'}
+              {activeTab === 'trust-benefits' && 'Homepage Trust Benefits'}
               {activeTab === 'inventory' && 'Stock Inventory'}
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
@@ -1410,6 +1414,7 @@ export default function AdminDashboardPage() {
               {activeTab === 'size-guides' && 'Manage reusable measurement guides for product pages'}
               {activeTab === 'collections' && 'Manage storefront collections and product associations'}
               {activeTab === 'reviews' && 'Approve or reject customer product reviews'}
+              {activeTab === 'trust-benefits' && 'Manage homepage shipping, returns, payment, and store benefit messages'}
               {activeTab === 'inventory' && 'Manage stock independently for every product color and size variant'}
             </p>
           </div>
@@ -3132,7 +3137,8 @@ export default function AdminDashboardPage() {
         {activeTab === 'sizes' && <CommerceAdminModule module="sizes" />}
         {activeTab === 'size-guides' && <CommerceAdminModule module="size-guides" />}
         {activeTab === 'collections' && <CommerceAdminModule module="collections" />}
-        {activeTab === 'reviews' && <CommerceAdminModule module="reviews" />}
+        {activeTab === 'reviews' && <ReviewsAdminModule />}
+        {activeTab === 'trust-benefits' && <CommerceAdminModule module="trust-benefits" />}
         {activeTab === 'inventory' && <CommerceAdminModule module="inventory" />}
         {activeTab === 'campaigns' && <PromoCampaignsModule />}
         {activeTab === 'campaign-cards' && <CampaignCardsModule />}

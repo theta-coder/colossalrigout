@@ -37,15 +37,39 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<{
+    averageRating: number;
+    reviewCount: number;
+    ratingBreakdown: Record<1 | 2 | 3 | 4 | 5, number>;
+  }>({
+    averageRating: 0,
+    reviewCount: 0,
+    ratingBreakdown: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  });
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState(5);
   const [variants, setVariants] = useState<any[]>([]);
   const [sizeGuide, setSizeGuide] = useState<any>(null);
-  const [reviewForm, setReviewForm] = useState({ customerName: '', customerEmail: '', rating: 5, title: '', body: '' });
+  const [reviewForm, setReviewForm] = useState({ customerName: '', customerEmail: '', rating: 5, title: '', body: '', orderId: '' });
   const [reviewMessage, setReviewMessage] = useState('');
 
   const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/commerce/reviews').then(response => response.json()).then(data => setReviews((data.data || []).filter((review: any) => review.productId === String(product?.id) && review.status === 'approved')));
+    if (!product?.id) return;
+    
+    // Fetch product reviews and summary info
+    fetch(`/api/reviews?productId=${product.id}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          setReviews(data.data || []);
+          if (data.summary) {
+            setReviewSummary(data.summary);
+          }
+        }
+      })
+      .catch(err => console.error('Error fetching reviews:', err));
+
     fetch('/api/commerce/inventory').then(response => response.json()).then(data => setVariants((data.data || []).filter((variant: any) => variant.productId === String(product?.id) && variant.active !== false)));
     if (product?.sizeGuideId) fetch('/api/commerce/size-guides').then(response => response.json()).then(data => setSizeGuide((data.data || []).find((guide: any) => guide.id === product.sizeGuideId) || null));
 
@@ -85,10 +109,21 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
 
   const submitReview = async (event: React.FormEvent) => {
     event.preventDefault();
-    const response = await fetch('/api/commerce/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ record: { ...reviewForm, productId: String(product.id), status: 'pending', verifiedPurchase: false } }) });
+    const response = await fetch('/api/reviews', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ 
+        review: { 
+          ...reviewForm, 
+          productId: String(product.id) 
+        } 
+      }) 
+    });
     const data = await response.json();
-    setReviewMessage(data.success ? 'Thank you. Your review is pending admin approval.' : data.message || 'Review submission failed.');
-    if (data.success) setReviewForm({ customerName: '', customerEmail: '', rating: 5, title: '', body: '' });
+    setReviewMessage(data.success ? (data.message || 'Thank you! Your review is pending admin approval.') : data.message || 'Review submission failed.');
+    if (data.success) {
+      setReviewForm({ customerName: '', customerEmail: '', rating: 5, title: '', body: '', orderId: '' });
+    }
   };
 
   // Accordion active tabs
@@ -446,17 +481,167 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
                   accordionOpen.rev ? 'open' : ''
                 }`}
               >
-                <div className="pb-4 space-y-4 pt-1">
-                  {reviews.map(review => <div key={review.id} className="border-b pb-3"><div className="text-amber-500">{'★'.repeat(Number(review.rating))}</div><p className="font-bold text-sm">{review.title}</p><p className="text-sm text-neutral-600">{review.body}</p><p className="text-[10px] text-neutral-400">{review.customerName}{review.verifiedPurchase ? ' · Verified buyer' : ''}</p></div>)}
-                  {reviews.length === 0 && <p className="text-xs text-neutral-400">No approved reviews yet.</p>}
-                  <form onSubmit={submitReview} className="grid grid-cols-2 gap-2 border-t pt-4">
-                    <input required placeholder="Your name" value={reviewForm.customerName} onChange={e=>setReviewForm({...reviewForm,customerName:e.target.value})} className="border rounded px-3 py-2 text-xs" />
-                    <input required type="email" placeholder="Email" value={reviewForm.customerEmail} onChange={e=>setReviewForm({...reviewForm,customerEmail:e.target.value})} className="border rounded px-3 py-2 text-xs" />
-                    <select value={reviewForm.rating} onChange={e=>setReviewForm({...reviewForm,rating:Number(e.target.value)})} className="border rounded px-3 py-2 text-xs"><option value="5">5 stars</option><option value="4">4 stars</option><option value="3">3 stars</option><option value="2">2 stars</option><option value="1">1 star</option></select>
-                    <input required placeholder="Review title" value={reviewForm.title} onChange={e=>setReviewForm({...reviewForm,title:e.target.value})} className="border rounded px-3 py-2 text-xs" />
-                    <textarea required placeholder="Write your review" value={reviewForm.body} onChange={e=>setReviewForm({...reviewForm,body:e.target.value})} className="col-span-2 border rounded px-3 py-2 text-xs" />
-                    {reviewMessage && <p className="col-span-2 text-xs text-neutral-500">{reviewMessage}</p>}
-                    <button className="col-span-2 bg-black text-white rounded py-2 text-xs font-bold">SUBMIT FOR APPROVAL</button>
+                <div className="pb-4 space-y-6 pt-2">
+                  
+                  {/* Rating distribution summary */}
+                  {reviews.length > 0 && (
+                    <div className="flex flex-col sm:flex-row gap-5 border-b border-neutral-100 pb-5 mb-5">
+                      <div className="flex flex-col items-center justify-center bg-neutral-50 rounded-xl p-4 sm:w-1/3 border border-neutral-100/60">
+                        <h3 className="text-3xl font-extrabold text-neutral-900">{reviewSummary.averageRating}</h3>
+                        <div className="flex text-amber-500 my-1">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(reviewSummary.averageRating) ? 'fill-current' : 'text-neutral-200'}`} />
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                          {reviewSummary.reviewCount} Approved Reviews
+                        </p>
+                      </div>
+                      
+                      <div className="flex-1 space-y-1">
+                        {([5, 4, 3, 2, 1] as const).map((stars) => {
+                          const count = reviewSummary.ratingBreakdown[stars] || 0;
+                          const percent = reviewSummary.reviewCount > 0 ? (count / reviewSummary.reviewCount) * 100 : 0;
+                          return (
+                            <div key={stars} className="flex items-center gap-2 text-[11px] text-neutral-500">
+                              <span className="w-12 font-semibold text-neutral-600 whitespace-nowrap">{stars} Stars</span>
+                              <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-black rounded-full" style={{ width: `${percent}%` }} />
+                              </div>
+                              <span className="w-6 text-right text-neutral-450 font-bold font-mono">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reviews List */}
+                  <div className="space-y-4">
+                    {reviews.slice(0, visibleReviewsCount).map(review => (
+                      <div key={review.id} className="border-b border-neutral-150/60 pb-4 last:border-b-0 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex text-amber-550">
+                            {Array.from({ length: Number(review.rating) }).map((_, i) => (
+                              <span key={i} className="text-xs">★</span>
+                            ))}
+                            {Array.from({ length: 5 - Number(review.rating) }).map((_, i) => (
+                              <span key={i} className="text-xs text-neutral-200">★</span>
+                            ))}
+                          </div>
+                          <span className="text-[9px] text-neutral-400">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        <h4 className="font-bold text-xs text-neutral-800">{review.title}</h4>
+                        <p className="text-xs text-neutral-650 leading-relaxed font-sans">{review.body}</p>
+                        
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] text-neutral-700 font-bold">{review.customerName}</span>
+                          {review.verifiedPurchase && (
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 text-[8px] font-extrabold px-1.5 py-0.5 rounded tracking-wide uppercase">
+                              Verified Buyer
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {reviews.length === 0 && (
+                      <p className="text-xs text-neutral-400 italic">No approved reviews yet. Be the first to share your thoughts!</p>
+                    )}
+
+                    {reviews.length > visibleReviewsCount && (
+                      <button
+                        onClick={() => setVisibleReviewsCount(prev => prev + 5)}
+                        className="w-full text-center py-2 text-[10px] font-extrabold uppercase text-neutral-500 hover:text-black border border-neutral-200 hover:bg-neutral-50 transition rounded-lg mt-2 cursor-pointer"
+                      >
+                        Load More Reviews
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Submission Form */}
+                  <form onSubmit={submitReview} className="grid grid-cols-2 gap-3 border-t border-neutral-200 pt-6 mt-6">
+                    <h4 className="col-span-2 text-xs font-bold text-neutral-800 uppercase tracking-wider mb-1">
+                      Write a Product Review
+                    </h4>
+                    
+                    <div className="col-span-2 sm:col-span-1">
+                      <input 
+                        required 
+                        placeholder="Your name" 
+                        value={reviewForm.customerName} 
+                        onChange={e=>setReviewForm({...reviewForm,customerName:e.target.value})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none focus:border-black" 
+                      />
+                    </div>
+                    
+                    <div className="col-span-2 sm:col-span-1">
+                      <input 
+                        required 
+                        type="email" 
+                        placeholder="Email address" 
+                        value={reviewForm.customerEmail} 
+                        onChange={e=>setReviewForm({...reviewForm,customerEmail:e.target.value})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none focus:border-black" 
+                      />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <select 
+                        value={reviewForm.rating} 
+                        onChange={e=>setReviewForm({...reviewForm,rating:Number(e.target.value)})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none bg-white cursor-pointer"
+                      >
+                        <option value="5">★★★★★ (5 Stars)</option>
+                        <option value="4">★★★★☆ (4 Stars)</option>
+                        <option value="3">★★★☆☆ (3 Stars)</option>
+                        <option value="2">★★☆☆☆ (2 Stars)</option>
+                        <option value="1">★☆☆☆☆ (1 Star)</option>
+                      </select>
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <input 
+                        placeholder="Order ID (e.g. CR-123456, optional)" 
+                        value={reviewForm.orderId} 
+                        onChange={e=>setReviewForm({...reviewForm,orderId:e.target.value})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none focus:border-black" 
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <input 
+                        required 
+                        placeholder="Review title (e.g. Great material, fits perfectly!)" 
+                        value={reviewForm.title} 
+                        onChange={e=>setReviewForm({...reviewForm,title:e.target.value})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none focus:border-black" 
+                      />
+                    </div>
+
+                    <div className="col-span-2">
+                      <textarea 
+                        required 
+                        rows={4}
+                        placeholder="Tell us what you liked or disliked about this product..." 
+                        value={reviewForm.body} 
+                        onChange={e=>setReviewForm({...reviewForm,body:e.target.value})} 
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none focus:border-black resize-none" 
+                      />
+                    </div>
+                    
+                    {reviewMessage && (
+                      <p className="col-span-2 text-xs font-semibold text-neutral-600 italic bg-neutral-50 border p-2.5 rounded-lg">
+                        {reviewMessage}
+                      </p>
+                    )}
+                    
+                    <button className="col-span-2 bg-black text-white hover:bg-neutral-800 transition rounded-lg py-2.5 text-xs font-bold uppercase tracking-wider cursor-pointer">
+                      Submit Review for Moderation
+                    </button>
                   </form>
                 </div>
               </div>

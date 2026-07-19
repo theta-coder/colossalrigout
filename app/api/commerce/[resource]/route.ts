@@ -4,7 +4,7 @@ import { db } from '../../../../lib/firebase';
 
 const collections: Record<string, string> = {
   colors: 'colors', sizes: 'sizes', 'size-guides': 'size-guides', collections: 'collections',
-  reviews: 'reviews', inventory: 'product-variants'
+  inventory: 'product-variants'
 };
 
 const cleanId = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
@@ -58,12 +58,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ res
     const current = await getDoc(doc(db, collectionName, record.id));
     const saved = { ...(current.exists() ? current.data() : {}), ...record, updatedAt: new Date().toISOString() };
     await setDoc(doc(db, collectionName, record.id), saved);
-    if (resource === 'reviews' && saved.productId) {
-      const reviewSnapshot = await getDocs(collection(db, 'reviews'));
-      const approved = reviewSnapshot.docs.map(item => item.data()).filter(item => item.productId === saved.productId && item.status === 'approved');
-      const aggregateRating = approved.length ? approved.reduce((total, item) => total + Number(item.rating || 0), 0) / approved.length : 0;
-      await setDoc(doc(db, 'products', String(saved.productId)), { aggregateRating: Number(aggregateRating.toFixed(2)), approvedReviewCount: approved.length, updatedAt: new Date().toISOString() }, { merge: true });
-    }
     return NextResponse.json({ success: true, data: saved });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
