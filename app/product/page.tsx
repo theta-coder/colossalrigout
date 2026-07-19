@@ -42,16 +42,46 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
   const [reviewForm, setReviewForm] = useState({ customerName: '', customerEmail: '', rating: 5, title: '', body: '' });
   const [reviewMessage, setReviewMessage] = useState('');
 
+  const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
+
   useEffect(() => {
     fetch('/api/commerce/reviews').then(response => response.json()).then(data => setReviews((data.data || []).filter((review: any) => review.productId === String(product?.id) && review.status === 'approved')));
     fetch('/api/commerce/inventory').then(response => response.json()).then(data => setVariants((data.data || []).filter((variant: any) => variant.productId === String(product?.id) && variant.active !== false)));
     if (product?.sizeGuideId) fetch('/api/commerce/size-guides').then(response => response.json()).then(data => setSizeGuide((data.data || []).find((guide: any) => guide.id === product.sizeGuideId) || null));
+
+    fetch('/api/promo-campaigns/active')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && Array.isArray(json.data)) {
+          setActiveCampaigns(json.data);
+        }
+      })
+      .catch(() => {});
   }, [product?.id, product?.sizeGuideId]);
 
   const selectedColorIndex = product?.colors.indexOf(selectedColor) ?? -1;
   const selectedSizeIndex = product?.sizes.indexOf(selectedSize) ?? -1;
   const selectedVariant = variants.find(variant => variant.colorId === product?.colorIds?.[selectedColorIndex] && variant.sizeId === product?.sizeIds?.[selectedSizeIndex]);
   const availableStock = Number(selectedVariant?.availableStock || 0);
+
+  // Campaign eligibility check
+  const checkCampaignEligibility = (p: any, camp: any) => {
+    if (!camp || !p) return false;
+    if (camp.targetType === 'all-products') return true;
+    if (camp.targetType === 'selected-products') {
+      const pids = Array.isArray(camp.productIds) ? camp.productIds.map(String) : [];
+      return pids.includes(String(p.id));
+    }
+    if (camp.targetType === 'selected-categories') {
+      const cids = Array.isArray(camp.categoryIds) ? camp.categoryIds.map((s: any) => String(s).toLowerCase().trim()) : [];
+      const catId = String(p.categoryId || p.categorySlug || '').toLowerCase().trim();
+      const catSlug = String(p.categorySlug || p.cat || '').toLowerCase().trim();
+      return cids.includes(catId) || cids.includes(catSlug);
+    }
+    return false;
+  };
+
+  const productCampaign = activeCampaigns.find(camp => checkCampaignEligibility(product, camp));
 
   const submitReview = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -171,26 +201,99 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
             </span>
           </div>
 
-          {/* Price Display with Discount Support */}
+          {/* Price Display with Campaign & Discount Support */}
           <div className="flex items-center gap-3 mt-4">
-            {(product as any).discountPrice && (product as any).discountPrice < (product as any).retailPrice ? (
-              <>
-                <span className="text-2xl sm:text-3xl font-extrabold text-red-600">
-                  ${(product as any).discountPrice.toFixed(2)}
+            {(() => {
+              if (!product) return null;
+              const retail = Number((product as any).retailPrice || product.price || 0);
+              const manualDiscount = (product as any).discountPrice ? Number((product as any).discountPrice) : null;
+              const manualPrice = manualDiscount !== null && manualDiscount < retail ? manualDiscount : retail;
+              
+              let isCampaignPriceApplied = false;
+              let campaignPrice = retail;
+              
+              if (productCampaign && productCampaign.discountMode === 'automatic') {
+                if (productCampaign.discountType === 'percentage') {
+                  campaignPrice = retail * (1 - Number(productCampaign.discountValue || 0) / 100);
+                } else if (productCampaign.discountType === 'fixed') {
+                  campaignPrice = Math.max(0.01, retail - Number(productCampaign.discountValue || 0));
+                }
+                if (campaignPrice < manualPrice) {
+                  isCampaignPriceApplied = true;
+                }
+              }
+
+              const finalDisplayPrice = isCampaignPriceApplied ? campaignPrice : manualPrice;
+
+              if (finalDisplayPrice < retail) {
+                return (
+                  <>
+                    <span className="text-2xl sm:text-3xl font-extrabold text-red-600">
+                      ${finalDisplayPrice.toFixed(2)}
+                    </span>
+                    <span className="text-base sm:text-lg text-neutral-400 line-through font-medium">
+                      ${retail.toFixed(2)}
+                    </span>
+                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                      -{Math.round((1 - finalDisplayPrice / retail) * 100)}% OFF
+                    </span>
+                    {isCampaignPriceApplied && (
+                      <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        Campaign Applied
+                      </span>
+                    )}
+                  </>
+                );
+              }
+
+              return (
+                <span className="text-xl sm:text-2xl font-bold text-neutral-900">
+                  ${retail.toFixed(2)}
                 </span>
-                <span className="text-base sm:text-lg text-neutral-400 line-through font-medium">
-                  ${((product as any).retailPrice || product.price).toFixed(2)}
-                </span>
-                <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                  -{Math.round((1 - (product as any).discountPrice / ((product as any).retailPrice || product.price)) * 100)}% OFF
-                </span>
-              </>
-            ) : (
-              <span className="text-xl sm:text-2xl font-bold text-neutral-900">
-                ${product.price.toFixed(2)}
-              </span>
-            )}
+              );
+            })()}
           </div>
+
+          {/* Active Campaign Info and Badge */}
+          {productCampaign && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-500 text-black font-display font-black text-[9px] tracking-widest px-2 py-0.5 rounded uppercase">
+                  {productCampaign.badgeText || 'Active Promotion'}
+                </span>
+                <span className="font-bold text-neutral-800 text-xs">
+                  {productCampaign.heading}
+                </span>
+              </div>
+              <p className="text-[11px] text-neutral-600 font-medium">
+                {productCampaign.highlightText && (
+                  <span className="text-amber-600 font-bold">{productCampaign.highlightText} </span>
+                )}
+                {productCampaign.description}
+              </p>
+              
+              {productCampaign.discountMode === 'coupon' && productCampaign.couponCode && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] text-neutral-500 font-semibold uppercase">Use Coupon:</span>
+                  <div className="flex items-center border rounded bg-white overflow-hidden">
+                    <span className="px-2 py-1 font-mono font-bold text-xs bg-neutral-50 border-r text-neutral-800">
+                      {productCampaign.couponCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(productCampaign.couponCode);
+                        alert('Coupon code copied to clipboard!');
+                      }}
+                      className="px-2 py-1 text-[10px] font-bold uppercase text-black hover:bg-neutral-100 transition cursor-pointer"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Product Description */}
           <p className="text-sm text-neutral-600 mt-4 leading-relaxed font-light">

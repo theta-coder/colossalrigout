@@ -152,3 +152,39 @@ export interface InventoryTransactionDocument {
   actorId: string;
   createdAt: string;
 }
+
+export interface PromoCampaignDocument {
+  id: string;
+  internalName: string;
+  badgeText: string;
+  heading: string;
+  description: string;
+  highlightText: string;
+  ctaText: string;
+  discountMode: 'automatic' | 'coupon';
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  couponCode: string;
+  minimumOrder: number;
+  targetType: 'all-products' | 'selected-products' | 'selected-categories';
+  productIds: string[];
+  categoryIds: string[];
+  startsAt: string;
+  endsAt: string;
+  status: 'draft' | 'active' | 'inactive';
+  backgroundOverlayOpacity: number;
+  textAlignment: 'left' | 'center';
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromoCampaignImageDocument {
+  id: string;
+  campaignId: string;
+  dataUrl: string;
+  mimeType: 'image/webp';
+  role: 'background';
+  createdAt: string;
+  updatedAt: string;
+}

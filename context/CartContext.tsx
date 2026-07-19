@@ -284,6 +284,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         payMethod,
         items: cart,
         ownerId: uid,
+        promoCodeApplied: promoCodeApplied || null,
       })
     });
     const checkoutData = await response.json();

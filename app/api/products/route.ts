@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 
-const logo = '/colossal-rigout-logo.png';
+const productPlaceholder = '/product-placeholder.png';
 const isManagedImage = (value: unknown): value is string => typeof value === 'string' && value.startsWith('data:image/webp;base64,') && value.length <= 750_000;
 
 async function readProducts() {
@@ -12,6 +12,16 @@ async function readProducts() {
     getDocs(collection(db, 'colors')),
     getDocs(collection(db, 'sizes'))
   ]);
+  if (productsSnapshot.empty) {
+    const now = new Date().toISOString();
+    await setDoc(doc(db, 'products', '_schema'), {
+      type: 'collection-schema',
+      description: 'Product records are created from the admin panel. This document keeps the Firestore collection visible while it is empty.',
+      fields: ['name', 'retailPrice', 'discountPrice', 'categoryId', 'imageIds', 'colorIds', 'sizeIds', 'collectionIds', 'sizeGuideId', 'status'],
+      createdAt: now,
+      updatedAt: now
+    });
+  }
   const colorNames = new Map(colorsSnapshot.docs.map(item => [item.id, String(item.data().name || item.id)]));
   const sizeNames = new Map(sizesSnapshot.docs.map(item => [item.id, String(item.data().code || item.data().name || item.id)]));
   const imagesByProduct = new Map<string, Array<{ id: string; dataUrl: string; order: number }>>();
@@ -22,7 +32,7 @@ async function readProducts() {
     list.push({ id: imageDoc.id, dataUrl: data.dataUrl, order: Number(data.order) || 0 });
     imagesByProduct.set(String(data.productId), list);
   });
-  return productsSnapshot.docs.map(productDoc => {
+  return productsSnapshot.docs.filter(productDoc => productDoc.id !== '_schema' && productDoc.data().type !== 'collection-schema').map(productDoc => {
     const data = productDoc.data();
     const images = (imagesByProduct.get(productDoc.id) || []).sort((a, b) => a.order - b.order);
     const retailPrice = Number(data.retailPrice ?? data.price ?? 0);
@@ -33,8 +43,8 @@ async function readProducts() {
       price: discountPrice || retailPrice,
       retailPrice,
       discountPrice,
-      img: images[0]?.dataUrl || logo,
-      images: images.length ? images.map(image => image.dataUrl) : [logo],
+      img: images[0]?.dataUrl || productPlaceholder,
+      images: images.length ? images.map(image => image.dataUrl) : [productPlaceholder],
       imageIds: images.map(image => image.id),
       colors: (data.colorIds || data.colors || []).map((id: string) => colorNames.get(id) || id),
       sizes: (data.sizeIds || data.sizes || []).map((id: string) => sizeNames.get(id) || id),

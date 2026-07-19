@@ -45,6 +45,11 @@ function ShopContent() {
   const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  // Dynamic campaign states
+  const [campaignProducts, setCampaignProducts] = useState<any[] | null>(null);
+  const [campaignDetails, setCampaignDetails] = useState<any | null>(null);
+  const [campaignLoading, setCampaignLoading] = useState(false);
+
   useEffect(() => {
     const fetchCats = async () => {
       try {
@@ -78,6 +83,30 @@ function ShopContent() {
     const fromHomeQuery = searchParams.get('fromHome') === 'true';
     const qQuery = searchParams.get('q');
     const collectionQuery = searchParams.get('collection');
+    const campaignId = searchParams.get('campaign');
+
+    if (campaignId) {
+      setCampaignLoading(true);
+      fetch(`/api/promo-campaigns/${campaignId}/products`)
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && Array.isArray(json.data)) {
+            setCampaignProducts(json.data);
+            setCampaignDetails(json.campaign);
+          } else {
+            setCampaignProducts([]);
+            setCampaignDetails(null);
+          }
+        })
+        .catch(() => {
+          setCampaignProducts([]);
+          setCampaignDetails(null);
+        })
+        .finally(() => setCampaignLoading(false));
+    } else {
+      setCampaignProducts(null);
+      setCampaignDetails(null);
+    }
 
     setTimeout(() => {
       if (fromHomeQuery) {
@@ -174,7 +203,8 @@ function ShopContent() {
 
 
   // Apply filters
-  const filteredProducts = products
+  const productsSource = campaignProducts !== null ? campaignProducts : products;
+  const filteredProducts = productsSource
     .filter((product) => {
       // 0. Search Query Match
       if (searchQuery) {
@@ -182,7 +212,7 @@ function ShopContent() {
         const matchesName = product.name.toLowerCase().includes(queryLower);
         const matchesDesc = product.description.toLowerCase().includes(queryLower);
         const matchesCat = product.cat.toLowerCase().includes(queryLower);
-        const matchesCollections = product.collections?.some((col) => col.toLowerCase().includes(queryLower)) || false;
+        const matchesCollections = product.collections?.some((col: any) => col.toLowerCase().includes(queryLower)) || false;
         if (!matchesName && !matchesDesc && !matchesCat && !matchesCollections) {
           return false;
         }
@@ -261,6 +291,8 @@ function ShopContent() {
     setIsFromHome(false);
     setSearchQuery('');
     setSelectedCollection('');
+    setCampaignProducts(null);
+    setCampaignDetails(null);
     router.push('/shop');
   };
 
@@ -279,15 +311,18 @@ function ShopContent() {
           alt="Men apparel banner"
           fill
           priority
-          className="object-cover object-center"
+          className="object-cover object-center opacity-40"
         />
-        <div className="absolute inset-0 bg-black/45"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
         <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col justify-center px-4">
-          <h1 className="font-display text-white text-3xl sm:text-4xl font-extrabold tracking-tight uppercase">
-            {searchQuery ? `Search: "${searchQuery}"` : (selectedSubCat !== 'All' ? `${selectedGroup !== 'All' ? selectedGroup.toUpperCase() + ' ' : ''}${selectedSubCat.toUpperCase()}` : selectedGroup.toUpperCase())}
+          <h1 className="font-display text-white text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight uppercase max-w-2xl leading-none">
+            {campaignDetails ? campaignDetails.heading : (searchQuery ? `Search: "${searchQuery}"` : (selectedSubCat !== 'All' ? `${selectedGroup !== 'All' ? selectedGroup.toUpperCase() + ' ' : ''}${selectedSubCat.toUpperCase()}` : selectedGroup.toUpperCase()))}
           </h1>
           <p className="text-neutral-200 text-xs sm:text-sm mt-1">
-            {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+            {campaignDetails 
+              ? `Promo Campaign active. ${filteredProducts.length} eligible item${filteredProducts.length !== 1 ? 's' : ''} available.`
+              : `${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''} found`
+            }
           </p>
         </div>
       </section>
@@ -860,17 +895,27 @@ function ShopContent() {
                     {p.name}
                   </Link>
                   <div className="flex items-center gap-2 mt-1">
-                    {(p as any).discountPrice && (p as any).discountPrice < (p as any).retailPrice ? (
+                    {(p as any).campaignDiscountApplied ? (
+                      <>
+                        <span className="text-sm font-extrabold text-red-600">${p.price.toFixed(2)}</span>
+                        <span className="text-xs text-neutral-400 line-through font-medium">
+                          ${((p as any).manualPrice || (p as any).retailPrice).toFixed(2)}
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-500">
+                          ({Math.round((1 - p.price / ((p as any).manualPrice || (p as any).retailPrice)) * 100)}% OFF)
+                        </span>
+                      </>
+                    ) : (p as any).discountPrice && (p as any).discountPrice < (p as any).retailPrice ? (
                       <>
                         <span className="text-sm font-extrabold text-red-600">${(p as any).discountPrice.toFixed(2)}</span>
-                        <span className="text-xs text-neutral-400 line-through font-medium">${((p as any).retailPrice || p.price).toFixed(2)}</span>
+                        <span className="text-xs text-neutral-400 line-through font-medium">${((p as any).retailPrice).toFixed(2)}</span>
                       </>
                     ) : (
                       <span className="text-sm text-neutral-800 font-semibold">${p.price.toFixed(2)}</span>
                     )}
                   </div>
                   <div className="flex gap-1 mt-1">
-                    {p.colors.map((c, i) => (
+                    {p.colors.map((c: any, i: any) => (
                       <span key={i} className={`w-3 h-3 rounded-full ${colorClasses[c]} inline-block`}></span>
                     ))}
                   </div>

@@ -64,26 +64,69 @@ export default function Home() {
   // Quick Add State
   const [quickAddProduct, setQuickAddProduct] = React.useState<Product | null>(null);
 
-  // Countdown Timer State (Hours, Minutes, Seconds)
-  const [timeLeft, setTimeLeft] = React.useState({ hours: 14, minutes: 32, seconds: 45 });
+  // Dynamic Promo Campaign State
+  const [activeCampaign, setActiveCampaign] = React.useState<any>(null);
+  const [campaignLoading, setCampaignLoading] = React.useState(true);
+  const [serverOffset, setServerOffset] = React.useState(0);
+  const [countdown, setCountdown] = React.useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [campaignExpired, setCampaignExpired] = React.useState(false);
 
+  // Fetch active campaign from API
   React.useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+    const fetchCampaign = async () => {
+      try {
+        const res = await fetch('/api/promo-campaigns/active');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setActiveCampaign(json.data[0]);
+          // Calculate server/client clock offset for accurate countdown
+          const serverTime = new Date(json.serverNow).getTime();
+          const clientTime = Date.now();
+          setServerOffset(serverTime - clientTime);
+          setCampaignExpired(false);
         } else {
-          return { hours: 24, minutes: 0, seconds: 0 }; // Loop or end
+          setActiveCampaign(null);
         }
-      });
-    }, 1000);
+      } catch {
+        setActiveCampaign(null);
+      } finally {
+        setCampaignLoading(false);
+      }
+    };
+    fetchCampaign();
 
-    return () => clearInterval(timer);
+    // Revalidate on page focus
+    const handleFocus = () => fetchCampaign();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
+
+  // Accurate countdown timer synced to server time
+  React.useEffect(() => {
+    if (!activeCampaign?.endsAt) return;
+    const endMs = new Date(activeCampaign.endsAt).getTime();
+
+    const tick = () => {
+      const nowSynced = Date.now() + serverOffset;
+      const remaining = endMs - nowSynced;
+      if (remaining <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setCampaignExpired(true);
+        return;
+      }
+      const totalSecs = Math.floor(remaining / 1000);
+      setCountdown({
+        days: Math.floor(totalSecs / 86400),
+        hours: Math.floor((totalSecs % 86400) / 3600),
+        minutes: Math.floor((totalSecs % 3600) / 60),
+        seconds: totalSecs % 60,
+      });
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [activeCampaign, serverOffset]);
 
   // Swiper Carousel States
   const [currentReview, setCurrentReview] = React.useState(0);
@@ -519,65 +562,97 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SALES PROMO WITH TIMER */}
-      <section className="w-full bg-[#111110] text-white py-12 sm:py-16 my-8 overflow-hidden relative">
-        <div className="absolute inset-0 opacity-15 mix-blend-overlay">
-          <Image
-            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=80"
-            alt="Promotion Background"
-            fill
-            className="object-cover"
-          />
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-4 relative flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="text-center md:text-left space-y-3 max-w-xl">
-            <span className="inline-block bg-amber-500 text-black font-display font-black text-[10px] tracking-widest px-3 py-1 rounded uppercase">
-              Limited Time Only
-            </span>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none text-white">
-              MID-SEASON FLASH SALE
-            </h2>
-            <p className="text-neutral-300 text-sm sm:text-base font-medium">
-              Elevate your wardrobe. Enjoy <span className="text-amber-400 font-bold">Flat 50% OFF</span> storewide. Use coupon code <span className="font-mono bg-white/10 text-white px-2 py-0.5 rounded text-xs font-semibold">COLOSSAL50</span> at checkout.
-            </p>
+      {/* DYNAMIC PROMO CAMPAIGN BANNER */}
+      {!campaignLoading && activeCampaign && !campaignExpired && (
+        <section className="w-full bg-[#111110] text-white py-12 sm:py-16 my-8 overflow-hidden relative">
+          {/* Dynamic background image from database */}
+          <div className="absolute inset-0" style={{ opacity: activeCampaign.backgroundOverlayOpacity ? 1 - activeCampaign.backgroundOverlayOpacity : 0.45 }}>
+            {activeCampaign.backgroundImageUrl ? (
+              <img
+                src={activeCampaign.backgroundImageUrl}
+                alt="Promotion Background"
+                className="w-full h-full object-cover object-center"
+              />
+            ) : (
+              <img
+                src="/colossal-rigout-logo.png"
+                alt="Fallback"
+                className="w-full h-full object-cover object-center opacity-20"
+              />
+            )}
           </div>
-
-          <div className="flex flex-col items-center gap-5 shrink-0 bg-white/5 border border-white/10 backdrop-blur-md p-6 sm:p-8 rounded-2xl w-full max-w-sm">
-            <p className="text-xs font-bold tracking-widest text-neutral-400 uppercase text-center">
-              Offer Ends In
-            </p>
-            
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="flex flex-col items-center min-w-[70px] bg-black/45 p-3 rounded-xl border border-white/5">
-                <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-                  {String(timeLeft.hours).padStart(2, '0')}
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
+          
+          <div className={`max-w-7xl mx-auto px-4 relative flex flex-col md:flex-row items-center justify-between gap-8 ${
+            activeCampaign.textAlignment === 'center' ? 'md:justify-center text-center' : ''
+          }`}>
+            <div className={`space-y-3 max-w-xl ${activeCampaign.textAlignment === 'center' ? 'text-center' : 'text-center md:text-left'}`}>
+              {activeCampaign.badgeText && (
+                <span className="inline-block bg-amber-500 text-black font-display font-black text-[10px] tracking-widest px-3 py-1 rounded uppercase">
+                  {activeCampaign.badgeText}
                 </span>
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Hours</span>
-              </div>
-              <div className="flex flex-col items-center min-w-[70px] bg-black/45 p-3 rounded-xl border border-white/5">
-                <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-                  {String(timeLeft.minutes).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Mins</span>
-              </div>
-              <div className="flex flex-col items-center min-w-[70px] bg-black/45 p-3 rounded-xl border border-white/5">
-                <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-400">
-                  {String(timeLeft.seconds).padStart(2, '0')}
-                </span>
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Secs</span>
-              </div>
+              )}
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-none text-white">
+                {activeCampaign.heading}
+              </h2>
+              {activeCampaign.description && (
+                <p className="text-neutral-300 text-sm sm:text-base font-medium">
+                  {activeCampaign.highlightText && (
+                    <span className="text-amber-400 font-bold">{activeCampaign.highlightText} </span>
+                  )}
+                  {activeCampaign.description}
+                  {activeCampaign.discountMode === 'coupon' && activeCampaign.couponCode && (
+                    <> Use code <span className="font-mono bg-white/10 text-white px-2 py-0.5 rounded text-xs font-semibold">{activeCampaign.couponCode}</span> at checkout.</>
+                  )}
+                </p>
+              )}
             </div>
 
-            <Link
-              href="/shop?cat=sale"
-              className="w-full bg-white hover:bg-neutral-100 text-black text-center text-xs font-bold py-3 px-6 rounded-lg transition uppercase tracking-wider active:scale-[0.98] cursor-pointer shadow-md"
-            >
-              Shop The Sale
-            </Link>
+            <div className="flex flex-col items-center gap-5 shrink-0 bg-white/5 border border-white/10 backdrop-blur-md p-6 sm:p-8 rounded-2xl w-full max-w-sm">
+              <p className="text-xs font-bold tracking-widest text-neutral-400 uppercase text-center">
+                Offer Ends In
+              </p>
+              
+              <div className={`grid gap-4 text-center ${countdown.days > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                {countdown.days > 0 && (
+                  <div className="flex flex-col items-center min-w-[60px] bg-black/45 p-3 rounded-xl border border-white/5">
+                    <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                      {String(countdown.days).padStart(2, '0')}
+                    </span>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Days</span>
+                  </div>
+                )}
+                <div className="flex flex-col items-center min-w-[60px] bg-black/45 p-3 rounded-xl border border-white/5">
+                  <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                    {String(countdown.hours).padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Hours</span>
+                </div>
+                <div className="flex flex-col items-center min-w-[60px] bg-black/45 p-3 rounded-xl border border-white/5">
+                  <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                    {String(countdown.minutes).padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Mins</span>
+                </div>
+                <div className="flex flex-col items-center min-w-[60px] bg-black/45 p-3 rounded-xl border border-white/5">
+                  <span className="font-mono text-3xl sm:text-4xl font-extrabold tracking-tight text-amber-400">
+                    {String(countdown.seconds).padStart(2, '0')}
+                  </span>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-1">Secs</span>
+                </div>
+              </div>
+
+              <Link
+                href={`/shop?campaign=${activeCampaign.id}`}
+                className="w-full bg-white hover:bg-neutral-100 text-black text-center text-xs font-bold py-3 px-6 rounded-lg transition uppercase tracking-wider active:scale-[0.98] cursor-pointer shadow-md"
+              >
+                {activeCampaign.ctaText}
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* BEST SELLERS */}
       <section className="max-w-7xl mx-auto px-4 py-8 w-full overflow-hidden">

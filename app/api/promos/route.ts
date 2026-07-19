@@ -2,40 +2,51 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 
-const defaultPromos = [
-  { code: 'WELCOME10', type: 'percentage', value: 10, minOrder: 0, status: 'Active' },
-  { code: 'COLOSSAL25', type: 'percentage', value: 25, minOrder: 100, status: 'Active' },
-  { code: 'FLAT20', type: 'fixed', value: 20, minOrder: 80, status: 'Active' },
-];
-
-// GET: Fetch all promo codes
+// GET: Fetch all promo codes (standalone + dynamic campaign virtual coupons)
 export async function GET() {
   try {
-    const colRef = collection(db, 'promos');
-    const snapshot = await getDocs(colRef);
-    
-    if (snapshot.empty) {
-      console.log("[API GET /api/promos] Promos collection empty, seeding default promos...");
-      try {
-        for (const promo of defaultPromos) {
-          await setDoc(doc(db, 'promos', promo.code), promo);
-        }
-        return NextResponse.json({ promos: defaultPromos, source: 'firestore-seeded' });
-      } catch (seedErr: any) {
-        console.warn("[API GET /api/promos] Seeding skipped (expected for guest users):", seedErr.message);
-        return NextResponse.json({ promos: defaultPromos, source: 'default-fallback' });
-      }
-    }
-    
+    const [promosSnap, campaignsSnap] = await Promise.all([
+      getDocs(collection(db, 'promos')),
+      getDocs(collection(db, 'promo-campaigns')),
+    ]);
+
     const loaded: any[] = [];
-    snapshot.forEach((docSnap) => {
-      loaded.push(docSnap.data());
+    promosSnap.forEach((docSnap) => {
+      // Exclude schema or config documents if any
+      if (docSnap.id !== '_schema') {
+        loaded.push(docSnap.data());
+      }
     });
-    
+
+    // Load active timed campaign coupons as virtual coupons
+    const nowMs = Date.now();
+    campaignsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.status !== 'active') return;
+
+      const startsMs = new Date(data.startsAt).getTime();
+      const endsMs = new Date(data.endsAt).getTime();
+      if (nowMs < startsMs || nowMs >= endsMs) return;
+
+      if (data.discountMode === 'coupon' && data.couponCode) {
+        loaded.push({
+          code: String(data.couponCode).toUpperCase().trim(),
+          type: data.discountType || 'percentage',
+          value: Number(data.discountValue || 0),
+          minOrder: Number(data.minimumOrder || 0),
+          status: 'Active',
+          campaignId: docSnap.id,
+          targetType: data.targetType || 'all-products',
+          productIds: data.productIds || [],
+          categoryIds: data.categoryIds || []
+        });
+      }
+    });
+
     return NextResponse.json({ promos: loaded, source: 'firestore' });
   } catch (error: any) {
-    console.error("[API GET /api/promos] Error fetching promos, using fallback:", error);
-    return NextResponse.json({ promos: defaultPromos, source: 'fallback', error: error.message });
+    console.error("[API GET /api/promos] Error fetching promos:", error);
+    return NextResponse.json({ promos: [], source: 'error', error: error.message }, { status: 500 });
   }
 }
 
