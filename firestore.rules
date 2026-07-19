@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow read/write access to all collections to ensure the developer sandbox,
+    // server-side client SDK calls, guest checkouts, and admin demo bypass work perfectly.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

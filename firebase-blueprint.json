@@ -1,0 +1,215 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Stores user profiles linked to their Firebase Authentication account",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User full name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user was created"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Stores dynamic clothing products for Colossal Rigout",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Product name"
+        },
+        "price": {
+          "type": "number",
+          "description": "Product retail price"
+        },
+        "img": {
+          "type": "string",
+          "description": "Primary product image URL"
+        },
+        "images": {
+          "type": "array",
+          "description": "List of secondary product image URLs"
+        },
+        "colors": {
+          "type": "array",
+          "description": "List of product color options"
+        },
+        "sizes": {
+          "type": "array",
+          "description": "List of product size options"
+        },
+        "cat": {
+          "type": "string",
+          "description": "Product category (e.g., Shirts, Bottoms, Shoes, etc.)"
+        },
+        "isBestseller": {
+          "type": "boolean",
+          "description": "Flag indicating if the product is a top seller"
+        },
+        "rating": {
+          "type": "string",
+          "description": "Average review rating (e.g., '4.8')"
+        },
+        "sold": {
+          "type": "string",
+          "description": "Formatted sales volume tracker (e.g., '1.2k+ sold')"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the product and materials"
+        },
+        "collections": {
+          "type": "array",
+          "description": "List of collection groups this product belongs to"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "price",
+        "img",
+        "cat",
+        "description"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Stores purchase orders placed by customers",
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Unique Order ID formatted as CR-######"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Optional authenticated User ID who placed the order"
+        },
+        "statusIndex": {
+          "type": "integer",
+          "description": "Current order status tracker index (0 to 4)"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "Estimated delivery date description"
+        },
+        "total": {
+          "type": "number",
+          "description": "Total purchase value"
+        },
+        "payMethod": {
+          "type": "string",
+          "description": "Selected payment method"
+        },
+        "items": {
+          "type": "array",
+          "description": "Array of ordered cart items"
+        },
+        "customer": {
+          "type": "object",
+          "description": "Customer details like name, address, email, phone"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the order was placed"
+        }
+      },
+      "required": [
+        "orderId",
+        "statusIndex",
+        "delivery",
+        "total",
+        "payMethod",
+        "items",
+        "customer"
+      ]
+    },
+    "HeroSlide": {
+      "title": "HeroSlide",
+      "description": "Stores individual slides for the homepage Hero carousel",
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string",
+          "description": "Unsplash or external image URL"
+        },
+        "title": {
+          "type": "string",
+          "description": "Main heading text (can contain newlines for custom breaking)"
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Description text below the heading"
+        },
+        "btn1Text": {
+          "type": "string",
+          "description": "Text of the first CTA button"
+        },
+        "btn1Link": {
+          "type": "string",
+          "description": "URL route of the first CTA button"
+        },
+        "btn2Text": {
+          "type": "string",
+          "description": "Text of the second CTA button"
+        },
+        "btn2Link": {
+          "type": "string",
+          "description": "URL route of the second CTA button"
+        },
+        "objectPosition": {
+          "type": "string",
+          "description": "Tailwind object positioning class (e.g., 'object-center')"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Numeric sort index of the slide"
+        }
+      },
+      "required": [
+        "image",
+        "title",
+        "subtitle",
+        "btn1Text",
+        "btn1Link",
+        "order"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records indexed by auth uid"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Dynamic clothing products collection"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Order documents indexed by order ID"
+    },
+    "/hero-slides/{slideId}": {
+      "schema": "HeroSlide",
+      "description": "Dynamic homepage carousel slide documents"
+    }
+  }
+}

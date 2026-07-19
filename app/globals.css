@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-sans), 'Poppins', sans-serif;
+  --font-display: var(--font-display), 'Playfair Display', serif;
+}
+
+/* Base style resets and font configurations */
+html, body {
+  font-family: var(--font-sans), 'Poppins', sans-serif;
+  background-color: #f4f4f3;
+  color: #171717;
+}
+
+.font-display {
+  font-family: var(--font-display), 'Playfair Display', serif;
+}
+
+.fade-up {
+  animation: fadeUp 0.6s ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Accordion styles */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.accordion-content.open {
+  max-height: 500px;
+}
+
+.accordion-arrow {
+  transition: transform 0.3s ease;
+}
+
+.accordion-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Custom scrollbars */
+.cat-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
