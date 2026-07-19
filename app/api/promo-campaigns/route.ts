@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { requireAdmin } from '../../../lib/serverAuth';
 
 const CAMPAIGNS_COL = 'promo-campaigns';
 const IMAGES_COL = 'promo-campaign-images';
+const PROMOTIONS_COL = 'promotions';
+const MAX_IMAGE_DATA_LENGTH = 900_000;
+const validImage = (value: unknown): value is string =>
+  typeof value === 'string' && /^data:image\/(webp|png|jpeg);base64,/.test(value) && value.length <= MAX_IMAGE_DATA_LENGTH;
+const clampOpacity = (value: unknown) => Math.min(0.9, Math.max(0.2, Number(value ?? 0.55)));
 
 // GET: Fetch all campaigns with their background images
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const admin = await requireAdmin(req);
+  if (admin instanceof NextResponse) return admin;
   try {
     const colRef = collection(db, CAMPAIGNS_COL);
     const q = query(colRef, orderBy('order', 'asc'));
@@ -23,7 +31,15 @@ export async function GET() {
     });
 
     const campaigns: any[] = [];
+    if (campaignsSnap.empty) {
+      await setDoc(doc(db, CAMPAIGNS_COL, '_schema'), {
+        type: 'collection-schema',
+        description: 'Timed homepage promotional campaigns managed from Admin.',
+        createdAt: new Date().toISOString()
+      });
+    }
     campaignsSnap.forEach((d) => {
+      if (d.id === '_schema' || d.data().type === 'collection-schema') return;
       const data = d.data();
       campaigns.push({
         ...data,
@@ -42,6 +58,8 @@ export async function GET() {
 
 // POST: Create a new campaign
 export async function POST(req: NextRequest) {
+  const admin = await requireAdmin(req);
+  if (admin instanceof NextResponse) return admin;
   try {
     const { campaign } = await req.json();
     if (!campaign || !campaign.heading || !campaign.ctaText)
@@ -68,7 +86,11 @@ export async function POST(req: NextRequest) {
 
     const now = new Date().toISOString();
     const id = campaign.id || `camp-${Date.now()}`;
-    const bgImageUrl = typeof campaign.backgroundImageUrl === 'string' && campaign.backgroundImageUrl.startsWith('data:image/') ? campaign.backgroundImageUrl : '';
+    const bgImageUrl = validImage(campaign.backgroundImageUrl) ? campaign.backgroundImageUrl : '';
+    if (!bgImageUrl)
+      return NextResponse.json({ success: false, message: 'A valid JPG, PNG or WebP background image is required and must be under the size limit' }, { status: 400 });
+    if (campaign.discountMode === 'coupon' && !String(campaign.couponCode || '').trim())
+      return NextResponse.json({ success: false, message: 'Coupon code is required in coupon mode' }, { status: 400 });
 
     const campaignDoc = {
       id,
@@ -88,15 +110,46 @@ export async function POST(req: NextRequest) {
       categoryIds: Array.isArray(campaign.categoryIds) ? campaign.categoryIds : [],
       startsAt: campaign.startsAt,
       endsAt: campaign.endsAt,
+      timezone: 'Asia/Karachi',
+      hideAfterExpiry: true,
       status: ['draft', 'active', 'inactive'].includes(campaign.status) ? campaign.status : 'draft',
-      backgroundOverlayOpacity: Number(campaign.backgroundOverlayOpacity ?? 0.55),
+      backgroundImageId: id,
+      backgroundOverlayOpacity: clampOpacity(campaign.backgroundOverlayOpacity),
       textAlignment: campaign.textAlignment === 'center' ? 'center' : 'left',
       order: Number(campaign.order ?? 0),
       createdAt: campaign.createdAt || now,
       updatedAt: now,
     };
 
-    const promises: Promise<void>[] = [setDoc(doc(db, CAMPAIGNS_COL, id), campaignDoc)];
+    const promises: Promise<void>[] = [
+      setDoc(doc(db, CAMPAIGNS_COL, id), campaignDoc),
+      setDoc(doc(db, PROMOTIONS_COL, `campaign-${id}`), {
+        id: `campaign-${id}`,
+        campaignId: id,
+        name: campaignDoc.internalName,
+        publicMessage: campaignDoc.description,
+        discountType: campaignDoc.discountType,
+        discountValue: campaignDoc.discountValue,
+        minimumOrder: campaignDoc.minimumOrder,
+        applicationMode: campaignDoc.discountMode,
+        couponCode: campaignDoc.couponCode,
+        stackable: false,
+        targetType: campaignDoc.targetType,
+        productIds: campaignDoc.productIds,
+        categoryIds: campaignDoc.categoryIds,
+        collectionIds: [],
+        loginRequired: false,
+        maxUsesPerUser: 0,
+        usedCount: 0,
+        channel: 'online',
+        storeIds: [],
+        startsAt: campaignDoc.startsAt,
+        endsAt: campaignDoc.endsAt,
+        status: campaignDoc.status,
+        createdAt: campaignDoc.createdAt,
+        updatedAt: now
+      }, { merge: true })
+    ];
     if (bgImageUrl) {
       promises.push(
         setDoc(doc(db, IMAGES_COL, id), {
@@ -122,6 +175,8 @@ export async function POST(req: NextRequest) {
 
 // PUT: Update existing campaign
 export async function PUT(req: NextRequest) {
+  const admin = await requireAdmin(req);
+  if (admin instanceof NextResponse) return admin;
   try {
     const { campaign } = await req.json();
     if (!campaign || !campaign.id)
@@ -134,7 +189,14 @@ export async function PUT(req: NextRequest) {
 
     const existing = existingSnap.data();
     const now = new Date().toISOString();
-    const bgImageUrl = typeof campaign.backgroundImageUrl === 'string' && campaign.backgroundImageUrl.startsWith('data:image/') ? campaign.backgroundImageUrl : '';
+    if (!campaign.startsAt || !campaign.endsAt || new Date(campaign.endsAt) <= new Date(campaign.startsAt))
+      return NextResponse.json({ success: false, message: 'A valid end date after the start date is required' }, { status: 400 });
+    const nextDiscountValue = Number(campaign.discountValue ?? existing.discountValue ?? 0);
+    if (nextDiscountValue <= 0 || ((campaign.discountType ?? existing.discountType) === 'percentage' && nextDiscountValue > 100))
+      return NextResponse.json({ success: false, message: 'Discount must be positive and percentage cannot exceed 100%' }, { status: 400 });
+    if ((campaign.discountMode ?? existing.discountMode) === 'coupon' && !String(campaign.couponCode ?? existing.couponCode ?? '').trim())
+      return NextResponse.json({ success: false, message: 'Coupon code is required in coupon mode' }, { status: 400 });
+    const bgImageUrl = validImage(campaign.backgroundImageUrl) ? campaign.backgroundImageUrl : '';
 
     // If no new image, keep existing image reference
     const existingImageSnap = await getDoc(doc(db, IMAGES_COL, campaign.id));
@@ -151,7 +213,7 @@ export async function PUT(req: NextRequest) {
       ctaText: String(campaign.ctaText ?? existing.ctaText ?? 'Shop Now').trim(),
       discountMode: campaign.discountMode === 'coupon' ? 'coupon' : (campaign.discountMode ?? existing.discountMode ?? 'automatic'),
       discountType: campaign.discountType === 'fixed' ? 'fixed' : (campaign.discountType ?? existing.discountType ?? 'percentage'),
-      discountValue: Number(campaign.discountValue ?? existing.discountValue ?? 0),
+      discountValue: nextDiscountValue,
       couponCode: String(campaign.couponCode ?? existing.couponCode ?? '').toUpperCase().trim(),
       minimumOrder: Number(campaign.minimumOrder ?? existing.minimumOrder ?? 0),
       targetType: ['all-products', 'selected-products', 'selected-categories'].includes(campaign.targetType) ? campaign.targetType : (existing.targetType || 'all-products'),
@@ -159,15 +221,44 @@ export async function PUT(req: NextRequest) {
       categoryIds: Array.isArray(campaign.categoryIds) ? campaign.categoryIds : (existing.categoryIds || []),
       startsAt: campaign.startsAt || existing.startsAt,
       endsAt: campaign.endsAt || existing.endsAt,
+      timezone: 'Asia/Karachi',
+      hideAfterExpiry: true,
       status: ['draft', 'active', 'inactive'].includes(campaign.status) ? campaign.status : (existing.status || 'draft'),
-      backgroundOverlayOpacity: Number(campaign.backgroundOverlayOpacity ?? existing.backgroundOverlayOpacity ?? 0.55),
+      backgroundImageId: campaign.id,
+      backgroundOverlayOpacity: clampOpacity(campaign.backgroundOverlayOpacity ?? existing.backgroundOverlayOpacity),
       textAlignment: campaign.textAlignment === 'center' ? 'center' : (campaign.textAlignment ?? existing.textAlignment ?? 'left'),
       order: Number(campaign.order ?? existing.order ?? 0),
       createdAt: existing.createdAt || now,
       updatedAt: now,
     };
 
-    const promises: Promise<void>[] = [setDoc(existingRef, updatedDoc)];
+    const promises: Promise<void>[] = [
+      setDoc(existingRef, updatedDoc),
+      setDoc(doc(db, PROMOTIONS_COL, `campaign-${campaign.id}`), {
+        id: `campaign-${campaign.id}`,
+        campaignId: campaign.id,
+        name: updatedDoc.internalName,
+        publicMessage: updatedDoc.description,
+        discountType: updatedDoc.discountType,
+        discountValue: updatedDoc.discountValue,
+        minimumOrder: updatedDoc.minimumOrder,
+        applicationMode: updatedDoc.discountMode,
+        couponCode: updatedDoc.couponCode,
+        stackable: false,
+        targetType: updatedDoc.targetType,
+        productIds: updatedDoc.productIds,
+        categoryIds: updatedDoc.categoryIds,
+        collectionIds: [],
+        loginRequired: false,
+        maxUsesPerUser: 0,
+        channel: 'online',
+        storeIds: [],
+        startsAt: updatedDoc.startsAt,
+        endsAt: updatedDoc.endsAt,
+        status: updatedDoc.status,
+        updatedAt: now
+      }, { merge: true })
+    ];
     if (bgImageUrl) {
       promises.push(
         setDoc(doc(db, IMAGES_COL, campaign.id), {
@@ -193,6 +284,8 @@ export async function PUT(req: NextRequest) {
 
 // DELETE: Delete campaign and its image
 export async function DELETE(req: NextRequest) {
+  const admin = await requireAdmin(req);
+  if (admin instanceof NextResponse) return admin;
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -202,6 +295,7 @@ export async function DELETE(req: NextRequest) {
     await Promise.all([
       deleteDoc(doc(db, CAMPAIGNS_COL, id)),
       deleteDoc(doc(db, IMAGES_COL, id)),
+      deleteDoc(doc(db, PROMOTIONS_COL, `campaign-${id}`)),
     ]);
 
     console.log(`[API DELETE /api/promo-campaigns] Deleted campaign ${id}`);

@@ -171,7 +171,10 @@ export interface PromoCampaignDocument {
   categoryIds: string[];
   startsAt: string;
   endsAt: string;
+  timezone: string;
+  hideAfterExpiry: boolean;
   status: 'draft' | 'active' | 'inactive';
+  backgroundImageId: string;
   backgroundOverlayOpacity: number;
   textAlignment: 'left' | 'center';
   order: number;

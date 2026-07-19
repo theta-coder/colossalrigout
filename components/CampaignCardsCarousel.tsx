@@ -35,6 +35,23 @@ export default function CampaignCardsCarousel() {
   const router = useRouter();
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [visibleCount, setVisibleCount] = useState(3);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setVisibleCount(3);
+      } else if (window.innerWidth >= 640) {
+        setVisibleCount(2);
+      } else {
+        setVisibleCount(1);
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     async function fetchActiveCards() {
@@ -243,24 +260,6 @@ export default function CampaignCardsCarousel() {
       </section>
     );
   }
-
-  const [visibleCount, setVisibleCount] = useState(3);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setVisibleCount(3);
-      } else if (window.innerWidth >= 640) {
-        setVisibleCount(2);
-      } else {
-        setVisibleCount(1);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Carousel layout for more than 3 cards
   return (

@@ -576,7 +576,7 @@ export default function Home() {
               />
             ) : (
               <img
-                src="/colossal-rigout-logo.png"
+                src="/product-placeholder.png"
                 alt="Fallback"
                 className="w-full h-full object-cover object-center opacity-20"
               />

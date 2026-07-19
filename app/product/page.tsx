@@ -115,15 +115,7 @@ function ProductDetailContent({ productId }: ProductDetailContentProps) {
     addToCart({
       id: product.id,
       name: product.name,
-      price: (() => {
-        const retail = Number(product.retailPrice || product.price || 0);
-        const manual = product.discountPrice && product.discountPrice < retail ? Number(product.discountPrice) : retail;
-        if (!productCampaign || productCampaign.discountMode !== 'automatic') return manual;
-        const campaignPrice = productCampaign.discountType === 'percentage'
-          ? retail * (1 - Number(productCampaign.discountValue || 0) / 100)
-          : Math.max(0.01, retail - Number(productCampaign.discountValue || 0));
-        return Number(Math.min(manual, campaignPrice).toFixed(2));
-      })(),
+      price: product.price,
       size: selectedSize,
       color: selectedColor,
       qty: quantity,

@@ -68,6 +68,16 @@ export async function POST(req: NextRequest) {
     };
     
     await setDoc(doc(db, 'promos', promoCode), formattedPromo);
+    const now = new Date().toISOString();
+    await setDoc(doc(db, 'promotions', `coupon-${promoCode}`), {
+      id: `coupon-${promoCode}`, name: `Coupon ${promoCode}`, publicMessage: `${promoCode} checkout discount`,
+      discountType: formattedPromo.type, discountValue: formattedPromo.value, minimumOrder: formattedPromo.minOrder,
+      applicationMode: 'coupon', couponCode: promoCode, stackable: false,
+      targetType: 'all-products', productIds: [], categoryIds: [], collectionIds: [],
+      loginRequired: false, maxUsesPerUser: 0, usedCount: 0, channel: 'online', storeIds: [],
+      startsAt: now, endsAt: '2099-12-31T23:59:59.999Z',
+      status: formattedPromo.status === 'Active' ? 'active' : 'inactive', createdAt: now, updatedAt: now
+    }, { merge: true });
     console.log(`[API POST /api/promos] Created promo code ${promoCode}`);
     return NextResponse.json({ success: true, promo: formattedPromo });
   } catch (error: any) {
@@ -86,6 +96,7 @@ export async function DELETE(req: NextRequest) {
     }
     
     await deleteDoc(doc(db, 'promos', code.toUpperCase()));
+    await deleteDoc(doc(db, 'promotions', `coupon-${code.toUpperCase()}`));
     console.log(`[API DELETE /api/promos] Deleted promo code ${code}`);
     return NextResponse.json({ success: true });
   } catch (error: any) {

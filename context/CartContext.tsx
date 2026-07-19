@@ -198,18 +198,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!isLoaded) return;
 
     const reapplyPromo = async () => {
-      if (!promoCodeApplied) {
-        setPromoDiscount(0);
-        return;
-      }
-
       try {
         const applyRes = await fetch('/api/promotions/apply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items: cart,
-            couponCode: promoCodeApplied,
+            couponCode: promoCodeApplied || null,
             userId: auth.currentUser?.uid || ''
           })
         });
@@ -221,9 +216,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const discountPct = subtotal > 0 ? computedDiscount / subtotal : 0;
           setPromoDiscount(discountPct);
         } else {
-          // Reset if it becomes invalid
           setPromoDiscount(0);
-          setPromoCodeApplied('');
+          if (promoCodeApplied) setPromoCodeApplied('');
         }
       } catch (err) {
         console.error("Error updating promo calculation:", err);
@@ -322,9 +316,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString()
     };
 
+    const token = await auth.currentUser?.getIdToken();
     const response = await fetch('/api/checkout', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({
         shippingInfo,
         shipCost,

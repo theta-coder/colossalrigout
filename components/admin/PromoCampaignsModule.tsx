@@ -6,6 +6,18 @@ import {
   Plus, X, Edit2, Trash2, Eye, EyeOff, Upload, Clock, Tag, Sparkles,
   CheckCircle, AlertCircle, Search, Calendar, Megaphone
 } from 'lucide-react';
+import { auth } from '../../lib/firebase';
+
+async function adminHeaders(includeJson = false): Promise<HeadersInit> {
+  const token = await auth.currentUser?.getIdToken();
+  const isLocalDemo = typeof window !== 'undefined' && localStorage.getItem('cr_admin_session') === 'demo';
+  if (!token && !isLocalDemo) throw new Error('Please sign in with Firebase Admin Authentication.');
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(isLocalDemo ? { 'X-Admin-Demo': '1' } : {}),
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {})
+  };
+}
 
 interface CampaignForm {
   id: string;
@@ -141,7 +153,7 @@ export default function PromoCampaignsModule() {
   const fetchCampaigns = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/promo-campaigns');
+      const res = await fetch('/api/promo-campaigns', { headers: await adminHeaders() });
       const json = await res.json();
       if (json.success) setCampaigns(json.data || []);
     } catch (e: any) {
@@ -253,7 +265,7 @@ export default function PromoCampaignsModule() {
       const method = editing ? 'PUT' : 'POST';
       const res = await fetch('/api/promo-campaigns', {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: await adminHeaders(true),
         body: JSON.stringify({ campaign: payload }),
       });
       const json = await res.json();
@@ -274,7 +286,7 @@ export default function PromoCampaignsModule() {
     if (!confirm(`Delete campaign "${name}"? This cannot be undone.`)) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/promo-campaigns?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/promo-campaigns?id=${id}`, { method: 'DELETE', headers: await adminHeaders() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       flash(setSuccessMsg, 'Campaign deleted');

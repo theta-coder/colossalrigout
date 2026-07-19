@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, doc, runTransaction, getDocs, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { verifyFirebaseUser } from '../../../lib/serverAuth';
 
 const PROMOTIONS_COL = 'promotions';
 const REDEMPTIONS_COL = 'promotion-redemptions';
+const USAGE_COL = 'promotion-user-usage';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { shippingInfo, shipCost, payMethod, items, ownerId, promoCodeApplied } = body;
+    const { shippingInfo, shipCost, payMethod, items, ownerId: requestedOwnerId, promoCodeApplied } = body;
+    const verifiedUser = await verifyFirebaseUser(request);
+    const ownerId = verifiedUser?.uid || null;
+    if (requestedOwnerId && requestedOwnerId !== ownerId) {
+      return NextResponse.json({ error: 'Your login session could not be verified. Please sign in again.' }, { status: 401 });
+    }
     
     if (!Array.isArray(items) || !items.length) {
       return NextResponse.json({ error: 'Cart is empty.' }, { status: 400 });
@@ -26,7 +33,6 @@ export async function POST(request: NextRequest) {
 
     // 1. Fetch matching coupon promotion before transaction (queries cannot run inside transaction)
     let matchingPromoId: string | null = null;
-    let userRedemptionsCount = 0;
 
     if (promoCodeApplied) {
       const q = query(
@@ -46,16 +52,6 @@ export async function POST(request: NextRequest) {
         throw new Error('Invalid or expired coupon code.');
       }
 
-      // Check current user redemptions count
-      if (ownerId && matchingPromoId) {
-        const redQ = query(
-          collection(db, REDEMPTIONS_COL),
-          where('promotionId', '==', matchingPromoId),
-          where('userId', '==', ownerId)
-        );
-        const redSnap = await getDocs(redQ);
-        userRedemptionsCount = redSnap.size;
-      }
     }
 
     // 2. Fetch active automatic promotions
@@ -74,12 +70,19 @@ export async function POST(request: NextRequest) {
     // 3. Start Firestore Transaction
     const order = await runTransaction(db, async transaction => {
       let matchedCouponPromo: any = null;
+      let userUsageRef: ReturnType<typeof doc> | null = null;
+      let userUsageCount = 0;
 
       if (matchingPromoId) {
         const promoRef = doc(db, PROMOTIONS_COL, matchingPromoId);
         const promoSnap = await transaction.get(promoRef);
         if (promoSnap.exists()) {
           matchedCouponPromo = { id: promoSnap.id, ...promoSnap.data() };
+        }
+        if (ownerId) {
+          userUsageRef = doc(db, USAGE_COL, `${matchingPromoId}_${ownerId}`);
+          const usageSnap = await transaction.get(userUsageRef);
+          userUsageCount = usageSnap.exists() ? Number(usageSnap.data().count || 0) : 0;
         }
       }
 
@@ -98,7 +101,7 @@ export async function POST(request: NextRequest) {
         }
 
         // User limit check
-        if (ownerId && userRedemptionsCount >= matchedCouponPromo.maxUsesPerUser) {
+        if (ownerId && matchedCouponPromo.maxUsesPerUser && userUsageCount >= Number(matchedCouponPromo.maxUsesPerUser)) {
           throw new Error(`You have already reached the limit for this offer (${matchedCouponPromo.maxUsesPerUser} use).`);
         }
 
@@ -110,6 +113,8 @@ export async function POST(request: NextRequest) {
 
       let rawSubtotal = 0;
       let eligibleSubtotalForCoupon = 0;
+      let couponSavings = 0;
+      let automaticSavings = 0;
       const snapshots: any[] = [];
 
       // Helper to check item targeting
@@ -149,7 +154,9 @@ export async function POST(request: NextRequest) {
         const variant = variantSnapshot.data();
         const product = productSnapshot.data();
         const quantity = Math.max(1, Number(item.qty || 1));
-        const available = Number(variant.availableStock || 0);
+        const stockOnHand = Number(variant.stockOnHand ?? variant.stock ?? variant.availableStock ?? 0);
+        const reservedStock = Number(variant.reservedStock ?? variant.reserved ?? 0);
+        const available = Number(variant.availableStock ?? Math.max(stockOnHand - reservedStock, 0));
 
         if (available < quantity) {
           throw new Error(`Only ${available} units of ${item.name} are available.`);
@@ -178,6 +185,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        automaticSavings += Math.max(0, basePrice - bestAutoPromoPrice) * quantity;
         basePrice = bestAutoPromoPrice;
 
         // Apply coupon-based promotion
@@ -193,11 +201,12 @@ export async function POST(request: NextRequest) {
             couponPromoPrice = Math.max(0.01, retail - Number(matchedCouponPromo.discountValue || 0));
           }
           finalPrice = Math.min(finalPrice, couponPromoPrice);
+          couponSavings += Math.max(0, basePrice - finalPrice) * quantity;
         }
 
         rawSubtotal += finalPrice * quantity;
         if (isEligibleForCoupon) {
-          eligibleSubtotalForCoupon += finalPrice * quantity;
+          eligibleSubtotalForCoupon += basePrice * quantity;
         }
 
         snapshots.push({
@@ -223,15 +232,9 @@ export async function POST(request: NextRequest) {
           throw new Error(`Minimum order of $${minOrder.toFixed(2)} is required for coupon ${matchedCouponPromo.couponCode}.`);
         }
         
-        if (matchedCouponPromo.discountType === 'percentage') {
-          discountAmount = eligibleSubtotalForCoupon * (Number(matchedCouponPromo.discountValue) / 100);
-        } else if (matchedCouponPromo.discountType === 'fixed') {
-          discountAmount = Math.min(eligibleSubtotalForCoupon, Number(matchedCouponPromo.discountValue));
-        }
-
-        if (matchedCouponPromo.maximumDiscount && discountAmount > matchedCouponPromo.maximumDiscount) {
-          discountAmount = matchedCouponPromo.maximumDiscount;
-        }
+        // Coupon price is already applied to eligible lines. Keep the saving for
+        // the order audit and never subtract the same discount a second time.
+        discountAmount = couponSavings;
 
         discountSnapshot = {
           type: matchedCouponPromo.discountType,
@@ -240,7 +243,7 @@ export async function POST(request: NextRequest) {
         };
       }
 
-      const finalSubtotal = Math.max(0, rawSubtotal - discountAmount);
+      const finalSubtotal = Math.max(0, rawSubtotal);
       const deliveryDate = new Date(); 
       deliveryDate.setDate(deliveryDate.getDate() + (Number(shipCost) === 12 ? 2 : 6));
 
@@ -263,21 +266,27 @@ export async function POST(request: NextRequest) {
           color: item.color,
           price: unitPrice,
           qty: quantity,
-          img: item.img || '/colossal-rigout-logo.png'
+          img: item.img || '/product-placeholder.png',
+          promotionId: matchedCouponPromo?.id || snapshots.find(snapshot => snapshot.item === item)?.autoPromoId || null
         })),
-        promotionId: matchedCouponPromo?.id || null,
+        promotionId: matchedCouponPromo?.id || snapshots.find(snapshot => snapshot.autoPromoId)?.autoPromoId || null,
         promoCodeApplied: promoCodeApplied || null,
         eligibleSubtotal: Number((matchedCouponPromo ? eligibleSubtotalForCoupon : rawSubtotal).toFixed(2)),
-        discountAmount: Number(discountAmount.toFixed(2)),
-        discountSnapshot: discountSnapshot || null
+        discountAmount: Number((discountAmount + automaticSavings).toFixed(2)),
+        discountSnapshot: discountSnapshot || (automaticSavings > 0 ? {
+          type: 'automatic',
+          value: Number(automaticSavings.toFixed(2)),
+          campaignName: 'Automatic promotion'
+        } : null)
       };
 
       // 4. Update stock and write ledger transactions
       for (const entry of snapshots) {
         const newAvailable = entry.available - entry.quantity;
         transaction.update(entry.variantSnapshot.ref, {
-          stockOnHand: Number(entry.variant.stockOnHand || 0) - entry.quantity,
+          stockOnHand: Math.max(0, Number(entry.variant.stockOnHand ?? entry.variant.stock ?? entry.available) - entry.quantity),
           availableStock: newAvailable,
+          stock: newAvailable,
           updatedAt: now
         });
         transaction.update(entry.productSnapshot.ref, {
@@ -318,6 +327,15 @@ export async function POST(request: NextRequest) {
           discountAmount: Number(discountAmount.toFixed(2)),
           redeemedAt: now
         });
+        if (userUsageRef && ownerId) {
+          transaction.set(userUsageRef, {
+            promotionId: matchedCouponPromo.id,
+            userId: ownerId,
+            count: userUsageCount + 1,
+            lastOrderId: orderId,
+            updatedAt: now
+          }, { merge: true });
+        }
       }
 
       // Write Order Document

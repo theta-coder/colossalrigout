@@ -15,6 +15,7 @@ export async function GET() {
 
     for (const d of snap.docs) {
       const data = d.data();
+      if (d.id === '_schema' || data.type === 'collection-schema') continue;
       if (data.status !== 'active') continue;
 
       const startsMs = new Date(data.startsAt).getTime();
@@ -49,6 +50,9 @@ export async function GET() {
         productIds: data.productIds || [],
         categoryIds: data.categoryIds || [],
         backgroundImageUrl,
+        backgroundImageId: data.backgroundImageId || d.id,
+        timezone: data.timezone || 'Asia/Karachi',
+        hideAfterExpiry: data.hideAfterExpiry !== false,
         backgroundOverlayOpacity: Number(data.backgroundOverlayOpacity ?? 0.55),
         textAlignment: data.textAlignment || 'left',
         order: Number(data.order || 0),

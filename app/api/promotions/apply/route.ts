@@ -61,11 +61,16 @@ export async function POST(req: NextRequest) {
 
     let rawSubtotal = 0;
     let eligibleSubtotalForCoupon = 0;
+    let couponSavings = 0;
+    let automaticSavings = 0;
     const processedItems = [];
 
     for (const item of items) {
-      const retail = Number(item.retailPrice || item.price || 0);
-      const manualDiscount = item.discountPrice ? Number(item.discountPrice) : null;
+      const productSnapshot = await getDoc(doc(db, 'products', String(item.productId || item.id)));
+      if (!productSnapshot.exists()) continue;
+      const product = { id: productSnapshot.id, ...productSnapshot.data() } as any;
+      const retail = Number(product.retailPrice || product.price || 0);
+      const manualDiscount = product.discountPrice ? Number(product.discountPrice) : null;
       let basePrice = manualDiscount !== null && manualDiscount < retail ? manualDiscount : retail;
 
       // Apply active automatic promotions
@@ -73,7 +78,7 @@ export async function POST(req: NextRequest) {
       let appliedAutoPromo: any = null;
 
       for (const promo of activePromotions) {
-        if (checkEligibility(item, promo)) {
+        if (checkEligibility(product, promo)) {
           let promoPrice = retail;
           if (promo.discountType === 'percentage') {
             promoPrice = retail * (1 - Number(promo.discountValue || 0) / 100);
@@ -87,13 +92,14 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      automaticSavings += Math.max(0, basePrice - bestAutoPromoPrice) * Number(item.qty || item.quantity || 1);
       basePrice = bestAutoPromoPrice;
 
       // Apply coupon-based promotion
       let isEligibleForCoupon = false;
       let finalPrice = basePrice;
 
-      if (matchedCouponPromo && checkEligibility(item, matchedCouponPromo)) {
+      if (matchedCouponPromo && checkEligibility(product, matchedCouponPromo)) {
         isEligibleForCoupon = true;
         let couponPromoPrice = retail;
         if (matchedCouponPromo.discountType === 'percentage') {
@@ -107,7 +113,8 @@ export async function POST(req: NextRequest) {
       const qty = Number(item.qty || item.quantity || 1);
       rawSubtotal += finalPrice * qty;
       if (isEligibleForCoupon) {
-        eligibleSubtotalForCoupon += finalPrice * qty;
+        eligibleSubtotalForCoupon += basePrice * qty;
+        couponSavings += Math.max(0, basePrice - finalPrice) * qty;
       }
 
       processedItems.push({
@@ -124,15 +131,7 @@ export async function POST(req: NextRequest) {
     if (matchedCouponPromo) {
       const minOrder = Number(matchedCouponPromo.minimumOrder || 0);
       if (minOrder <= 0 || eligibleSubtotalForCoupon >= minOrder) {
-        if (matchedCouponPromo.discountType === 'percentage') {
-          discountAmount = eligibleSubtotalForCoupon * (Number(matchedCouponPromo.discountValue) / 100);
-        } else if (matchedCouponPromo.discountType === 'fixed') {
-          discountAmount = Math.min(eligibleSubtotalForCoupon, Number(matchedCouponPromo.discountValue));
-        }
-
-        if (matchedCouponPromo.maximumDiscount && discountAmount > matchedCouponPromo.maximumDiscount) {
-          discountAmount = matchedCouponPromo.maximumDiscount;
-        }
+        discountAmount = couponSavings;
 
         discountSnapshot = {
           type: matchedCouponPromo.discountType,
@@ -145,8 +144,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       rawSubtotal: Number(rawSubtotal.toFixed(2)),
-      discountAmount: Number(discountAmount.toFixed(2)),
-      finalSubtotal: Number(Math.max(0, rawSubtotal - discountAmount).toFixed(2)),
+      discountAmount: Number((discountAmount + automaticSavings).toFixed(2)),
+      finalSubtotal: Number(Math.max(0, rawSubtotal).toFixed(2)),
       items: processedItems,
       discountSnapshot,
     });
