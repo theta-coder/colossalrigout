@@ -84,10 +84,11 @@ function ShopContent() {
     const qQuery = searchParams.get('q');
     const collectionQuery = searchParams.get('collection');
     const campaignId = searchParams.get('campaign');
+    const promotionId = searchParams.get('promotion');
 
-    if (campaignId) {
+    if (campaignId || promotionId) {
       setCampaignLoading(true);
-      fetch(`/api/promo-campaigns/${campaignId}/products`)
+      fetch(promotionId ? `/api/promotions/${promotionId}/products` : `/api/promo-campaigns/${campaignId}/products`)
         .then(res => res.json())
         .then(json => {
           if (json.success && Array.isArray(json.data)) {

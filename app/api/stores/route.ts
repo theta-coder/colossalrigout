@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { requireAdmin } from '../../../lib/serverAuth';
 
 const STORES_COL = 'stores';
 
 // GET: Fetch all stores
 export async function GET(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const colRef = collection(db, STORES_COL);
     const snap = await getDocs(colRef);
     const stores: any[] = [];
@@ -27,6 +30,8 @@ export async function GET(req: NextRequest) {
 // POST: Create a new store
 export async function POST(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { store } = await req.json();
     if (!store || !store.name || !store.address || !store.city)
       return NextResponse.json({ success: false, message: 'Name, Address, and City are required' }, { status: 400 });
@@ -58,6 +63,8 @@ export async function POST(req: NextRequest) {
 // PUT: Update an existing store
 export async function PUT(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { store } = await req.json();
     if (!store || !store.id)
       return NextResponse.json({ success: false, message: 'Store ID is required' }, { status: 400 });
@@ -94,6 +101,8 @@ export async function PUT(req: NextRequest) {
 // DELETE: Delete store
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id)

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit2, Plus, X, Search, MapPin, Phone, CheckCircle, AlertCircle } from 'lucide-react';
+import { adminApiFetch } from '../../lib/admin-api';
 
 interface Store {
   id: string;
@@ -39,7 +40,7 @@ export default function StoresModule() {
   const fetchStores = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/stores');
+      const res = await adminApiFetch('/api/stores');
       const json = await res.json();
       if (json.success) {
         setStores(json.data || []);
@@ -69,7 +70,7 @@ export default function StoresModule() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this store?')) return;
     try {
-      const res = await fetch(`/api/stores?id=${id}`, { method: 'DELETE' });
+      const res = await adminApiFetch(`/api/stores?id=${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         setSuccess('Store deleted successfully!');
@@ -99,7 +100,7 @@ export default function StoresModule() {
         ? { store: { ...form, id: editingStore.id } }
         : { store: form };
 
-      const res = await fetch('/api/stores', {
+      const res = await adminApiFetch('/api/stores', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

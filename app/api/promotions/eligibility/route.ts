@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
+import { verifyFirebaseUser } from '../../../../lib/serverAuth';
 
 const PROMOTIONS_COL = 'promotions';
 const REDEMPTIONS_COL = 'promotion-redemptions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { promotionId, userId, cartItems, couponCode } = await req.json();
+    const { promotionId, cartItems, couponCode } = await req.json();
+    const verifiedUser = await verifyFirebaseUser(req);
+    const userId = verifiedUser?.uid || '';
 
     const nowMs = Date.now();
 

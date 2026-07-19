@@ -52,7 +52,9 @@ import {
   Boxes,
   Megaphone,
   MapPin,
-  CreditCard
+  CreditCard,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { ShopCategory } from '../../lib/category';
 
@@ -263,6 +265,12 @@ export default function AdminDashboardPage() {
   // Search & Filter state for Inventory
   const [invSearch, setInvSearch] = useState('');
   const [invCategory, setInvCategory] = useState('All');
+  const [invPage, setInvPage] = useState(1);
+  const invItemsPerPage = 10;
+
+  useEffect(() => {
+    setInvPage(1);
+  }, [invSearch, invCategory]);
 
   // Orders State
   const [orders, setOrders] = useState<Order[]>([]);
@@ -1145,6 +1153,10 @@ export default function AdminDashboardPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const totalPages = Math.ceil(filteredProducts.length / invItemsPerPage);
+  const startIndex = (invPage - 1) * invItemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + invItemsPerPage);
+
   // Order Filtering
   const filteredOrders = orders.filter((o) => {
     if (orderFilter === 'All') return true;
@@ -1604,7 +1616,7 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100 text-xs">
-                      {filteredProducts.map((p) => (
+                      {paginatedProducts.map((p) => (
                         <tr key={p.id} className="hover:bg-neutral-50/50 transition">
                           <td className="py-3 px-5 font-bold text-neutral-500">#{p.id}</td>
                           <td className="py-3 px-5">
@@ -1681,6 +1693,85 @@ export default function AdminDashboardPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* PAGINATION CONTROLS */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-neutral-200 bg-[#fcfcfb] px-4 py-3 sm:px-6 rounded-b-xl">
+                  <div className="flex flex-1 justify-between sm:hidden">
+                    <button
+                      onClick={() => setInvPage(p => Math.max(1, p - 1))}
+                      disabled={invPage === 1}
+                      className="relative inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setInvPage(p => Math.min(totalPages, p + 1))}
+                      disabled={invPage === totalPages}
+                      className="relative ml-3 inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs text-neutral-500">
+                        Showing <span className="font-bold text-neutral-900">{startIndex + 1}</span> to{' '}
+                        <span className="font-bold text-neutral-900">
+                          {Math.min(startIndex + invItemsPerPage, filteredProducts.length)}
+                        </span>{' '}
+                        of <span className="font-bold text-neutral-900">{filteredProducts.length}</span> items
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm gap-1" aria-label="Pagination">
+                        <button
+                          onClick={() => setInvPage(p => Math.max(1, p - 1))}
+                          disabled={invPage === 1}
+                          className="relative inline-flex items-center rounded-lg border border-neutral-200 bg-white px-2 py-2 text-neutral-500 hover:bg-neutral-50 disabled:opacity-30 transition cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+
+                        {Array.from({ length: totalPages }).map((_, idx) => {
+                          const pageNum = idx + 1;
+                          if (
+                            pageNum === 1 ||
+                            pageNum === totalPages ||
+                            (pageNum >= invPage - 1 && pageNum <= invPage + 1)
+                          ) {
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setInvPage(pageNum)}
+                                className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                                  invPage === pageNum
+                                    ? 'bg-black text-white border-black shadow-sm'
+                                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          }
+                          if (pageNum === 2 || pageNum === totalPages - 1) {
+                            return <span key={pageNum} className="relative inline-flex items-center px-2 py-1.5 text-xs font-semibold text-neutral-400">...</span>;
+                          }
+                          return null;
+                        })}
+
+                        <button
+                          onClick={() => setInvPage(p => Math.min(totalPages, p + 1))}
+                          disabled={invPage === totalPages}
+                          className="relative inline-flex items-center rounded-lg border border-neutral-200 bg-white px-2 py-2 text-neutral-500 hover:bg-neutral-50 disabled:opacity-30 transition cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

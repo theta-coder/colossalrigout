@@ -86,6 +86,30 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Re-read automatic promotions and per-user usage inside the transaction so
+      // checkout, not the campaign-card timer, is the source of truth for discounts.
+      const usableAutoPromos: any[] = [];
+      const autoUsage = new Map<string, { ref: ReturnType<typeof doc>; count: number }>();
+      for (const candidate of activeAutoPromos) {
+        const promoRef = doc(db, PROMOTIONS_COL, candidate.id);
+        const promoSnap = await transaction.get(promoRef);
+        if (!promoSnap.exists()) continue;
+        const promo = { id: promoSnap.id, ...promoSnap.data() } as any;
+        const starts = new Date(promo.startsAt).getTime();
+        const ends = new Date(promo.endsAt).getTime();
+        if (promo.status !== 'active' || promo.applicationMode !== 'automatic' || nowMs < starts || nowMs >= ends) continue;
+        if (promo.loginRequired && !ownerId) continue;
+        if (promo.globalUsageLimit && Number(promo.usedCount || 0) >= Number(promo.globalUsageLimit)) continue;
+        if (ownerId) {
+          const usageRef = doc(db, USAGE_COL, `${promo.id}_${ownerId}`);
+          const usageSnap = await transaction.get(usageRef);
+          const count = usageSnap.exists() ? Number(usageSnap.data().count || 0) : 0;
+          if (promo.maxUsesPerUser && count >= Number(promo.maxUsesPerUser)) continue;
+          autoUsage.set(promo.id, { ref: usageRef, count });
+        }
+        usableAutoPromos.push(promo);
+      }
+
       // Validate matched coupon rules
       if (matchedCouponPromo) {
         // Date checks
@@ -170,7 +194,7 @@ export async function POST(request: NextRequest) {
         let bestAutoPromoPrice = basePrice;
         let appliedAutoPromo: any = null;
 
-        for (const promo of activeAutoPromos) {
+        for (const promo of usableAutoPromos) {
           if (checkEligibility({ id: item.id, ...product }, promo)) {
             let promoPrice = retail;
             if (promo.discountType === 'percentage') {
@@ -186,6 +210,7 @@ export async function POST(request: NextRequest) {
         }
 
         automaticSavings += Math.max(0, basePrice - bestAutoPromoPrice) * quantity;
+        const autoSavingAmount = Math.max(0, basePrice - bestAutoPromoPrice) * quantity;
         basePrice = bestAutoPromoPrice;
 
         // Apply coupon-based promotion
@@ -203,6 +228,7 @@ export async function POST(request: NextRequest) {
           finalPrice = Math.min(finalPrice, couponPromoPrice);
           couponSavings += Math.max(0, basePrice - finalPrice) * quantity;
         }
+        const couponSavingAmount = isEligibleForCoupon ? Math.max(0, basePrice - finalPrice) * quantity : 0;
 
         rawSubtotal += finalPrice * quantity;
         if (isEligibleForCoupon) {
@@ -218,8 +244,25 @@ export async function POST(request: NextRequest) {
           quantity,
           available,
           unitPrice: Number(finalPrice.toFixed(2)),
-          autoPromoId: appliedAutoPromo?.id || null
+          autoPromoId: appliedAutoPromo?.id || null,
+          autoSavingAmount: Number(autoSavingAmount.toFixed(2)),
+          isEligibleForCoupon,
+          couponSavingAmount: Number(couponSavingAmount.toFixed(2))
         });
+      }
+
+      // Cap coupon savings across eligible lines without trusting a client total.
+      const maximumCouponDiscount = Number(matchedCouponPromo?.maximumDiscount || 0);
+      if (maximumCouponDiscount > 0 && couponSavings > maximumCouponDiscount) {
+        const excess = couponSavings - maximumCouponDiscount;
+        const totalUncappedSavings = couponSavings;
+        snapshots.forEach(entry => {
+          if (!entry.isEligibleForCoupon || entry.couponSavingAmount <= 0) return;
+          const restoreTotal = excess * (entry.couponSavingAmount / totalUncappedSavings);
+          entry.unitPrice = Number((entry.unitPrice + restoreTotal / entry.quantity).toFixed(2));
+          rawSubtotal += restoreTotal;
+        });
+        couponSavings = maximumCouponDiscount;
       }
 
       // Calculate coupon discount
@@ -241,6 +284,41 @@ export async function POST(request: NextRequest) {
           value: Number(matchedCouponPromo.discountValue),
           campaignName: matchedCouponPromo.name,
         };
+      }
+
+
+      // Each automatic promotion is redeemed once per order, regardless of the
+      // number of eligible lines. This keeps global and per-user limits accurate.
+      const appliedAutomaticPromos = new Map<string, { promo: any; amount: number }>();
+      snapshots.forEach(entry => {
+        if (!entry.autoPromoId) return;
+        const existing = appliedAutomaticPromos.get(entry.autoPromoId);
+        const promo = usableAutoPromos.find(item => item.id === entry.autoPromoId);
+        if (promo) appliedAutomaticPromos.set(entry.autoPromoId, { promo, amount: (existing?.amount || 0) + Number(entry.autoSavingAmount || 0) });
+      });
+      for (const [promotionId, applied] of appliedAutomaticPromos) {
+        transaction.update(doc(db, PROMOTIONS_COL, promotionId), {
+          usedCount: Number(applied.promo.usedCount || 0) + 1,
+          updatedAt: now,
+        });
+        const redemptionRef = doc(collection(db, REDEMPTIONS_COL));
+        transaction.set(redemptionRef, {
+          id: redemptionRef.id,
+          promotionId,
+          userId: ownerId || 'guest',
+          orderId,
+          channel: 'online',
+          discountAmount: Number(applied.amount.toFixed(2)),
+          redeemedAt: now,
+        });
+        const usage = autoUsage.get(promotionId);
+        if (ownerId && usage) transaction.set(usage.ref, {
+          promotionId,
+          userId: ownerId,
+          count: usage.count + 1,
+          lastOrderId: orderId,
+          updatedAt: now,
+        }, { merge: true });
       }
 
       const finalSubtotal = Math.max(0, rawSubtotal);

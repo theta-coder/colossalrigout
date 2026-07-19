@@ -199,9 +199,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const reapplyPromo = async () => {
       try {
+        const token = await auth.currentUser?.getIdToken();
         const applyRes = await fetch('/api/promotions/apply', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             items: cart,
             couponCode: promoCodeApplied || null,
@@ -235,12 +236,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     
     try {
       // 1. Verify eligibility first
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/promotions/eligibility', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           couponCode: sanitized,
-          userId: auth.currentUser?.uid || '',
           cartItems: cart.map(item => ({
             productId: item.id,
             price: item.price,
@@ -254,7 +255,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // 2. Compute discount amount
         const applyRes = await fetch('/api/promotions/apply', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             items: cart,
             couponCode: sanitized,

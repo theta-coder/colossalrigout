@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { requireAdmin } from '../../../lib/serverAuth';
 
 const CARDS_COL = 'campaign-cards';
 const IMAGES_COL = 'campaign-card-images';
+const isManagedCardImage = (value: unknown): value is string =>
+  typeof value === 'string' && /^data:image\/(webp|png|jpeg);base64,/.test(value) && value.length <= 900_000;
+const isSafeInternalPath = (value: unknown) => typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\');
 
 // GET: Fetch all campaign cards with their background images (Admin & Public)
 export async function GET(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const colRef = collection(db, CARDS_COL);
     const q = query(colRef, orderBy('order', 'asc'));
     const [cardsSnap, imagesSnap] = await Promise.all([
@@ -43,6 +49,8 @@ export async function GET(req: NextRequest) {
 // POST: Create a new campaign card
 export async function POST(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { card } = await req.json();
     if (!card || !card.heading || !card.buttonText)
       return NextResponse.json({ success: false, message: 'Heading and Button text are required' }, { status: 400 });
@@ -54,7 +62,10 @@ export async function POST(req: NextRequest) {
 
     const now = new Date().toISOString();
     const id = card.id || `card-${Date.now()}`;
-    const bgImageUrl = typeof card.backgroundImageUrl === 'string' && card.backgroundImageUrl.startsWith('data:image/') ? card.backgroundImageUrl : '';
+    const bgImageUrl = isManagedCardImage(card.backgroundImageUrl) ? card.backgroundImageUrl : '';
+    if (!bgImageUrl) return NextResponse.json({ success: false, message: 'An imported JPG, PNG, or WebP background image is required (maximum 900KB after compression).' }, { status: 400 });
+    if (card.actionType === 'custom-page' && !isSafeInternalPath(card.internalPath))
+      return NextResponse.json({ success: false, message: 'Custom destination must be a safe internal path beginning with /.' }, { status: 400 });
 
     const cardDoc = {
       id,
@@ -110,6 +121,8 @@ export async function POST(req: NextRequest) {
 // PUT: Update an existing campaign card
 export async function PUT(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { card } = await req.json();
     if (!card || !card.id)
       return NextResponse.json({ success: false, message: 'Card ID is required' }, { status: 400 });
@@ -121,7 +134,9 @@ export async function PUT(req: NextRequest) {
 
     const existing = existingSnap.data();
     const now = new Date().toISOString();
-    const bgImageUrl = typeof card.backgroundImageUrl === 'string' && card.backgroundImageUrl.startsWith('data:image/') ? card.backgroundImageUrl : '';
+    const bgImageUrl = isManagedCardImage(card.backgroundImageUrl) ? card.backgroundImageUrl : '';
+    if (card.actionType === 'custom-page' && !isSafeInternalPath(card.internalPath))
+      return NextResponse.json({ success: false, message: 'Custom destination must be a safe internal path beginning with /.' }, { status: 400 });
 
     const existingImageSnap = await getDoc(doc(db, IMAGES_COL, card.id));
     const existingImageUrl = existingImageSnap.exists() ? String(existingImageSnap.data().dataUrl || '') : '';
@@ -181,6 +196,8 @@ export async function PUT(req: NextRequest) {
 // DELETE: Delete campaign card and its image
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id)

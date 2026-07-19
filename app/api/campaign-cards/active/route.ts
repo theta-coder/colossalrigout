@@ -10,7 +10,13 @@ export async function GET() {
     const nowMs = Date.now();
     const serverNow = new Date().toISOString();
 
-    const snap = await getDocs(collection(db, CARDS_COL));
+    const [snap, promotionsSnap, storesSnap] = await Promise.all([
+      getDocs(collection(db, CARDS_COL)),
+      getDocs(collection(db, 'promotions')),
+      getDocs(collection(db, 'stores')),
+    ]);
+    const promotions = new Map(promotionsSnap.docs.map(item => [item.id, item.data()]));
+    const stores = new Map(storesSnap.docs.map(item => [item.id, item.data()]));
     const activeCards: any[] = [];
 
     for (const d of snap.docs) {
@@ -32,20 +38,40 @@ export async function GET() {
         }
       } catch { /* ignore image fetch errors */ }
 
+      const promotion = data.promotionId ? promotions.get(String(data.promotionId)) : undefined;
+      const store = data.storeId ? stores.get(String(data.storeId)) : undefined;
+      const remainingUses = promotion?.globalUsageLimit
+        ? Math.max(0, Number(promotion.globalUsageLimit) - Number(promotion.usedCount || 0))
+        : '';
+      const discount = promotion
+        ? promotion.discountType === 'percentage'
+          ? `${Number(promotion.discountValue || 0)}% OFF`
+          : promotion.discountType === 'fixed'
+            ? `$${Number(promotion.discountValue || 0)} OFF`
+            : 'FREE SHIPPING'
+        : '';
+      const tokens: Record<string, string> = {
+        discount,
+        coupon: String(promotion?.couponCode || ''),
+        remainingUses: String(remainingUses),
+        storeName: String(store?.name || ''),
+      };
+      const interpolate = (value: unknown) => String(value || '').replace(/\{\{(discount|coupon|remainingUses|storeName)\}\}/g, (_, key) => tokens[key]);
+
       activeCards.push({
         id: d.id,
         cardType: data.cardType || 'discount',
-        eyebrowText: data.eyebrowText || '',
-        heading: data.heading || '',
-        description: data.description || '',
-        buttonText: data.buttonText || '',
+        eyebrowText: interpolate(data.eyebrowText),
+        heading: interpolate(data.heading),
+        description: interpolate(data.description),
+        buttonText: interpolate(data.buttonText),
         overlayOpacity: Number(data.overlayOpacity ?? 0.4),
         textPosition: data.textPosition || 'bottom-left',
         actionType: data.actionType || 'campaign-products',
         productId: data.productId || '',
         collectionId: data.collectionId || '',
         storeId: data.storeId || '',
-        internalPath: data.internalPath || '',
+        internalPath: typeof data.internalPath === 'string' && data.internalPath.startsWith('/') && !data.internalPath.startsWith('//') && !data.internalPath.includes('\\') ? data.internalPath : '',
         hasDiscount: !!data.hasDiscount,
         promotionId: data.promotionId || '',
         startsAt: data.startsAt,

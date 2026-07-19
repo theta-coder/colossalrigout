@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { auth } from '../lib/firebase';
 
 interface CampaignCard {
   id: string;
@@ -24,6 +24,8 @@ interface CampaignCard {
   hasDiscount: boolean;
   promotionId?: string;
   backgroundImageUrl?: string;
+  startsAt: string;
+  endsAt: string;
 }
 
 export default function CampaignCardsCarousel() {
@@ -31,7 +33,8 @@ export default function CampaignCardsCarousel() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const { currentUser } = useAuth();
+  const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
   const router = useRouter();
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +54,17 @@ export default function CampaignCardsCarousel() {
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Campaign visibility is its own clock. It only hides/shows cards and never
+  // grants a discount; promotion eligibility remains server-controlled.
+  useEffect(() => {
+    const removeExpiredCards = () => {
+      const now = Date.now();
+      setCards(current => current.filter(card => now >= new Date(card.startsAt).getTime() && now < new Date(card.endsAt).getTime()));
+    };
+    const timer = window.setInterval(removeExpiredCards, 15_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -81,11 +95,12 @@ export default function CampaignCardsCarousel() {
 
   // Auto-play effect
   useEffect(() => {
-    if (cards.length <= 3 || prefersReducedMotion) return;
+    const maxIndex = Math.max(0, cards.length - visibleCount);
+    if (maxIndex === 0 || prefersReducedMotion || paused) return;
 
     const startTimer = () => {
       timerRef.current = setInterval(() => {
-        setCurrentIndex((prev) => (prev + 1) % (cards.length - 2));
+        setCurrentIndex((prev) => prev >= maxIndex ? 0 : prev + 1);
       }, 5000);
     };
 
@@ -93,7 +108,11 @@ export default function CampaignCardsCarousel() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [cards.length, prefersReducedMotion]);
+  }, [cards.length, visibleCount, prefersReducedMotion, paused]);
+
+  useEffect(() => {
+    setCurrentIndex(prev => Math.min(prev, Math.max(0, cards.length - visibleCount)));
+  }, [cards.length, visibleCount]);
 
   if (loading) {
     return (
@@ -122,12 +141,12 @@ export default function CampaignCardsCarousel() {
 
   const checkEligibilityAndNavigate = async (card: CampaignCard) => {
     try {
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/promotions/eligibility', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           promotionId: card.promotionId,
-          userId: currentUser?.uid || '',
         }),
       });
       const json = await res.json();
@@ -148,6 +167,8 @@ export default function CampaignCardsCarousel() {
       if (json.success && !json.eligible && json.loginRequired) {
         // Redirect to login page and return back to home/origin
         router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
+      } else if (json.success && !json.eligible) {
+        window.alert(json.reason || 'This offer is not available for your account.');
       } else {
         router.push(targetPath);
       }
@@ -208,71 +229,40 @@ export default function CampaignCardsCarousel() {
     );
   };
 
-  // Grid layouts for 1, 2, or 3 cards
-  if (cards.length === 1) {
-    return (
-      <section className="max-w-7xl mx-auto px-4 py-12 w-full">
-        {renderCard(cards[0])}
-      </section>
-    );
-  }
+  const maxIndex = Math.max(0, cards.length - visibleCount);
+  const carouselActive = maxIndex > 0;
+  const goPrevious = () => setCurrentIndex(prev => prev <= 0 ? maxIndex : prev - 1);
+  const goNext = () => setCurrentIndex(prev => prev >= maxIndex ? 0 : prev + 1);
 
-  if (cards.length === 2) {
-    return (
-      <section className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-        {cards.map(renderCard)}
-      </section>
-    );
-  }
-
-  if (cards.length === 3) {
-    return (
-      <section className="max-w-7xl mx-auto px-4 py-12 w-full">
-        {/* Desktop grid */}
-        <div className="hidden sm:grid grid-cols-3 gap-4">
-          {cards.map(renderCard)}
-        </div>
-        {/* Mobile Swipeable Carousel */}
-        <div className="block sm:hidden relative overflow-hidden h-52">
-          <div
-            className="flex transition-transform duration-300 ease-in-out h-full"
-            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-          >
-            {cards.map((c) => (
-              <div key={c.id} className="min-w-full h-full px-1">
-                {renderCard(c)}
-              </div>
-            ))}
-          </div>
-          {/* Navigation dots */}
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 z-10">
-            {cards.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  currentIndex === i ? 'bg-white scale-125' : 'bg-white/40'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  // Carousel layout for more than 3 cards
   return (
-    <section className="max-w-7xl mx-auto px-4 py-12 w-full relative group">
+    <section
+      className="max-w-7xl mx-auto px-4 py-12 w-full relative group"
+      aria-roledescription={carouselActive ? 'carousel' : undefined}
+      aria-label="Featured campaigns"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setPaused(false); }}
+      onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; setPaused(true); }}
+      onTouchEnd={(event) => {
+        const end = event.changedTouches[0]?.clientX;
+        if (touchStartX.current !== null && end !== undefined) {
+          const delta = end - touchStartX.current;
+          if (Math.abs(delta) > 45) delta > 0 ? goPrevious() : goNext();
+        }
+        touchStartX.current = null;
+        setPaused(false);
+      }}
+    >
       <div className="overflow-hidden">
         <div
-          className="flex transition-transform duration-500 ease-in-out -mx-2"
+          className={`flex -mx-2 ${prefersReducedMotion ? '' : 'transition-transform duration-500 ease-in-out'}`}
           style={{
             transform: `translateX(-${currentIndex * (100 / visibleCount)}%)`
           }}
         >
           {cards.map((card) => (
-            <div key={card.id} className="min-w-[100%] sm:min-w-[50%] md:min-w-[33.3333%] shrink-0 px-2">
+            <div key={card.id} className={`${cards.length === 1 ? 'min-w-full' : cards.length === 2 ? 'min-w-full sm:min-w-[50%]' : 'min-w-full sm:min-w-[50%] md:min-w-[33.3333%]'} shrink-0 px-2`}>
               {renderCard(card)}
             </div>
           ))}
@@ -280,24 +270,36 @@ export default function CampaignCardsCarousel() {
       </div>
 
       {/* Navigation Controls */}
-      <button
-        onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-        disabled={currentIndex === 0}
-        className="absolute left-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white text-black border shadow flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:opacity-0 transition duration-300 z-10"
+      {carouselActive && <button
+        type="button"
+        aria-label="Previous campaign"
+        onClick={goPrevious}
+        className="absolute left-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white text-black border shadow flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition duration-300 z-10"
       >
         <ChevronLeft className="w-5 h-5" />
-      </button>
+      </button>}
 
-      <button
-        onClick={() => {
-          const maxIdx = Math.max(0, cards.length - visibleCount);
-          setCurrentIndex((prev) => Math.min(maxIdx, prev + 1));
-        }}
-        disabled={currentIndex >= Math.max(0, cards.length - visibleCount)}
-        className="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white text-black border shadow flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:opacity-0 transition duration-300 z-10"
+      {carouselActive && <button
+        type="button"
+        aria-label="Next campaign"
+        onClick={goNext}
+        className="absolute right-6 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white text-black border shadow flex items-center justify-center opacity-100 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition duration-300 z-10"
       >
         <ChevronRight className="w-5 h-5" />
-      </button>
+      </button>}
+
+      {carouselActive && <div className="mt-4 flex justify-center gap-2" aria-label="Choose campaign page">
+        {Array.from({ length: maxIndex + 1 }, (_, index) => (
+          <button
+            type="button"
+            key={index}
+            aria-label={`Show campaign page ${index + 1}`}
+            aria-current={currentIndex === index ? 'true' : undefined}
+            onClick={() => setCurrentIndex(index)}
+            className={`h-2 rounded-full transition-all ${currentIndex === index ? 'w-6 bg-black' : 'w-2 bg-neutral-300'}`}
+          />
+        ))}
+      </div>}
     </section>
   );
 }

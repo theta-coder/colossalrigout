@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Trash2, Edit2, Plus, X, Upload, Eye, CheckCircle, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { adminApiFetch } from '../../lib/admin-api';
 
 interface CampaignCard {
   id: string;
@@ -83,8 +84,8 @@ export default function CampaignCardsModule() {
         fetch('/api/products').then(r => r.json()),
         fetch('/api/categories').then(r => r.json()),
         fetch('/api/collections').then(r => r.json()).catch(() => ({ success: true, data: [] })),
-        fetch('/api/stores').then(r => r.json()).catch(() => ({ success: true, data: [] })),
-        fetch('/api/promotions?admin=true').then(r => r.json()).catch(() => ({ success: true, data: [] }))
+        adminApiFetch('/api/stores').then(r => r.json()).catch(() => ({ success: true, data: [] })),
+        adminApiFetch('/api/promotions?admin=true').then(r => r.json()).catch(() => ({ success: true, data: [] }))
       ]);
 
       if (prodRes.success) setProducts(prodRes.products || []);
@@ -100,7 +101,7 @@ export default function CampaignCardsModule() {
   const fetchCards = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/campaign-cards');
+      const res = await adminApiFetch('/api/campaign-cards');
       const json = await res.json();
       if (json.success) {
         setCards(json.data || []);
@@ -190,7 +191,7 @@ export default function CampaignCardsModule() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this campaign card?')) return;
     try {
-      const res = await fetch(`/api/campaign-cards?id=${id}`, { method: 'DELETE' });
+      const res = await adminApiFetch(`/api/campaign-cards?id=${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         setSuccess('Campaign card deleted!');
@@ -200,6 +201,27 @@ export default function CampaignCardsModule() {
       }
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const moveCard = async (id: string, direction: -1 | 1) => {
+    const index = cards.findIndex(card => card.id === id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= cards.length) return;
+    const reordered = [...cards];
+    [reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]];
+    setCards(reordered.map((card, order) => ({ ...card, order })));
+    try {
+      const response = await adminApiFetch('/api/campaign-cards/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: reordered.map(card => card.id) }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to reorder cards');
+    } catch (reason: any) {
+      setError(reason.message);
+      fetchCards();
     }
   };
 
@@ -235,7 +257,7 @@ export default function CampaignCardsModule() {
         }
       };
 
-      const res = await fetch('/api/campaign-cards', {
+      const res = await adminApiFetch('/api/campaign-cards', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -722,6 +744,8 @@ export default function CampaignCardsModule() {
                   </div>
 
                   <div className="flex gap-2 pt-2 border-t justify-end">
+                    <button type="button" aria-label="Move card earlier" onClick={() => moveCard(card.id, -1)} className="p-2 border rounded-lg hover:bg-neutral-50"><ArrowUp className="w-3.5 h-3.5" /></button>
+                    <button type="button" aria-label="Move card later" onClick={() => moveCard(card.id, 1)} className="p-2 border rounded-lg hover:bg-neutral-50"><ArrowDown className="w-3.5 h-3.5" /></button>
                     <button
                       onClick={() => handleEdit(card)}
                       className="flex items-center gap-1 px-3 py-1.5 border rounded-lg hover:bg-neutral-50 text-neutral-600 font-bold uppercase tracking-wider"

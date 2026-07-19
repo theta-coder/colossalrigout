@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, query, where, orderBy, limit } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { adminApiFetch } from '../../lib/admin-api';
 import { Trash2, Edit2, Plus, X, Search, Tag, CheckCircle, AlertCircle, Eye, Users, Gift, Ticket, RefreshCw } from 'lucide-react';
 
 interface Promotion {
@@ -101,7 +100,7 @@ export default function PromotionsModule() {
         fetch('/api/products').then(r => r.json()),
         fetch('/api/categories').then(r => r.json()),
         fetch('/api/collections').then(r => r.json()).catch(() => ({ success: true, data: [] })),
-        fetch('/api/stores').then(r => r.json()).catch(() => ({ success: true, data: [] }))
+        adminApiFetch('/api/stores').then(r => r.json()).catch(() => ({ success: true, data: [] }))
       ]);
 
       if (prodRes.success) setProducts(prodRes.products || []);
@@ -116,7 +115,7 @@ export default function PromotionsModule() {
   const fetchPromotions = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/promotions?admin=true');
+      const res = await adminApiFetch('/api/promotions?admin=true');
       const json = await res.json();
       if (json.success) {
         setPromotions(json.data || []);
@@ -131,43 +130,10 @@ export default function PromotionsModule() {
   const fetchRedemptions = async () => {
     try {
       setRedemptionsLoading(true);
-      const snap = await getDocs(collection(db, 'promotion-redemptions'));
-      const list: Redemption[] = [];
-      
-      // Let's resolve user details from orders/auth if possible
-      const ordersSnap = await getDocs(collection(db, 'orders'));
-      const orderUserMap = new Map<string, { email: string; name: string }>();
-      ordersSnap.forEach(o => {
-        const d = o.data();
-        if (d.ownerId) {
-          orderUserMap.set(d.ownerId, {
-            email: d.customer?.email || 'N/A',
-            name: d.customer?.name || 'N/A'
-          });
-        }
-      });
-
-      snap.forEach((d) => {
-        const data = d.data();
-        const uInfo = orderUserMap.get(data.userId) || { email: 'User ID: ' + data.userId, name: 'Customer' };
-        const matchedStore = stores.find(s => s.id === data.storeId);
-        list.push({
-          id: d.id,
-          promotionId: data.promotionId,
-          userId: data.userId,
-          userEmail: uInfo.email,
-          userName: uInfo.name,
-          orderId: data.orderId,
-          storeId: data.storeId,
-          storeName: matchedStore?.name || data.storeId || 'N/A',
-          channel: data.channel || 'online',
-          discountAmount: Number(data.discountAmount || 0),
-          redeemedAt: data.redeemedAt,
-        });
-      });
-      // Sort newest first
-      list.sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime());
-      setRedemptions(list);
+      const res = await adminApiFetch('/api/promotions/redemptions');
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Unable to load redemption report');
+      setRedemptions(json.data || []);
     } catch (err) {
       console.error('Error fetching redemptions:', err);
     } finally {
@@ -214,7 +180,7 @@ export default function PromotionsModule() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this promotion?')) return;
     try {
-      const res = await fetch(`/api/promotions?id=${id}`, { method: 'DELETE' });
+      const res = await adminApiFetch(`/api/promotions?id=${id}`, { method: 'DELETE' });
       const json = await res.json();
       if (json.success) {
         setSuccess('Promotion deleted successfully!');
@@ -261,7 +227,7 @@ export default function PromotionsModule() {
         }
       };
 
-      const res = await fetch('/api/promotions', {
+      const res = await adminApiFetch('/api/promotions', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { requireAdmin } from '../../../lib/serverAuth';
 
 const PROMOTIONS_COL = 'promotions';
 
 // GET: Fetch all promotions (Admin)
 export async function GET(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const colRef = collection(db, PROMOTIONS_COL);
     const snap = await getDocs(colRef);
     const promotions: any[] = [];
@@ -27,6 +30,8 @@ export async function GET(req: NextRequest) {
 // POST: Create a new promotion
 export async function POST(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { promotion } = await req.json();
     if (!promotion || !promotion.name || !promotion.publicMessage)
       return NextResponse.json({ success: false, message: 'Name and Public Message are required' }, { status: 400 });
@@ -35,6 +40,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Start and end dates are required' }, { status: 400 });
     if (new Date(promotion.endsAt) <= new Date(promotion.startsAt))
       return NextResponse.json({ success: false, message: 'End date must be after start date' }, { status: 400 });
+    if (!['percentage', 'fixed', 'free-shipping'].includes(promotion.discountType || 'percentage'))
+      return NextResponse.json({ success: false, message: 'Invalid discount type' }, { status: 400 });
+    if (promotion.discountType !== 'free-shipping' && Number(promotion.discountValue) <= 0)
+      return NextResponse.json({ success: false, message: 'Discount value must be greater than zero' }, { status: 400 });
+    if (promotion.discountType === 'percentage' && Number(promotion.discountValue) > 100)
+      return NextResponse.json({ success: false, message: 'Percentage discount cannot exceed 100%' }, { status: 400 });
+    if (promotion.applicationMode === 'coupon' && !String(promotion.couponCode || '').trim())
+      return NextResponse.json({ success: false, message: 'Coupon code is required for coupon promotions' }, { status: 400 });
+    if (Number(promotion.maxUsesPerUser ?? 1) < 1)
+      return NextResponse.json({ success: false, message: 'Per-user usage limit must be at least 1' }, { status: 400 });
 
     const now = new Date().toISOString();
     const id = promotion.id || `promo-${Date.now()}`;
@@ -79,6 +94,8 @@ export async function POST(req: NextRequest) {
 // PUT: Update an existing promotion
 export async function PUT(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { promotion } = await req.json();
     if (!promotion || !promotion.id)
       return NextResponse.json({ success: false, message: 'Promotion ID is required' }, { status: 400 });
@@ -90,6 +107,14 @@ export async function PUT(req: NextRequest) {
 
     const existing = existingSnap.data();
     const now = new Date().toISOString();
+    const nextStartsAt = promotion.startsAt || existing.startsAt;
+    const nextEndsAt = promotion.endsAt || existing.endsAt;
+    if (new Date(nextEndsAt) <= new Date(nextStartsAt))
+      return NextResponse.json({ success: false, message: 'End date must be after start date' }, { status: 400 });
+    const nextType = promotion.discountType ?? existing.discountType ?? 'percentage';
+    const nextValue = Number(promotion.discountValue ?? existing.discountValue ?? 0);
+    if (!['percentage', 'fixed', 'free-shipping'].includes(nextType) || (nextType !== 'free-shipping' && nextValue <= 0) || (nextType === 'percentage' && nextValue > 100))
+      return NextResponse.json({ success: false, message: 'Invalid discount value or type' }, { status: 400 });
 
     const updatedDoc = {
       id: promotion.id,
@@ -131,6 +156,8 @@ export async function PUT(req: NextRequest) {
 // DELETE: Delete promotion
 export async function DELETE(req: NextRequest) {
   try {
+    const admin = await requireAdmin(req);
+    if (admin instanceof NextResponse) return admin;
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     if (!id)

@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { doc, getDoc, collection, query, getDocs } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
+import { verifyFirebaseUser } from '../../../../lib/serverAuth';
 
 const PROMOTIONS_COL = 'promotions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { items, couponCode, userId } = await req.json();
+    const { items, couponCode } = await req.json();
+    const verifiedUser = await verifyFirebaseUser(req);
+    const userId = verifiedUser?.uid || '';
     if (!Array.isArray(items) || !items.length) {
       return NextResponse.json({ success: true, discountAmount: 0, items: [] });
     }
@@ -36,6 +39,21 @@ export async function POST(req: NextRequest) {
         matchedCouponPromo = { id: d.id, ...data };
       }
     });
+
+    // Preview must respect the same login and usage limits as checkout. Checkout
+    // still revalidates transactionally to prevent races.
+    const usageAllowed = async (promotion: any) => {
+      if (promotion.loginRequired && !userId) return false;
+      if (promotion.globalUsageLimit && Number(promotion.usedCount || 0) >= Number(promotion.globalUsageLimit)) return false;
+      if (userId && promotion.maxUsesPerUser) {
+        const usage = await getDoc(doc(db, 'promotion-user-usage', `${promotion.id}_${userId}`));
+        if (usage.exists() && Number(usage.data().count || 0) >= Number(promotion.maxUsesPerUser)) return false;
+      }
+      return true;
+    };
+    const allowedAutomatic: any[] = [];
+    for (const promotion of activePromotions) if (await usageAllowed(promotion)) allowedAutomatic.push(promotion);
+    if (matchedCouponPromo && !(await usageAllowed(matchedCouponPromo))) matchedCouponPromo = null;
 
     const checkEligibility = (p: any, promo: any) => {
       if (!promo) return false;
@@ -77,7 +95,7 @@ export async function POST(req: NextRequest) {
       let bestAutoPromoPrice = basePrice;
       let appliedAutoPromo: any = null;
 
-      for (const promo of activePromotions) {
+      for (const promo of allowedAutomatic) {
         if (checkEligibility(product, promo)) {
           let promoPrice = retail;
           if (promo.discountType === 'percentage') {
@@ -131,7 +149,8 @@ export async function POST(req: NextRequest) {
     if (matchedCouponPromo) {
       const minOrder = Number(matchedCouponPromo.minimumOrder || 0);
       if (minOrder <= 0 || eligibleSubtotalForCoupon >= minOrder) {
-        discountAmount = couponSavings;
+        const maximumDiscount = Number(matchedCouponPromo.maximumDiscount || 0);
+        discountAmount = maximumDiscount > 0 ? Math.min(couponSavings, maximumDiscount) : couponSavings;
 
         discountSnapshot = {
           type: matchedCouponPromo.discountType,
