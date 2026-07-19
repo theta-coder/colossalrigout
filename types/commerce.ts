@@ -188,3 +188,91 @@ export interface PromoCampaignImageDocument {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CampaignCardDocument {
+  id: string;
+  internalName: string;
+  cardType: 'discount' | 'announcement' | 'store' | 'new-arrival' | 'event';
+  eyebrowText: string;
+  heading: string;
+  description: string;
+  buttonText: string;
+  imageId: string;
+  overlayOpacity: number;
+  textPosition: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+  actionType: 'campaign-products' | 'collection' | 'product' | 'store-location' | 'custom-page';
+  productId?: string;
+  collectionId?: string;
+  storeId?: string;
+  internalPath?: string;
+  hasDiscount: boolean;
+  promotionId?: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  status: 'draft' | 'active' | 'inactive';
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CampaignCardImageDocument {
+  id: string;
+  cardId: string;
+  dataUrl: string;
+  mimeType: 'image/webp';
+  role: 'card-background';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromotionDocument {
+  id: string;
+  name: string;
+  publicMessage: string;
+  discountType: 'percentage' | 'fixed' | 'free-shipping';
+  discountValue: number;
+  maximumDiscount?: number;
+  minimumOrder: number;
+  applicationMode: 'automatic' | 'coupon';
+  couponCode?: string;
+  stackable: boolean;
+  targetType: 'all-products' | 'selected-products' | 'selected-categories' | 'selected-collections';
+  productIds: string[];
+  categoryIds: string[];
+  collectionIds: string[];
+  loginRequired: boolean;
+  maxUsesPerUser: number;
+  globalUsageLimit?: number;
+  usedCount: number;
+  channel: 'online' | 'in-store' | 'both';
+  storeIds: string[];
+  startsAt: string;
+  endsAt: string;
+  status: 'draft' | 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromotionRedemptionDocument {
+  id: string;
+  promotionId: string;
+  userId: string;
+  orderId?: string;
+  storeId?: string;
+  channel: 'online' | 'in-store';
+  discountAmount: number;
+  redeemedAt: string;
+}
+
+export interface StoreDocument {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  phone?: string;
+  mapUrl?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

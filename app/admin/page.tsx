@@ -11,6 +11,9 @@ import { Product } from '../../lib/products';
 import CommerceAdminModule from '../../components/admin/CommerceAdminModule';
 import dynamic from 'next/dynamic';
 const PromoCampaignsModule = dynamic(() => import('../../components/admin/PromoCampaignsModule'), { ssr: false });
+const CampaignCardsModule = dynamic(() => import('../../components/admin/CampaignCardsModule'), { ssr: false });
+const PromotionsModule = dynamic(() => import('../../components/admin/PromotionsModule'), { ssr: false });
+const StoresModule = dynamic(() => import('../../components/admin/StoresModule'), { ssr: false });
 import {
   LayoutDashboard,
   Package,
@@ -47,7 +50,9 @@ import {
   Layers3,
   Star,
   Boxes,
-  Megaphone
+  Megaphone,
+  MapPin,
+  CreditCard
 } from 'lucide-react';
 import { ShopCategory } from '../../lib/category';
 
@@ -177,7 +182,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts } = useProducts();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory'>('overview');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1238,13 +1243,13 @@ export default function AdminDashboardPage() {
           </button>
 
           <button
-            onClick={() => { setActiveTab('promos'); setEditingProduct(null); }}
+            onClick={() => { setActiveTab('promotions'); setEditingProduct(null); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'promos' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
             }`}
           >
             <Ticket className="w-4 h-4" />
-            Promo codes
+            Promotions & Rules
           </button>
 
           <button
@@ -1255,6 +1260,26 @@ export default function AdminDashboardPage() {
           >
             <Megaphone className="w-4 h-4" />
             Promo Campaigns
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('campaign-cards'); setEditingProduct(null); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+              activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+            }`}
+          >
+            <CreditCard className="w-4 h-4" />
+            Campaign Cards
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('stores'); setEditingProduct(null); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+              activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            Store Locations
           </button>
 
           <button
@@ -1343,7 +1368,10 @@ export default function AdminDashboardPage() {
               {activeTab === 'add-product' && (editingProduct ? 'Modify Product Specifications' : 'Add Brand New Product')}
               {activeTab === 'orders' && 'Fulfillment Hub'}
               {activeTab === 'promos' && 'Promotions & Coupons'}
+              {activeTab === 'promotions' && 'Promotions & Rules'}
               {activeTab === 'campaigns' && 'Promo Campaigns'}
+              {activeTab === 'campaign-cards' && 'Campaign Cards'}
+              {activeTab === 'stores' && 'Store Locations'}
               {activeTab === 'hero' && 'Homepage Carousel Management'}
               {activeTab === 'categories' && 'Shop Categories Management'}
               {activeTab === 'colors' && 'Color Library'}
@@ -1359,7 +1387,10 @@ export default function AdminDashboardPage() {
               {activeTab === 'add-product' && 'Define pricing, imported images, variants, sizes, and collections'}
               {activeTab === 'orders' && `Manage, fulfill, and check status for ${filteredOrders.length} customer order requests`}
               {activeTab === 'promos' && `Manage, create, and inspect active customer checkout discount codes`}
+              {activeTab === 'promotions' && `Configure advanced product discounts, usage limits, and redemption rules`}
               {activeTab === 'campaigns' && 'Create timed promotional banners with discounts, countdowns, and product targeting'}
+              {activeTab === 'campaign-cards' && 'Arrange and publish promotional cards, store visits, and events'}
+              {activeTab === 'stores' && 'Manage physical store outlets referenced in store campaigns'}
               {activeTab === 'hero' && 'Customize, sequence, and manage background banners, CTA buttons, and promo slides'}
               {activeTab === 'categories' && `Create, edit, sequence, and control visibility for ${categoriesList.length} shop categories`}
               {activeTab === 'colors' && 'Create reusable named and HEX color swatches for products'}
@@ -3013,6 +3044,9 @@ export default function AdminDashboardPage() {
         {activeTab === 'reviews' && <CommerceAdminModule module="reviews" />}
         {activeTab === 'inventory' && <CommerceAdminModule module="inventory" />}
         {activeTab === 'campaigns' && <PromoCampaignsModule />}
+        {activeTab === 'campaign-cards' && <CampaignCardsModule />}
+        {activeTab === 'promotions' && <PromotionsModule />}
+        {activeTab === 'stores' && <StoresModule />}
 
       </main>
     </div>

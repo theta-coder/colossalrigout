@@ -9,6 +9,7 @@ import { Product } from '../lib/products';
 import dynamic from 'next/dynamic';
 
 const QuickAddModal = dynamic(() => import('../components/QuickAddModal'), { ssr: false });
+const CampaignCardsCarousel = dynamic(() => import('../components/CampaignCardsCarousel'), { ssr: false });
 import { ShopCategory } from '../lib/category';
 import { Truck, RotateCcw, ShieldCheck, MapPin, Heart, Star, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -717,58 +718,7 @@ export default function Home() {
       </section>
 
       {/* PROMO BANNERS */}
-      <section className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full">
-        <div className="relative rounded-md overflow-hidden h-52 sm:h-60 md:h-64 group">
-          <Image
-            src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=600&q=80"
-            alt="Student Discount Promo"
-            fill
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black/40"></div>
-          <div className="absolute bottom-5 left-5 text-white">
-            <p className="text-xs font-semibold tracking-wide">STUDENTS GET</p>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold">10% OFF</p>
-            <p className="text-xs mt-1 max-w-[180px] text-neutral-200">Verify status & use WELCOME10 code.</p>
-            <Link href="/shop" className="mt-3 inline-block bg-white text-black text-xs font-semibold px-4 py-2 rounded">
-              GET DISCOUNT
-            </Link>
-          </div>
-        </div>
-        <div className="relative rounded-md overflow-hidden h-52 sm:h-60 md:h-64 group">
-          <Image
-            src="https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80"
-            alt="New Season Promo"
-            fill
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black/25"></div>
-          <div className="absolute bottom-5 left-5 text-white">
-            <p className="text-xs font-semibold tracking-wide">NEW SEASON</p>
-            <p className="font-display text-2xl sm:text-3xl font-extrabold">NEW LOOK</p>
-            <p className="text-xs mt-1 max-w-[180px] text-neutral-200">Discover the latest trends curated for you.</p>
-            <Link href="/shop" className="mt-3 inline-block bg-white text-black text-xs font-semibold px-4 py-2 rounded">
-              SHOP NOW
-            </Link>
-          </div>
-        </div>
-        <div className="relative rounded-md overflow-hidden h-52 sm:h-60 md:h-64 group sm:col-span-2 md:col-span-1">
-          <Image
-            src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=600&q=80"
-            alt="Gulberg Store Promo"
-            fill
-            className="object-cover transition duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black/35"></div>
-          <div className="absolute top-5 right-5 text-white text-right">
-            <p className="font-semibold text-sm">VISIT US IN STORE</p>
-            <p className="text-xs mt-1 text-neutral-200">Gulberg III, Lahore, Pakistan</p>
-            <Link href="/contact" className="mt-3 inline-block bg-white text-black text-xs font-semibold px-4 py-2 rounded">
-              FIND STORE
-            </Link>
-          </div>
-        </div>
-      </section>
+      <CampaignCardsCarousel />
 
       {/* EXPLORE COLLECTIONS */}
       <section className="max-w-7xl mx-auto px-4 py-10 w-full">

@@ -193,6 +193,46 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  // Recalculate promo discount when cart or authentication changes
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const reapplyPromo = async () => {
+      if (!promoCodeApplied) {
+        setPromoDiscount(0);
+        return;
+      }
+
+      try {
+        const applyRes = await fetch('/api/promotions/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cart,
+            couponCode: promoCodeApplied,
+            userId: auth.currentUser?.uid || ''
+          })
+        });
+        const applyData = await applyRes.json();
+
+        if (applyData.success && applyData.discountAmount > 0) {
+          const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+          const computedDiscount = applyData.discountAmount;
+          const discountPct = subtotal > 0 ? computedDiscount / subtotal : 0;
+          setPromoDiscount(discountPct);
+        } else {
+          // Reset if it becomes invalid
+          setPromoDiscount(0);
+          setPromoCodeApplied('');
+        }
+      } catch (err) {
+        console.error("Error updating promo calculation:", err);
+      }
+    };
+
+    reapplyPromo();
+  }, [cart, isLoaded, promoCodeApplied]);
+
   const applyPromo = async (code: string) => {
     const sanitized = code.trim().toUpperCase();
     if (!sanitized) {
@@ -200,44 +240,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     
     try {
-      const response = await fetch('/api/promos');
-      if (response.ok) {
-        const data = await response.json();
-        const activePromos = data.promos || [];
-        const found = activePromos.find((p: any) => p.code === sanitized && p.status === 'Active');
-        
-        if (found) {
-          // Compute subtotal to verify minimum order threshold
+      // 1. Verify eligibility first
+      const res = await fetch('/api/promotions/eligibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          couponCode: sanitized,
+          userId: auth.currentUser?.uid || '',
+          cartItems: cart.map(item => ({
+            productId: item.id,
+            price: item.price,
+            qty: item.qty
+          }))
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.eligible) {
+        // 2. Compute discount amount
+        const applyRes = await fetch('/api/promotions/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cart,
+            couponCode: sanitized,
+            userId: auth.currentUser?.uid || ''
+          })
+        });
+        const applyData = await applyRes.json();
+
+        if (applyData.success) {
           const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-          if (found.minOrder > 0 && subtotal < found.minOrder) {
-            return { 
-              success: false, 
-              message: `Minimum order of $${found.minOrder.toFixed(2)} is required for this code.` 
-            };
-          }
-          
-          let discountPct = 0;
-          if (found.type === 'percentage') {
-            discountPct = found.value / 100;
-          } else {
-            // Fixed cash discount, computed as percentage of subtotal to integrate smoothly with the existing calculation engine
-            discountPct = subtotal > 0 ? found.value / subtotal : 0;
-          }
-          
+          const computedDiscount = applyData.discountAmount;
+          const discountPct = subtotal > 0 ? computedDiscount / subtotal : 0;
+
           setPromoDiscount(discountPct);
           setPromoCodeApplied(sanitized);
-          return { success: true, message: `${sanitized}: Discount applied successfully!` };
+          return { success: true, message: `${sanitized}: Coupon applied successfully!` };
         }
+      } else {
+        return { success: false, message: data.reason || 'Invalid or expired coupon code.' };
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error verifying promo code via API:", e);
     }
 
-    if (sanitized === 'WELCOME10') {
-      setPromoDiscount(0.10);
-      setPromoCodeApplied(sanitized);
-      return { success: true, message: 'WELCOME10: 10% discount applied successfully!' };
-    }
     return { success: false, message: 'Invalid or expired promo code.' };
   };
 
