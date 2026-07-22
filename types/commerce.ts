@@ -144,6 +144,7 @@ export interface ReviewDocument {
   body: string;
   status: 'pending' | 'approved' | 'rejected';
   verifiedPurchase: boolean;
+  images?: string[];
   source?: 'customer' | 'admin-seed';
   adminNote?: string;
   moderatedBy?: string | null;

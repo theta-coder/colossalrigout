@@ -15,7 +15,7 @@ import RelatedProducts from '@/components/product/RelatedProducts';
 import { ShippingPolicySettings } from '@/lib/shipping-policy';
 import { ReturnsPolicySettings } from '@/lib/returns-policy';
 import ProductImageGallery, { GalleryItem } from '@/components/product/ProductImageGallery';
-import { Star, Heart, Check, ChevronDown, Sparkles, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Star, Heart, Check, ChevronDown, Sparkles, AlertTriangle, ShieldCheck, Camera, Upload, X } from 'lucide-react';
 
 interface ProductDetailsClientProps {
   product: CatalogProduct;
@@ -221,9 +221,44 @@ export default function ProductDetailsClient({
     title: '',
     body: '',
     orderId: '',
+    images: [] as string[],
   });
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [uploadingReviewPhotos, setUploadingReviewPhotos] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string>('');
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  const handleReviewPhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingReviewPhotos(true);
+    try {
+      const fileList = Array.from(files).slice(0, 3);
+      const newImages: string[] = [];
+      for (const file of fileList) {
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) continue;
+        const source = await createImageBitmap(file);
+        const scale = Math.min(1, 1000 / source.width, 1000 / source.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(source.width * scale));
+        canvas.height = Math.max(1, Math.round(source.height * scale));
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/webp', 0.8);
+          newImages.push(dataUrl);
+        }
+        source.close();
+      }
+      setReviewForm((prev) => ({
+        ...prev,
+        images: [...prev.images, ...newImages].slice(0, 3),
+      }));
+    } catch (err) {
+      console.error('Failed to upload review photos:', err);
+    } finally {
+      setUploadingReviewPhotos(false);
+    }
+  };
 
   // Accordions
   const [accordionOpen, setAccordionOpen] = useState<Record<string, boolean>>({
@@ -397,6 +432,7 @@ export default function ProductDetailsClient({
           title: '',
           body: '',
           orderId: '',
+          images: [],
         });
       } else {
         setReviewMessage(data.message || 'Review submission failed. Please try again.');
@@ -689,6 +725,25 @@ export default function ProductDetailsClient({
                         </div>
                         <h5 className="font-bold text-neutral-900 text-xs">{rev.title}</h5>
                         <p className="text-neutral-600 font-light leading-relaxed">{rev.body}</p>
+
+                        {/* Customer Uploaded Parcel Photos */}
+                        {Array.isArray(rev.images) && rev.images.length > 0 && (
+                          <div className="flex gap-2 pt-1.5 overflow-x-auto">
+                            {rev.images.map((imgUrl: string, idx: number) => (
+                              <a
+                                key={idx}
+                                href={imgUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block relative w-16 h-16 rounded-lg border border-neutral-300 overflow-hidden bg-white shrink-0 hover:opacity-90 transition shadow-2xs"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={imgUrl} alt={`Parcel photo ${idx + 1}`} className="w-full h-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 pt-1 text-[10px] text-neutral-500 font-medium">
                           <span>By {rev.customerName}</span>
                           {rev.verifiedPurchase && (
@@ -703,7 +758,7 @@ export default function ProductDetailsClient({
                 </div>
 
                 {/* Review Form */}
-                <form onSubmit={handleReviewSubmit} className="pt-4 border-t border-neutral-200 space-y-3">
+                <form onSubmit={handleReviewSubmit} className="pt-4 border-t border-neutral-200 space-y-3.5">
                   <h4 className="font-bold text-neutral-900 text-xs uppercase tracking-wider">Write a Customer Review</h4>
                   {reviewMessage && (
                     <div className="p-3 rounded-lg bg-neutral-100 text-neutral-800 font-medium text-xs">
@@ -733,19 +788,72 @@ export default function ProductDetailsClient({
                     </div>
                   </div>
 
+                  {/* INTERACTIVE GOLDEN STAR RATING BAR */}
                   <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">Rating</label>
-                    <select
-                      value={reviewForm.rating}
-                      onChange={(e) => setReviewForm({ ...reviewForm, rating: Number(e.target.value) })}
-                      className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-xs bg-white focus:border-black"
-                    >
-                      <option value={5}>5 Stars - Excellent</option>
-                      <option value={4}>4 Stars - Good</option>
-                      <option value={3}>3 Stars - Average</option>
-                      <option value={2}>2 Stars - Poor</option>
-                      <option value={1}>1 Star - Terrible</option>
-                    </select>
+                    <label className="block font-semibold text-neutral-700 mb-1">Rating *</label>
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {[1, 2, 3, 4, 5].map((starVal) => {
+                        const activeRating = hoverRating !== null ? hoverRating : reviewForm.rating;
+                        return (
+                          <button
+                            key={starVal}
+                            type="button"
+                            onMouseEnter={() => setHoverRating(starVal)}
+                            onMouseLeave={() => setHoverRating(null)}
+                            onClick={() => setReviewForm({ ...reviewForm, rating: starVal as 1|2|3|4|5 })}
+                            className="p-1 hover:scale-110 transition active:scale-95 cursor-pointer"
+                          >
+                            <Star
+                              className={`w-6 h-6 ${
+                                starVal <= activeRating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'
+                              }`}
+                            />
+                          </button>
+                        );
+                      })}
+                      <span className="text-xs font-bold text-neutral-700 ml-2">
+                        {reviewForm.rating} Out of 5 Stars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* PARCEL PHOTO UPLOADER */}
+                  <div>
+                    <label className="block font-semibold text-neutral-700 mb-1">
+                      Upload Parcel / Product Photos (Optional)
+                    </label>
+                    <p className="text-[11px] text-neutral-500 mb-2">
+                      Upload pictures of your received parcel or product to help other shoppers!
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {reviewForm.images.map((imgUrl, i) => (
+                        <div key={i} className="relative w-16 h-16 rounded-lg border border-neutral-300 overflow-hidden bg-neutral-100 shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={imgUrl} alt={`Review upload ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setReviewForm((prev) => ({ ...prev, images: prev.images.filter((_, idx) => idx !== i) }))}
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 hover:bg-black transition cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {reviewForm.images.length < 3 && (
+                        <label className="w-16 h-16 rounded-lg border-2 border-dashed border-neutral-300 hover:border-black flex flex-col items-center justify-center text-neutral-500 hover:text-black transition cursor-pointer bg-neutral-50 hover:bg-white shrink-0">
+                          <Camera className="w-5 h-5 mb-0.5" />
+                          <span className="text-[9px] font-bold uppercase">{uploadingReviewPhotos ? 'Wait...' : '+ Photo'}</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => handleReviewPhotoUpload(e.target.files)}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   <div>

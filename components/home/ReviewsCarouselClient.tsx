@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, ShieldCheck } from 'lucide-react';
 import type { HomepageReview } from '@/lib/server/homepage';
 
 interface Props {
@@ -80,14 +80,37 @@ export default function ReviewsCarouselClient({ reviews }: Props) {
             <div key={r.id} className="w-full sm:w-1/2 lg:w-1/3 shrink-0 px-2 sm:px-3 flex flex-col">
               <div className="bg-[#f4f4f3] border border-neutral-200 rounded-lg p-6 flex flex-col justify-between h-full hover:shadow-md transition duration-300 min-h-[220px]">
                 <div>
-                  <div className="flex gap-0.5 text-amber-500 text-sm">
-                    {Array.from({ length: r.rating || 5 }).map((_, i) => (
-                      <span key={i}>&#9733;</span>
+                  <div className="flex items-center gap-1 text-amber-400">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < (r.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'
+                        }`}
+                      />
                     ))}
                   </div>
-                  <p className="text-sm text-neutral-700 mt-4 leading-relaxed italic font-sans">
+                  <p className="text-sm text-neutral-700 mt-3.5 leading-relaxed italic font-sans">
                     &ldquo;{r.body}&rdquo;
                   </p>
+
+                  {/* Parcel Photos */}
+                  {Array.isArray(r.images) && r.images.length > 0 && (
+                    <div className="flex gap-2 mt-3 overflow-x-auto">
+                      {r.images.map((imgUrl, i) => (
+                        <a
+                          key={i}
+                          href={imgUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative w-14 h-14 rounded-lg border border-neutral-300 overflow-hidden bg-white shrink-0 hover:opacity-90 transition shadow-2xs"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={imgUrl} alt={`Parcel photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="mt-5 pt-4 border-t border-neutral-200/50 flex flex-col">
                   <p className="text-xs font-semibold text-neutral-900">{r.customerName}</p>

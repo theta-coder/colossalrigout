@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
         title: data.title,
         body: data.body,
         verifiedPurchase: data.verifiedPurchase,
+        images: Array.isArray(data.images) ? data.images : [],
         createdAt: data.createdAt,
       });
     });
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
       rating: validatedInput.rating,
       title: validatedInput.title,
       body: validatedInput.body,
+      images: Array.isArray(rawReview.images) ? rawReview.images.slice(0, 5) : [],
       status: 'pending', // Public reviews start as pending moderation
       verifiedPurchase,
       source: 'customer',

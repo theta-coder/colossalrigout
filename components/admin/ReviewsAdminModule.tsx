@@ -715,6 +715,24 @@ export default function ReviewsAdminModule() {
                   <div className="lg:col-span-2 space-y-1.5">
                     <h4 className="font-bold text-sm text-neutral-800">{rev.title}</h4>
                     <p className="text-xs text-neutral-600 leading-relaxed font-sans">{rev.body}</p>
+
+                    {/* Parcel Photos */}
+                    {Array.isArray(rev.images) && rev.images.length > 0 && (
+                      <div className="flex gap-2 pt-2 overflow-x-auto">
+                        {rev.images.map((imgUrl: string, idx: number) => (
+                          <a
+                            key={idx}
+                            href={imgUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block relative w-12 h-12 rounded-lg border border-neutral-300 overflow-hidden bg-white shrink-0 hover:opacity-90 transition shadow-2xs"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={imgUrl} alt={`Parcel photo ${idx + 1}`} className="w-full h-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Right Column: Reviewer Info */}

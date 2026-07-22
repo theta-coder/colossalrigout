@@ -123,6 +123,7 @@ export interface HomepageReview {
   title: string;
   body: string;
   verifiedPurchase: boolean;
+  images?: string[];
   createdAt: string;
   moderatedAt: string | null;
 }
@@ -478,6 +479,7 @@ export async function getLatestApprovedReviews(): Promise<HomepageReview[]> {
         title: data.title || '',
         body: data.body || '',
         verifiedPurchase: Boolean(data.verifiedPurchase),
+        images: Array.isArray(data.images) ? data.images : [],
         createdAt: data.createdAt || '',
         moderatedAt: data.moderatedAt || null,
       });
