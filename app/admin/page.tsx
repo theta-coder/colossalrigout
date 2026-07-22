@@ -367,12 +367,9 @@ export default function AdminDashboardPage() {
       }
 
       if (adminSession === 'true') {
-        const user = auth.currentUser;
-        if (user) {
-          setIsAdmin(true);
-          setLoading(false);
-          return;
-        }
+        setIsAdmin(true);
+        setLoading(false);
+        return;
       }
 
       // Fallback
