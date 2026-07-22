@@ -322,15 +322,12 @@ export default function ProductDetailsClient({
     if (selectedVariant) {
       return Number(selectedVariant.availableStock ?? selectedVariant.stockOnHand ?? selectedVariant.stock ?? 0);
     }
-    if (variants.length > 0 && requiresVariant) {
-      return 0;
-    }
     if ((product as any).inStock === false) return 0;
-    if (typeof (product as any).totalStock === 'number' && (product as any).totalStock <= 0) return 0;
-    if (typeof (product as any).stock === 'number' && (product as any).stock <= 0) return 0;
+    if (typeof (product as any).totalStock === 'number' && (product as any).totalStock === 0) return 0;
+    if (typeof (product as any).stock === 'number' && (product as any).stock === 0) return 0;
 
     return (product as any).totalStock ?? (product as any).stock ?? 10;
-  }, [variantsLoading, selectedVariant, variants, requiresVariant, product]);
+  }, [variantsLoading, selectedVariant, product]);
 
   const isCurrentVariantOutOfStock = !variantsLoading && availableStock <= 0;
 
@@ -417,6 +414,8 @@ export default function ProductDetailsClient({
         body: JSON.stringify({
           review: {
             ...reviewForm,
+            title: reviewForm.title.trim() || 'Customer Review',
+            body: reviewForm.body.trim() || 'Verified customer rating and feedback.',
             productId: String(product.id),
           },
         }),
@@ -857,25 +856,23 @@ export default function ProductDetailsClient({
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">Review Title *</label>
+                    <label className="block font-semibold text-neutral-700 mb-1">Review Title (Optional)</label>
                     <input
                       type="text"
-                      required
                       value={reviewForm.title}
                       onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
-                      placeholder="e.g. Perfect fit and great fabric!"
+                      placeholder="e.g. Perfect fit and great fabric! (Optional)"
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-xs outline-none focus:border-black"
                     />
                   </div>
 
                   <div>
-                    <label className="block font-semibold text-neutral-700 mb-1">Review Details *</label>
+                    <label className="block font-semibold text-neutral-700 mb-1">Review Details (Optional)</label>
                     <textarea
                       rows={3}
-                      required
                       value={reviewForm.body}
                       onChange={(e) => setReviewForm({ ...reviewForm, body: e.target.value })}
-                      placeholder="Write your honest opinion about the product fit, quality, and style..."
+                      placeholder="Write your honest opinion about the product fit, quality, and style... (Optional)"
                       className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-xs outline-none focus:border-black resize-none"
                     />
                   </div>

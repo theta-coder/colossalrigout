@@ -33,14 +33,18 @@ export function validateReviewInput(input: ReviewInput) {
     throw new Error('Rating must be an integer between 1 and 5.');
   }
 
-  const title = String(input.title || '').trim().replace(/<[^>]*>/g, '');
-  if (title.length < 3 || title.length > 120) {
-    throw new Error('Title must be between 3 and 120 characters.');
+  let title = String(input.title || '').trim().replace(/<[^>]*>/g, '');
+  if (!title || title.length < 2) {
+    title = 'Customer Review';
+  } else if (title.length > 120) {
+    title = title.substring(0, 120);
   }
 
-  const body = String(input.body || '').trim().replace(/<[^>]*>/g, '');
-  if (body.length < 10 || body.length > 1500) {
-    throw new Error('Review body must be between 10 and 1500 characters.');
+  let body = String(input.body || '').trim().replace(/<[^>]*>/g, '');
+  if (!body || body.length < 2) {
+    body = 'Verified customer feedback and rating.';
+  } else if (body.length > 1500) {
+    body = body.substring(0, 1500);
   }
 
   return {
