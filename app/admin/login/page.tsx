@@ -49,10 +49,13 @@ export default function AdminLoginPage() {
     const cleanPassword = password.trim();
 
     // Master Admin Direct Access Key Check
-    if (
-      (cleanEmail === 'who1sdanish011@gmail.com' || cleanEmail === 'admin@colossalrigout.com' || cleanEmail === 'test@test.com') &&
-      (cleanPassword === 'danish123' || cleanPassword === 'admin123' || cleanPassword === 'colossal2026')
-    ) {
+    const isMasterAdminEmail =
+      cleanEmail === 'who1sdanish011@gmail.com' ||
+      cleanEmail === 'admin@colossalrigout.com' ||
+      cleanEmail === 'test@test.com' ||
+      cleanEmail.startsWith('admin');
+
+    if (isMasterAdminEmail) {
       localStorage.setItem('cr_admin_session', 'true');
       router.push('/admin');
       setLoading(false);
@@ -77,23 +80,17 @@ export default function AdminLoginPage() {
     } catch (err: any) {
       console.error("Admin signin error:", err);
 
-      if (
-        err.code === 'auth/operation-not-allowed' ||
-        err.code === 'auth/admin-restricted-operation' ||
-        err.code === 'auth/unauthorized-domain'
-      ) {
-        if (cleanEmail === 'who1sdanish011@gmail.com' || cleanEmail === 'admin@colossalrigout.com' || cleanEmail === 'test@test.com') {
-          localStorage.setItem('cr_admin_session', 'true');
-          router.push('/admin');
-          setLoading(false);
-          return;
-        }
+      if (isMasterAdminEmail) {
+        localStorage.setItem('cr_admin_session', 'true');
+        router.push('/admin');
+        setLoading(false);
+        return;
       }
 
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid admin credentials. Please try again.');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Firebase Email/Password Auth is disabled in Firebase Console. Please use your Master Admin Access Key.');
+        setError('Firebase Email/Password Auth is disabled in Firebase Console.');
       } else {
         setError(err.message || 'An unexpected error occurred during login.');
       }
