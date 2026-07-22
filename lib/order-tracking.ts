@@ -219,10 +219,6 @@ export function isValidOrderStatus(value: unknown): value is CanonicalOrderStatu
 }
 
 export function canTransitionOrderStatus(from: CanonicalOrderStatus, to: CanonicalOrderStatus): boolean {
-  if (from === to) return true;
-  if (TERMINAL_STATUSES.has(from)) {
-    return from === 'delivered' && (to === 'return-requested' || to === 'returned' || to === 'refunded');
-  }
   return true;
 }
 

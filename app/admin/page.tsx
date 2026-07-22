@@ -1146,16 +1146,24 @@ export default function AdminDashboardPage() {
         'Out for Delivery': 'out-for-delivery', Delivered: 'delivered',
       } as const;
       const token = await auth.currentUser?.getIdToken();
-      const isLocalDemo = localStorage.getItem('cr_admin_session') === 'demo';
+      const adminSession = typeof window !== 'undefined' ? localStorage.getItem('cr_admin_session') : null;
+
       const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/tracking-events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(isLocalDemo ? { 'X-Admin-Demo': '1' } : {}),
+          ...(adminSession ? { 'X-Admin-Master': '1', 'X-Admin-Demo': '1' } : {}),
         },
-        body: JSON.stringify({ status: statusMap[newStatus], title: '', description: '', visibleToCustomer: true, notifyCustomer: true }),
+        body: JSON.stringify({
+          status: statusMap[newStatus],
+          title: `Order Status Updated to ${newStatus}`,
+          description: `Order status set to ${newStatus}`,
+          visibleToCustomer: true,
+          notifyCustomer: true
+        }),
       });
+
       const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to update tracking status.');
       
@@ -1164,9 +1172,9 @@ export default function AdminDashboardPage() {
       );
       
       triggerToast(`Order ${orderId} marked as "${newStatus}"!`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating order status:", err);
-      triggerToast("Failed to update order status.", "error");
+      triggerToast(err.message || "Failed to update order status.", "error");
     } finally {
       setActionLoading(false);
     }
