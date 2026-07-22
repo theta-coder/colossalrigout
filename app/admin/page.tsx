@@ -18,6 +18,12 @@ const CampaignCardsModule = dynamic(() => import('../../components/admin/Campaig
 const PromotionsModule = dynamic(() => import('../../components/admin/PromotionsModule'), { ssr: false });
 const StoresModule = dynamic(() => import('../../components/admin/StoresModule'), { ssr: false });
 const ReviewsAdminModule = dynamic(() => import('../../components/admin/ReviewsAdminModule'), { ssr: false });
+const AboutPageModule = dynamic(() => import('../../components/admin/AboutPageModule'), { ssr: false });
+const ShippingPolicyModule = dynamic(() => import('../../components/admin/ShippingPolicyModule'), { ssr: false });
+const ReturnsPolicyModule = dynamic(() => import('../../components/admin/ReturnsPolicyModule'), { ssr: false });
+const FaqManagerModule = dynamic(() => import('../../components/admin/FaqManagerModule'), { ssr: false });
+const ContactInquiriesModule = dynamic(() => import('../../components/admin/ContactInquiriesModule'), { ssr: false });
+const StorefrontContentModule = dynamic(() => import('../../components/admin/StorefrontContentModule'), { ssr: false });
 import {
   LayoutDashboard,
   Package,
@@ -57,6 +63,8 @@ import {
   Boxes,
   Megaphone,
   MapPin,
+  HelpCircle,
+  Mail,
   CreditCard,
   ShieldCheck,
   ChevronLeft,
@@ -191,7 +199,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts } = useProducts();
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits' | 'about-page' | 'shipping-policy' | 'returns-policy' | 'faq-manager' | 'contact-inquiries' | 'storefront-content'>('overview');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1385,6 +1393,12 @@ export default function AdminDashboardPage() {
             ['reviews', 'Reviews', Star],
             ['trust-benefits', 'Trust Benefits', ShieldCheck],
             ['inventory', 'Stock Inventory', Boxes],
+            ['about-page', 'About Us Page', FileText],
+            ['shipping-policy', 'Shipping Policy', Truck],
+            ['returns-policy', 'Returns & Exchanges', RefreshCw],
+            ['faq-manager', 'FAQ Manager', HelpCircle],
+            ['contact-inquiries', 'Customer Inquiries', Mail],
+            ['storefront-content', 'Storefront Content', LayoutTemplate],
           ] as const).map(([tab, label, Icon]) => (
             <button
               key={tab}
@@ -1457,6 +1471,12 @@ export default function AdminDashboardPage() {
               {activeTab === 'reviews' && 'Review Moderation'}
               {activeTab === 'trust-benefits' && 'Homepage Trust Benefits'}
               {activeTab === 'inventory' && 'Stock Inventory'}
+              {activeTab === 'about-page' && 'About Us Dynamic Editor'}
+              {activeTab === 'shipping-policy' && 'Shipping Policy Manager'}
+              {activeTab === 'returns-policy' && 'Returns & Exchanges Policy Manager'}
+              {activeTab === 'faq-manager' && 'FAQ Knowledge Base Manager'}
+              {activeTab === 'contact-inquiries' && 'Customer Inquiries & Messages'}
+              {activeTab === 'storefront-content' && 'Storefront Global Content'}
             </h2>
             <p className="text-xs text-neutral-500 mt-1">
               {activeTab === 'overview' && 'Real-time sales telemetry, shop parameters, and incoming logs'}
@@ -1477,6 +1497,12 @@ export default function AdminDashboardPage() {
               {activeTab === 'reviews' && 'Approve or reject customer product reviews'}
               {activeTab === 'trust-benefits' && 'Manage homepage shipping, returns, payment, and store benefit messages'}
               {activeTab === 'inventory' && 'Manage stock independently for every product color and size variant'}
+              {activeTab === 'about-page' && 'Manage About Us story, hero image, brand stats, values, and team members'}
+              {activeTab === 'shipping-policy' && 'Configure dynamic shipping rates, delivery times, and free shipping threshold'}
+              {activeTab === 'returns-policy' && 'Configure dynamic return window days, policy rules, and exchange guidance'}
+              {activeTab === 'faq-manager' && 'Add, edit, and organize customer support questions and answers'}
+              {activeTab === 'contact-inquiries' && 'View and manage customer contact messages and inquiries'}
+              {activeTab === 'storefront-content' && 'Manage global banners, announcement bars, and policy text'}
             </p>
           </div>
 
@@ -3153,6 +3179,12 @@ export default function AdminDashboardPage() {
         {activeTab === 'campaign-cards' && <CampaignCardsModule />}
         {activeTab === 'promotions' && <PromotionsModule />}
         {activeTab === 'stores' && <StoresModule />}
+        {activeTab === 'about-page' && <AboutPageModule />}
+        {activeTab === 'shipping-policy' && <ShippingPolicyModule />}
+        {activeTab === 'returns-policy' && <ReturnsPolicyModule />}
+        {activeTab === 'faq-manager' && <FaqManagerModule />}
+        {activeTab === 'contact-inquiries' && <ContactInquiriesModule />}
+        {activeTab === 'storefront-content' && <StorefrontContentModule />}
 
       </main>
     </div>

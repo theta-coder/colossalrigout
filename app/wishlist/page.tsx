@@ -37,7 +37,7 @@ export default function WishlistPage() {
       {/* HERO / BANNER SECTION */}
       <section className="relative h-44 sm:h-52 md:h-60 overflow-hidden -mx-4 mb-8 rounded-b-xl shadow-sm">
         <Image
-          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1920&q=80"
+          src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=1920&q=80"
           alt="Wishlist Cover Banner"
           fill
           priority
