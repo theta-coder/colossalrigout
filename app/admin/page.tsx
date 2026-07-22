@@ -11,6 +11,7 @@ import { Product } from '../../lib/products';
 import { formatPkr } from '../../lib/utils';
 import CommerceAdminModule from '../../components/admin/CommerceAdminModule';
 import ProductColorGalleryManager, { ManagedColorImage } from '../../components/admin/ProductColorGalleryManager';
+import GuidedSizeColorBuilder from '../../components/admin/GuidedSizeColorBuilder';
 import dynamic from 'next/dynamic';
 const PromoCampaignsModule = dynamic(() => import('../../components/admin/PromoCampaignsModule'), { ssr: false });
 const CampaignCardsModule = dynamic(() => import('../../components/admin/CampaignCardsModule'), { ssr: false });
@@ -1986,147 +1987,24 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* STEP 1: SIZES MULTI-SELECT */}
-              <div className="bg-neutral-50 p-5 rounded-xl border border-neutral-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-neutral-200/80 pb-2.5">
-                  <div>
-                    <label className="block text-xs font-black text-neutral-900 uppercase tracking-wider">
-                      STEP 1: Select Available Sizes *
-                    </label>
-                    <p className="text-[11px] text-neutral-500">Select all sizes available for this product (e.g. S, M, L, XL).</p>
-                  </div>
-                  <span className="text-[11px] font-bold text-neutral-600 bg-white px-2.5 py-1 rounded border">
-                    {prodForm.sizes.length} Selected
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2.5 pt-1">
-                  {commerceSizes.map((sz) => {
-                    const isSelected = prodForm.sizes.includes(sz.id);
-                    return (
-                      <button
-                        key={sz.id}
-                        type="button"
-                        onClick={() => toggleSelection('sizes', sz.id)}
-                        className={`min-w-[44px] h-11 px-3 text-xs font-black rounded-lg border transition uppercase cursor-pointer flex items-center justify-center gap-1.5 ${
-                          isSelected
-                            ? 'bg-black text-white border-black shadow-md scale-105'
-                            : 'bg-white text-neutral-700 border-neutral-300 hover:border-black'
-                        }`}
-                      >
-                        {sz.code}
-                        {isSelected && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* STEP 2: COLORS MULTI-SELECT */}
-              <div className="bg-neutral-50 p-5 rounded-xl border border-neutral-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-neutral-200/80 pb-2.5">
-                  <div>
-                    <label className="block text-xs font-black text-neutral-900 uppercase tracking-wider">
-                      STEP 2: Select Available Colors *
-                    </label>
-                    <p className="text-[11px] text-neutral-500">Select all colors available for this product.</p>
-                  </div>
-                  <span className="text-[11px] font-bold text-neutral-600 bg-white px-2.5 py-1 rounded border">
-                    {prodForm.colors.length} Selected
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2.5 pt-1">
-                  {commerceColors.map((col) => {
-                    const isSelected = prodForm.colors.includes(col.id);
-                    return (
-                      <button
-                        key={col.id}
-                        type="button"
-                        onClick={() => toggleSelection('colors', col.id)}
-                        className={`px-3.5 py-2 text-xs font-bold rounded-lg border transition flex items-center gap-2 cursor-pointer ${
-                          isSelected
-                            ? 'bg-black text-white border-black shadow-md scale-105'
-                            : 'bg-white text-neutral-700 border-neutral-300 hover:border-black'
-                        }`}
-                      >
-                        <span className="w-3.5 h-3.5 rounded-full inline-block border border-black/10 shrink-0" style={{ background: col.secondaryHex ? `linear-gradient(135deg, ${col.hex} 50%, ${col.secondaryHex} 50%)` : col.hex }} />
-                        {col.name}
-                        {isSelected && <Check className="w-3.5 h-3.5 ml-0.5" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* STEP 3: COLOR-WISE IMAGE GALLERY MANAGER */}
-              <div className="bg-white p-5 rounded-xl border border-neutral-200 space-y-3 shadow-2xs">
-                <div className="border-b border-neutral-200 pb-2.5">
-                  <label className="block text-xs font-black text-neutral-900 uppercase tracking-wider">
-                    STEP 3: Configure Color Image Galleries
-                  </label>
-                  <p className="text-[11px] text-neutral-500">Upload multiple photos for each selected color. Product gallery automatically updates on swatch selection.</p>
-                </div>
-                <ProductColorGalleryManager
-                  selectedColorIds={prodForm.colors}
-                  availableColors={commerceColors}
-                  colorGalleries={adminColorGalleries}
-                  onChange={(updated) => setAdminColorGalleries(updated)}
-                />
-              </div>
-
-              {/* STEP 4: SIZE-WISE & COLOR-WISE INVENTORY MATRIX */}
-              {prodForm.sizes.length > 0 && prodForm.colors.length > 0 && (
-                <div className="bg-neutral-50 p-5 rounded-xl border border-neutral-200 space-y-4">
-                  <div className="border-b border-neutral-200 pb-2.5">
-                    <h4 className="text-xs font-black text-neutral-900 uppercase tracking-wider flex items-center gap-2">
-                      <Boxes className="w-4 h-4 text-purple-700" /> STEP 4: Size-Wise & Color-Wise Inventory Matrix
-                    </h4>
-                    <p className="text-[11px] text-neutral-500">
-                      Configure stock quantity for each color variation within every size.
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {prodForm.sizes.map((sizeId) => {
-                      const sizeObj = commerceSizes.find((s) => s.id === sizeId);
-                      return (
-                        <div key={sizeId} className="bg-white rounded-lg border border-neutral-200/80 overflow-hidden shadow-2xs">
-                          <div className="bg-neutral-100/80 px-4 py-2.5 border-b flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-neutral-900 uppercase tracking-wide flex items-center gap-2">
-                              <span className="bg-black text-white px-2 py-0.5 rounded text-[11px]">Size {sizeObj?.code || sizeId}</span>
-                              <span className="text-neutral-500 font-normal">({prodForm.colors.length} color variants)</span>
-                            </span>
-                          </div>
-
-                          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            {prodForm.colors.map((colorId) => {
-                              const colorObj = commerceColors.find((c) => c.id === colorId);
-                              const key = `${colorId}_${sizeId}`;
-                              return (
-                                <div key={key} className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-lg border border-neutral-200">
-                                  <div className="flex items-center gap-2">
-                                    <span className="w-3 h-3 rounded-full border border-black/10 shrink-0" style={{ background: colorObj?.secondaryHex ? `linear-gradient(135deg, ${colorObj.hex} 50%, ${colorObj.secondaryHex} 50%)` : colorObj?.hex || '#000' }} />
-                                    <span className="text-xs font-bold text-neutral-800">{colorObj?.name || colorId}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-neutral-400 font-bold uppercase">Qty:</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={variantStocks[key] ?? 10}
-                                      onChange={(e) => setVariantStocks({ ...variantStocks, [key]: Math.max(0, Number(e.target.value)) })}
-                                      className="w-16 px-2 py-1 text-xs font-bold border border-neutral-300 rounded bg-white text-center outline-none focus:border-black"
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              {/* GUIDED SIZE-BY-SIZE VARIANT BUILDER */}
+              <GuidedSizeColorBuilder
+                availableSizes={commerceSizes}
+                availableColors={commerceColors}
+                selectedSizes={prodForm.sizes}
+                selectedColors={prodForm.colors}
+                adminColorGalleries={adminColorGalleries}
+                variantStocks={variantStocks}
+                onUpdateProductVariants={({ sizes, colors, colorGalleries, variantStocks: newStocks }) => {
+                  setProdForm((prev) => ({
+                    ...prev,
+                    sizes,
+                    colors,
+                  }));
+                  setAdminColorGalleries(colorGalleries);
+                  setVariantStocks(newStocks);
+                }}
+              />
 
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
