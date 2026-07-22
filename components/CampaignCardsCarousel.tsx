@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
+import ImageWithFallback from './ui/ImageWithFallback';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -28,17 +28,36 @@ interface CampaignCard {
   endsAt: string;
 }
 
-export default function CampaignCardsCarousel() {
-  const [cards, setCards] = useState<CampaignCard[]>([]);
-  const [loading, setLoading] = useState(true);
+interface CampaignCardsCarouselProps {
+  initialCards?: CampaignCard[];
+}
+
+export default function CampaignCardsCarousel({ initialCards }: CampaignCardsCarouselProps = {}) {
+  const [cards, setCards] = useState<CampaignCard[]>(initialCards || []);
+  const [loading, setLoading] = useState(!initialCards);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [inView, setInView] = useState(true);
+  const sectionRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const router = useRouter();
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [visibleCount, setVisibleCount] = useState(3);
+
+  // IntersectionObserver to pause auto-play when off-screen
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -81,7 +100,8 @@ export default function CampaignCardsCarousel() {
         setLoading(false);
       }
     }
-    fetchActiveCards();
+    // Server-rendered homepage passes initialCards; avoid an immediate duplicate API request.
+    if (!initialCards) fetchActiveCards();
 
     // Check media query for reduced motion
     if (typeof window !== 'undefined') {
@@ -91,12 +111,12 @@ export default function CampaignCardsCarousel() {
       mediaQuery.addEventListener('change', listener);
       return () => mediaQuery.removeEventListener('change', listener);
     }
-  }, []);
+  }, [initialCards]);
 
   // Auto-play effect
   useEffect(() => {
     const maxIndex = Math.max(0, cards.length - visibleCount);
-    if (maxIndex === 0 || prefersReducedMotion || paused) return;
+    if (maxIndex === 0 || prefersReducedMotion || paused || !inView) return;
 
     const startTimer = () => {
       timerRef.current = setInterval(() => {
@@ -108,7 +128,7 @@ export default function CampaignCardsCarousel() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [cards.length, visibleCount, prefersReducedMotion, paused]);
+  }, [cards.length, visibleCount, prefersReducedMotion, paused, inView]);
 
   useEffect(() => {
     setCurrentIndex(prev => Math.min(prev, Math.max(0, cards.length - visibleCount)));
@@ -202,10 +222,11 @@ export default function CampaignCardsCarousel() {
         key={card.id}
         className="relative rounded-md overflow-hidden h-52 sm:h-60 md:h-64 group w-full select-none"
       >
-        <Image
-          src={card.backgroundImageUrl || '/product-placeholder.png'}
-          alt={card.heading}
+        <ImageWithFallback
+          src={card.backgroundImageUrl}
+          alt={card.heading || 'Campaign card'}
           fill
+          sizes="(max-width: 639px) 100vw, (max-width: 767px) 50vw, 33vw"
           className="object-cover transition duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black" style={{ opacity: card.overlayOpacity }}></div>
@@ -236,6 +257,7 @@ export default function CampaignCardsCarousel() {
 
   return (
     <section
+      ref={sectionRef}
       className="max-w-7xl mx-auto px-4 py-12 w-full relative group"
       aria-roledescription={carouselActive ? 'carousel' : undefined}
       aria-label="Featured campaigns"

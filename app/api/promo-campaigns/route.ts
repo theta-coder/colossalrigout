@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { requireAdmin } from '../../../lib/serverAuth';
@@ -164,6 +165,11 @@ export async function POST(req: NextRequest) {
       );
     }
     await Promise.all(promises);
+    try {
+      revalidatePath('/');
+      revalidateTag('homepage');
+      revalidateTag('homepage:promo');
+    } catch {}
 
     console.log(`[API POST /api/promo-campaigns] Created campaign "${campaignDoc.heading}" (${id})`);
     return NextResponse.json({ success: true, data: { ...campaignDoc, backgroundImageUrl: bgImageUrl } });
@@ -273,6 +279,11 @@ export async function PUT(req: NextRequest) {
       );
     }
     await Promise.all(promises);
+    try {
+      revalidatePath('/');
+      revalidateTag('homepage');
+      revalidateTag('homepage:promo');
+    } catch {}
 
     console.log(`[API PUT /api/promo-campaigns] Updated campaign ${campaign.id}`);
     return NextResponse.json({ success: true, data: { ...updatedDoc, backgroundImageUrl: finalImageUrl } });
@@ -297,6 +308,11 @@ export async function DELETE(req: NextRequest) {
       deleteDoc(doc(db, IMAGES_COL, id)),
       deleteDoc(doc(db, PROMOTIONS_COL, `campaign-${id}`)),
     ]);
+    try {
+      revalidatePath('/');
+      revalidateTag('homepage');
+      revalidateTag('homepage:promo');
+    } catch {}
 
     console.log(`[API DELETE /api/promo-campaigns] Deleted campaign ${id}`);
     return NextResponse.json({ success: true, message: 'Campaign deleted successfully' });

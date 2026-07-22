@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 
@@ -181,6 +182,11 @@ export async function POST(req: NextRequest) {
       }));
     }
     await Promise.all(writes);
+    try {
+      revalidatePath('/');
+      revalidateTag('homepage');
+      revalidateTag('homepage:hero');
+    } catch {}
     console.log(`[API POST /api/hero] Saved slide ${slideId} successfully.`);
 
     return NextResponse.json({ success: true, slide: { ...updatedSlide, image: finalImageData || legacyImage } });
@@ -205,6 +211,11 @@ export async function DELETE(req: NextRequest) {
       deleteDoc(docRef),
       deleteDoc(doc(db, slideImagesCollection, slideId))
     ]);
+    try {
+      revalidatePath('/');
+      revalidateTag('homepage');
+      revalidateTag('homepage:hero');
+    } catch {}
     console.log(`[API DELETE /api/hero] Deleted slide ${slideId}`);
     return NextResponse.json({ success: true });
   } catch (error: any) {

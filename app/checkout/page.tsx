@@ -4,10 +4,20 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart, Order } from '../../context/CartContext';
-import { Lock, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Lock, CheckCircle2, User } from 'lucide-react';
+import { formatPkr } from '../../lib/utils';
+import { defaultShippingSettings, ShippingPolicySettings } from '../../lib/shipping-policy';
+import CheckoutSkeleton from '@/components/checkout/CheckoutSkeleton';
 
 export default function Checkout() {
-  const { cart, promoDiscount, placeOrder } = useCart();
+  const { cart, promoDiscount, placeOrder, isLoaded } = useCart();
+  const { currentUser } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Form Fields State
   const [name, setName] = useState('');
@@ -15,34 +25,76 @@ export default function Checkout() {
   const [city, setCity] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-
-  // Shipping Cost (Standard is fixed at $5.00)
-  const shipCost = 5.0;
+  const [shippingSettings, setShippingSettings] = useState<ShippingPolicySettings>(defaultShippingSettings);
 
   // Completed Placed Order Details
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+
+  // Auto-fill account details (name, email) & saved device shipping info
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedInfo = localStorage.getItem('cr_saved_checkout_info');
+        if (savedInfo) {
+          const parsed = JSON.parse(savedInfo);
+          if (parsed.name) setName(parsed.name);
+          if (parsed.email) setEmail(parsed.email);
+          if (parsed.address) setAddress(parsed.address);
+          if (parsed.city) setCity(parsed.city);
+          if (parsed.phone) setPhone(parsed.phone);
+        }
+      } catch (e) {
+        console.error("Error reading saved checkout info:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.name) setName((prev) => prev || currentUser.name);
+      if (currentUser.email) setEmail((prev) => prev || currentUser.email);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetch('/api/shipping-policy')
+      .then((res) => res.json())
+      .then((payload) => {
+        if (payload.success && payload.data) {
+          setShippingSettings(payload.data);
+        }
+      })
+      .catch(() => setShippingSettings(defaultShippingSettings));
+  }, []);
 
   useEffect(() => {
     // Scroll to top on order placement
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [placedOrder]);
 
+  // Computations
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const freeThreshold = shippingSettings.freeShippingEnabled ? Number(shippingSettings.freeShippingThreshold || 0) : 0;
+  const qualifiesForFreeShipping = subtotal === 0 || (freeThreshold > 0 && subtotal >= freeThreshold);
+  const finalShipCost = qualifiesForFreeShipping ? 0 : shippingSettings.flatRateEnabled ? Number(shippingSettings.flatRate || 0) : 0;
+  const discount = subtotal * promoDiscount;
+  const total = Math.max(subtotal + finalShipCost - discount, 0);
+
   const handlePlaceOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Generate order in global CartContext state
     try {
-      const order = await placeOrder({ name, address, city, phone, email }, subtotal >= 75 ? 0 : shipCost, 'Cash on Delivery');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'cr_saved_checkout_info',
+          JSON.stringify({ name, email, address, city, phone })
+        );
+      }
+      const order = await placeOrder({ name, address, city, phone, email }, finalShipCost, 'Cash on Delivery');
       setPlacedOrder(order);
     } catch (error: any) {
       alert(error.message || 'Checkout failed because inventory changed.');
     }
   };
-
-  // Computations
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const finalShipCost = subtotal >= 75 ? 0 : shipCost;
-  const discount = subtotal * promoDiscount;
-  const total = Math.max(subtotal + finalShipCost - discount, 0);
 
   // If already confirmed order, display CONFIRMATION VIEW
   if (placedOrder) {
@@ -72,7 +124,7 @@ export default function Checkout() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-neutral-500">Total Paid</span>
-              <span className="font-bold text-neutral-900">${placedOrder.total.toFixed(2)}</span>
+              <span className="font-bold text-neutral-900">{formatPkr(placedOrder.total)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-neutral-500">Payment Method</span>
@@ -86,13 +138,13 @@ export default function Checkout() {
         </div>
 
         <p className="text-neutral-400 text-[11px] mt-6 leading-relaxed font-light">
-          A confirmation email has been sent to {placedOrder.customer.email}. You can track your order status anytime using the button below.
+          Your confirmation notification has been queued for {placedOrder.customer.email}. You can track your order status anytime using the button below.
         </p>
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             id="track-order-btn"
-            href={`/track-order?orderId=${placedOrder.orderId}`}
+            href={`/track-order?order=${placedOrder.publicTrackingId || placedOrder.orderId}`}
             className="bg-black text-white text-sm font-bold px-6 py-3 rounded-md hover:bg-neutral-800 transition active:scale-95 shadow"
           >
             TRACK MY ORDER
@@ -107,6 +159,10 @@ export default function Checkout() {
         </div>
       </section>
     );
+  }
+
+  if (!mounted || !isLoaded) {
+    return <CheckoutSkeleton />;
   }
 
   // If no items in cart on checkout mount, redirect to cart page
@@ -141,6 +197,21 @@ export default function Checkout() {
             <div id="shipping-info-section">
               <h2 className="font-display text-lg font-bold text-neutral-900 mb-1">1. Shipping Information</h2>
               <p className="text-neutral-500 text-xs mb-5 font-light">Where should we deliver your order?</p>
+
+              {!currentUser && (
+                <div className="mb-5 p-3.5 bg-neutral-100/90 border border-neutral-200/80 rounded-md text-xs text-neutral-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-neutral-500 flex-none" />
+                    <span>Want to track your order history and save details?</span>
+                  </div>
+                  <Link
+                    href={`/login?redirect=${encodeURIComponent('/checkout')}`}
+                    className="text-black font-bold underline hover:text-neutral-700 text-[11px] uppercase tracking-wider"
+                  >
+                    Sign In / Register Account
+                  </Link>
+                </div>
+              )}
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
@@ -149,11 +220,24 @@ export default function Checkout() {
                     id="checkout-name"
                     required
                     type="text"
+                    readOnly={Boolean(currentUser)}
                     placeholder="Ali Ahmed"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1.5 w-full border border-neutral-300 rounded-md px-3 py-2.5 text-sm outline-none focus:border-black bg-[#f4f4f3] transition text-neutral-800"
+                    className={`mt-1.5 w-full border rounded-md px-3 py-2.5 text-sm outline-none transition ${
+                      currentUser
+                        ? 'bg-neutral-100/90 text-neutral-600 font-medium border-neutral-200 cursor-not-allowed'
+                        : 'bg-[#f4f4f3] focus:border-black text-neutral-800 border-neutral-300'
+                    }`}
                   />
+                  {currentUser && (
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-neutral-500">
+                      <span>Locked to logged-in account name</span>
+                      <Link href="/login" className="text-black font-semibold underline hover:text-neutral-700">
+                        Switch Account
+                      </Link>
+                    </div>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <label className="text-xs font-semibold text-neutral-600">SHIPPING ADDRESS</label>
@@ -197,11 +281,24 @@ export default function Checkout() {
                     id="checkout-email"
                     required
                     type="email"
+                    readOnly={Boolean(currentUser)}
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1.5 w-full border border-neutral-300 rounded-md px-3 py-2.5 text-sm outline-none focus:border-black bg-[#f4f4f3] transition text-neutral-800"
+                    className={`mt-1.5 w-full border rounded-md px-3 py-2.5 text-sm outline-none transition ${
+                      currentUser
+                        ? 'bg-neutral-100/90 text-neutral-600 font-medium border-neutral-200 cursor-not-allowed'
+                        : 'bg-[#f4f4f3] focus:border-black text-neutral-800 border-neutral-300'
+                    }`}
                   />
+                  {currentUser && (
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-neutral-500">
+                      <span>Locked to logged-in account email</span>
+                      <Link href="/login" className="text-black font-semibold underline hover:text-neutral-700">
+                        Switch Account
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -215,7 +312,7 @@ export default function Checkout() {
                 <div className="w-5 h-5 mt-0.5 rounded-full bg-black flex items-center justify-center text-white text-[10px] font-bold flex-none">✓</div>
                 <div>
                   <span className="text-xs sm:text-sm font-bold text-neutral-900 block">Cash on Delivery (COD)</span>
-                  <span className="text-[10px] sm:text-xs text-neutral-500">Pay with cash when your package is delivered to your doorstep. No prepayment or online accounts required.</span>
+                  <span className="text-[10px] sm:text-xs text-neutral-500">Pay with cash when your package is delivered to your doorstep. No prepayment required.</span>
                 </div>
               </div>
             </div>
@@ -227,7 +324,7 @@ export default function Checkout() {
                 type="submit"
                 className="w-full bg-black text-white text-sm font-bold py-4 rounded hover:bg-[#1a1a1a] transition active:scale-95 shadow flex items-center justify-center gap-2 cursor-pointer"
               >
-                PLACE ORDER (${total.toFixed(2)})
+                PLACE ORDER ({formatPkr(total)})
               </button>
             </div>
           </form>
@@ -258,7 +355,7 @@ export default function Checkout() {
                     {item.size} &middot; {item.color}
                   </p>
                 </div>
-                <span className="font-bold text-neutral-800">${(item.price * item.qty).toFixed(2)}</span>
+                <span className="font-bold text-neutral-800">{formatPkr(item.price * item.qty)}</span>
               </div>
             ))}
           </div>
@@ -266,25 +363,25 @@ export default function Checkout() {
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between font-light">
               <span className="text-neutral-500">Subtotal</span>
-              <span className="font-semibold text-neutral-800">${subtotal.toFixed(2)}</span>
+              <span className="font-semibold text-neutral-800">{formatPkr(subtotal)}</span>
             </div>
             <div className="flex justify-between font-light">
               <span className="text-neutral-500">Shipping</span>
               <span className="font-semibold text-neutral-800">
-                {finalShipCost === 0 ? 'FREE' : `$${finalShipCost.toFixed(2)}`}
+                {finalShipCost === 0 ? 'FREE' : formatPkr(finalShipCost)}
               </span>
             </div>
             {promoDiscount > 0 && (
               <div className="flex justify-between text-green-700 font-bold text-xs">
                 <span>Discount</span>
-                <span>&minus;${discount.toFixed(2)}</span>
+                <span>&minus;{formatPkr(discount)}</span>
               </div>
             )}
           </div>
 
           <div className="mt-4 pt-4 border-t border-neutral-200 flex justify-between items-baseline">
             <span className="font-bold text-neutral-900">Total</span>
-            <span className="font-display text-xl font-extrabold text-neutral-900">${total.toFixed(2)}</span>
+            <span className="font-display text-xl font-extrabold text-neutral-900">{formatPkr(total)}</span>
           </div>
 
           {/* SIDEBAR PLACE ORDER BUTTON FOR DESKTOP */}
@@ -295,7 +392,7 @@ export default function Checkout() {
               form="checkout-form"
               className="w-full bg-black text-white text-xs font-bold py-4 rounded hover:bg-[#1a1a1a] transition active:scale-95 shadow flex items-center justify-center gap-2 cursor-pointer"
             >
-              PLACE ORDER (${total.toFixed(2)})
+              PLACE ORDER ({formatPkr(total)})
             </button>
           </div>
 

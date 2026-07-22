@@ -9,6 +9,8 @@ export interface Product {
   colors: string[];
   sizes: string[];
   cat: string;
+  audienceId?: string;
+  audienceSlug?: string;
   isBestseller?: boolean;
   rating?: string;
   reviews?: string;
@@ -21,6 +23,21 @@ export interface Product {
   collectionIds?: string[];
   sizeGuideId?: string | null;
   totalStock?: number;
+  slug?: string;
+  categoryId?: string;
+  categorySlug?: string;
+  featured?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  colorGalleries?: Record<string, Array<{
+    id: string;
+    colorId: string;
+    dataUrl?: string;
+    url?: string;
+    altText: string;
+    role: 'primary' | 'gallery';
+    order: number;
+  }>>;
 }
 
 // Static product seed data was intentionally removed. Firestore is the only source.

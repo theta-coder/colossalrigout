@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, doc, runTransaction, getDocs, getDoc, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { verifyFirebaseUser } from '../../../lib/serverAuth';
+import { generatePublicTrackingId, toNormalizedEmail } from '../../../lib/order-tracking';
+import { queueOrderNotification } from '../../../lib/server/orders';
 
 const PROMOTIONS_COL = 'promotions';
 const REDEMPTIONS_COL = 'promotion-redemptions';
@@ -22,6 +24,10 @@ export async function POST(request: NextRequest) {
     }
     if (!shippingInfo?.name || !shippingInfo?.address || !shippingInfo?.email) {
       return NextResponse.json({ error: 'Incomplete shipping information.' }, { status: 400 });
+    }
+    const normalizedCheckoutEmail = toNormalizedEmail(shippingInfo.email);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedCheckoutEmail)) {
+      return NextResponse.json({ error: 'A valid checkout email address is required.' }, { status: 400 });
     }
     if (items.some(item => !item.variantId)) {
       return NextResponse.json({ error: 'One or more cart items have no inventory variant. Add them again.' }, { status: 400 });
@@ -136,6 +142,7 @@ export async function POST(request: NextRequest) {
       }
 
       let rawSubtotal = 0;
+      let retailSubtotal = 0;
       let eligibleSubtotalForCoupon = 0;
       let couponSavings = 0;
       let automaticSavings = 0;
@@ -187,6 +194,7 @@ export async function POST(request: NextRequest) {
         }
 
         const retail = Number(product.retailPrice || 0);
+        retailSubtotal += retail * quantity;
         const manualDiscount = product.discountPrice ? Number(product.discountPrice) : null;
         let basePrice = manualDiscount !== null && manualDiscount < retail ? manualDiscount : retail;
 
@@ -322,18 +330,34 @@ export async function POST(request: NextRequest) {
       }
 
       const finalSubtotal = Math.max(0, rawSubtotal);
+      const serverShippingCost = retailSubtotal >= 75 ? 0 : 5;
+      const deliveryDays = 6;
       const deliveryDate = new Date(); 
-      deliveryDate.setDate(deliveryDate.getDate() + (Number(shipCost) === 12 ? 2 : 6));
+      deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
+      const estimatedDeliveryAt = deliveryDate.toISOString();
+      const publicTrackingId = generatePublicTrackingId(orderId);
+      const customerEmailNormalized = normalizedCheckoutEmail;
+      const totalDiscountAmount = Number((discountAmount + automaticSavings).toFixed(2));
+      const subtotalBeforeDiscount = Number((finalSubtotal + totalDiscountAmount).toFixed(2));
 
       const orderData = {
         orderId,
+        publicTrackingId,
+        customerEmailNormalized,
+        currentStatus: 'placed',
+        fulfillmentStatus: 'unfulfilled',
+        paymentStatus: 'cod-pending',
+        estimatedDeliveryAt,
+        subtotal: subtotalBeforeDiscount,
+        shippingCost: serverShippingCost,
         statusIndex: 0,
         delivery: deliveryDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        total: Number((finalSubtotal + Number(shipCost || 0)).toFixed(2)),
+        total: Number((finalSubtotal + serverShippingCost).toFixed(2)),
         payMethod: payMethod || 'Cash on Delivery',
         customer: shippingInfo,
         ownerId: ownerId || null,
         createdAt: now,
+        updatedAt: now,
         items: snapshots.map(({ item, variant, product, quantity, unitPrice }) => ({
           id: item.id,
           productId: String(item.id),
@@ -350,7 +374,7 @@ export async function POST(request: NextRequest) {
         promotionId: matchedCouponPromo?.id || snapshots.find(snapshot => snapshot.autoPromoId)?.autoPromoId || null,
         promoCodeApplied: promoCodeApplied || null,
         eligibleSubtotal: Number((matchedCouponPromo ? eligibleSubtotalForCoupon : rawSubtotal).toFixed(2)),
-        discountAmount: Number((discountAmount + automaticSavings).toFixed(2)),
+        discountAmount: totalDiscountAmount,
         discountSnapshot: discountSnapshot || (automaticSavings > 0 ? {
           type: 'automatic',
           value: Number(automaticSavings.toFixed(2)),
@@ -358,7 +382,21 @@ export async function POST(request: NextRequest) {
         } : null)
       };
 
-      // 4. Update stock and write ledger transactions
+      // 4. Write initial tracking event
+      const initEventRef = doc(db, 'order-tracking-events', `evt-init-${orderId}`);
+      transaction.set(initEventRef, {
+        id: `evt-init-${orderId}`,
+        orderId,
+        status: 'placed',
+        title: 'Order Placed',
+        description: 'Your order was successfully placed and confirmed.',
+        occurredAt: now,
+        visibleToCustomer: true,
+        createdBy: 'checkout',
+        createdAt: now,
+      });
+
+      // 5. Update stock and write ledger transactions
       for (const entry of snapshots) {
         const newAvailable = entry.available - entry.quantity;
         transaction.update(entry.variantSnapshot.ref, {
@@ -420,6 +458,17 @@ export async function POST(request: NextRequest) {
       transaction.set(doc(db, 'orders', orderId), orderData);
       return orderData;
     });
+
+    try {
+      await queueOrderNotification({
+        orderId: order.orderId,
+        recipient: order.customerEmailNormalized,
+        template: 'order-confirmation',
+        templateData: { customerName: order.customer.name, orderId: order.orderId, trackingId: order.publicTrackingId, trackingPath: `/track-order?order=${order.publicTrackingId}`, total: order.total, estimatedDeliveryAt: order.estimatedDeliveryAt },
+      });
+    } catch (notificationError) {
+      console.error('[Checkout] Confirmation notification could not be queued:', notificationError);
+    }
 
     return NextResponse.json({ success: true, order });
   } catch (error: any) {

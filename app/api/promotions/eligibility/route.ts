@@ -22,9 +22,30 @@ export async function POST(req: NextRequest) {
         promoDoc = { id: snap.id, ...snap.data() };
       }
     } else if (couponCode) {
-      const q = query(collection(db, PROMOTIONS_COL));
-      const snap = await getDocs(q);
-      snap.forEach((d) => {
+      // Single offer rule: If an automatic promotion is active, reject applying coupon codes
+      const allPromosSnap = await getDocs(collection(db, PROMOTIONS_COL));
+      let hasActiveAutoPromo = false;
+
+      allPromosSnap.forEach((d) => {
+        const data = d.data();
+        if (data.status === 'active' && data.applicationMode === 'automatic') {
+          const startsMs = new Date(data.startsAt).getTime();
+          const endsMs = new Date(data.endsAt).getTime();
+          if (nowMs >= startsMs && nowMs < endsMs) {
+            hasActiveAutoPromo = true;
+          }
+        }
+      });
+
+      if (hasActiveAutoPromo) {
+        return NextResponse.json({
+          success: true,
+          eligible: false,
+          reason: 'An offer has already been applied. Only one promotion can be used at a time.',
+        });
+      }
+
+      allPromosSnap.forEach((d) => {
         const data = d.data();
         if (
           data.applicationMode === 'coupon' &&

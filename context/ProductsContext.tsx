@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { catalog, Product } from '../lib/products';
+import { auth } from '../lib/firebase';
 
 interface ProductsContextType {
   products: Product[];
@@ -45,64 +46,53 @@ export function ProductsProvider({ children }: { children: React.ReactNode }) {
 
   const addProduct = async (newProd: Omit<Product, 'id'>): Promise<Product> => {
     // Generate a new unique numeric ID
-    const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    const numericIds = products.map((p) => Number(p.id)).filter(Number.isFinite);
+    const nextId = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
     const productWithId: Product = {
       ...newProd,
       id: nextId,
     };
 
-    try {
-      const response = await fetch('/api/products', {
+    const token = await auth.currentUser?.getIdToken();
+    const isLocalDemo = localStorage.getItem('cr_admin_session') === 'demo';
+    const response = await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isLocalDemo ? { 'x-admin-demo': '1' } : {}) },
         body: JSON.stringify({ product: productWithId }),
       });
-      if (!response.ok) {
-        throw new Error(`Failed to create product via API: ${response.statusText}`);
-      }
-    } catch (e) {
-      console.error("Error adding product via API:", e);
-    }
-
-    // Update state optimistically
-    setProducts((prev) => [...prev, productWithId]);
-    return productWithId;
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Failed to create product: ${response.statusText}`);
+    const saved = payload.product || productWithId;
+    setProducts((prev) => [...prev, saved]);
+    return saved;
   };
 
   const updateProduct = async (updatedProd: Product): Promise<void> => {
-    try {
-      const response = await fetch('/api/products', {
+    const token = await auth.currentUser?.getIdToken();
+    const isLocalDemo = localStorage.getItem('cr_admin_session') === 'demo';
+    const response = await fetch('/api/products', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isLocalDemo ? { 'x-admin-demo': '1' } : {}) },
         body: JSON.stringify({ product: updatedProd }),
       });
-      if (!response.ok) {
-        throw new Error(`Failed to update product via API: ${response.statusText}`);
-      }
-    } catch (e) {
-      console.error("Error updating product via API:", e);
-    }
-
-    // Update state optimistically
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Failed to update product: ${response.statusText}`);
+    const saved = payload.product || updatedProd;
     setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProd.id ? updatedProd : p))
+      prev.map((p) => (String(p.id) === String(updatedProd.id) ? saved : p))
     );
   };
 
   const deleteProduct = async (id: number): Promise<void> => {
-    try {
-      const response = await fetch(`/api/products?id=${id}`, {
+    const token = await auth.currentUser?.getIdToken();
+    const isLocalDemo = localStorage.getItem('cr_admin_session') === 'demo';
+    const response = await fetch(`/api/products?id=${encodeURIComponent(String(id))}`, {
         method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(isLocalDemo ? { 'x-admin-demo': '1' } : {}) },
       });
-      if (!response.ok) {
-        throw new Error(`Failed to delete product via API: ${response.statusText}`);
-      }
-    } catch (e) {
-      console.error("Error deleting product via API:", e);
-    }
-
-    // Update state optimistically
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || `Failed to delete product: ${response.statusText}`);
+    setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
   };
 
   const resetProducts = async (): Promise<void> => {

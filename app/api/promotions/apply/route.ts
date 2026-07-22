@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
     let eligibleSubtotalForCoupon = 0;
     let couponSavings = 0;
     let automaticSavings = 0;
+    const automaticSavingsByPromo = new Map<string, { promotion: any; amount: number }>();
     const processedItems = [];
 
     for (const item of items) {
@@ -110,7 +111,12 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      automaticSavings += Math.max(0, basePrice - bestAutoPromoPrice) * Number(item.qty || item.quantity || 1);
+      const lineAutomaticSaving = Math.max(0, basePrice - bestAutoPromoPrice) * Number(item.qty || item.quantity || 1);
+      automaticSavings += lineAutomaticSaving;
+      if (appliedAutoPromo && lineAutomaticSaving > 0) {
+        const current = automaticSavingsByPromo.get(appliedAutoPromo.id);
+        automaticSavingsByPromo.set(appliedAutoPromo.id, { promotion: appliedAutoPromo, amount: (current?.amount || 0) + lineAutomaticSaving });
+      }
       basePrice = bestAutoPromoPrice;
 
       // Apply coupon-based promotion
@@ -143,10 +149,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Single offer rule: If automatic savings exist, coupon promotion cannot be stacked.
+    const autoPromos = Array.from(automaticSavingsByPromo.values());
+    const hasAutoPromo = autoPromos.length > 0 && automaticSavings > 0;
+
     let discountAmount = 0;
     let discountSnapshot: any = null;
 
-    if (matchedCouponPromo) {
+    if (!hasAutoPromo && matchedCouponPromo) {
       const minOrder = Number(matchedCouponPromo.minimumOrder || 0);
       if (minOrder <= 0 || eligibleSubtotalForCoupon >= minOrder) {
         const maximumDiscount = Number(matchedCouponPromo.maximumDiscount || 0);
@@ -160,13 +170,44 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const appliedPromotions = hasAutoPromo
+      ? autoPromos.slice(0, 1).map(({ promotion, amount }) => ({
+          id: promotion.id,
+          name: promotion.publicMessage || promotion.name || 'Automatic promotion',
+          mode: 'automatic',
+          code: null,
+          discountType: promotion.discountType,
+          discountValue: Number(promotion.discountValue || 0),
+          discountAmount: Number(amount.toFixed(2)),
+          minimumOrder: Number(promotion.minimumOrder || 0),
+          maximumDiscount: Number(promotion.maximumDiscount || 0) || null,
+        }))
+      : matchedCouponPromo && discountAmount > 0
+      ? [
+          {
+            id: matchedCouponPromo.id,
+            name: matchedCouponPromo.publicMessage || matchedCouponPromo.name || 'Coupon promotion',
+            mode: 'coupon',
+            code: String(matchedCouponPromo.couponCode || couponCode || '').toUpperCase(),
+            discountType: matchedCouponPromo.discountType,
+            discountValue: Number(matchedCouponPromo.discountValue || 0),
+            discountAmount: Number(discountAmount.toFixed(2)),
+            minimumOrder: Number(matchedCouponPromo.minimumOrder || 0),
+            maximumDiscount: Number(matchedCouponPromo.maximumDiscount || 0) || null,
+          },
+        ]
+      : [];
+
+    const totalDiscount = hasAutoPromo ? automaticSavings : discountAmount;
+
     return NextResponse.json({
       success: true,
       rawSubtotal: Number(rawSubtotal.toFixed(2)),
-      discountAmount: Number((discountAmount + automaticSavings).toFixed(2)),
-      finalSubtotal: Number(Math.max(0, rawSubtotal).toFixed(2)),
+      discountAmount: Number(totalDiscount.toFixed(2)),
+      finalSubtotal: Number(Math.max(0, rawSubtotal - (hasAutoPromo ? 0 : discountAmount)).toFixed(2)),
       items: processedItems,
       discountSnapshot,
+      appliedPromotions,
     });
   } catch (error: any) {
     console.error('[API POST /api/promotions/apply] Error:', error);

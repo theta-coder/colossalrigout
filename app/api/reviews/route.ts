@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get('productId');
+    const requestedLimit = Number(searchParams.get('limit') || 10);
+    const responseLimit = Math.min(50, Math.max(1, Number.isFinite(requestedLimit) ? Math.floor(requestedLimit) : 10));
 
     if (!productId) {
       return NextResponse.json({ success: false, message: 'productId parameter is required' }, { status: 400 });
@@ -69,7 +71,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: reviews,
+      data: reviews.slice(0, responseLimit),
+      hasMore: reviews.length > responseLimit,
       summary: {
         averageRating,
         reviewCount,
@@ -85,6 +88,10 @@ export async function GET(req: NextRequest) {
 // POST: Public submission of a new customer review (Saves as 'pending')
 export async function POST(req: NextRequest) {
   try {
+    const contentLength = Number(req.headers.get('content-length') || 0);
+    if (contentLength > 20_000) {
+      return NextResponse.json({ success: false, message: 'Review submission is too large' }, { status: 413 });
+    }
     const body = await req.json();
     const { review: rawReview } = body;
 
@@ -115,6 +122,19 @@ export async function POST(req: NextRequest) {
     // 3. Resolve user session securely
     const verifiedUser = await verifyFirebaseUser(req);
     const userId = verifiedUser?.uid || null;
+
+    // Prevent accidental/repeated submissions for the same product and email.
+    const duplicateQuery = query(collection(db, 'reviews'), where('productId', '==', validatedInput.productId));
+    const duplicateSnapshot = await getDocs(duplicateQuery);
+    const duplicateCutoff = Date.now() - 10 * 60 * 1000;
+    const isDuplicate = duplicateSnapshot.docs.some((reviewSnap) => {
+      const data = reviewSnap.data() as ReviewDocument;
+      return data.customerEmail?.toLowerCase() === validatedInput.customerEmail.toLowerCase()
+        && new Date(data.createdAt).getTime() >= duplicateCutoff;
+    });
+    if (isDuplicate) {
+      return NextResponse.json({ success: false, message: 'A review from this email was already submitted recently.' }, { status: 429 });
+    }
 
     // 4. Verify purchase status server-side
     let verifiedPurchase = false;

@@ -8,7 +8,9 @@ import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, orderBy 
 import { auth, db } from '../../lib/firebase';
 import { useProducts } from '../../context/ProductsContext';
 import { Product } from '../../lib/products';
+import { formatPkr } from '../../lib/utils';
 import CommerceAdminModule from '../../components/admin/CommerceAdminModule';
+import ProductColorGalleryManager, { ManagedColorImage } from '../../components/admin/ProductColorGalleryManager';
 import dynamic from 'next/dynamic';
 const PromoCampaignsModule = dynamic(() => import('../../components/admin/PromoCampaignsModule'), { ssr: false });
 const CampaignCardsModule = dynamic(() => import('../../components/admin/CampaignCardsModule'), { ssr: false });
@@ -78,6 +80,7 @@ interface OrderItem {
   name: string;
   price: number;
   quantity: number;
+  qty?: number;
   size: string;
   color: string;
   img: string;
@@ -190,6 +193,7 @@ export default function AdminDashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [adminColorGalleries, setAdminColorGalleries] = useState<Record<string, ManagedColorImage[]>>({});
 
   // Shop Categories Management State
   const [categoriesList, setCategoriesList] = useState<ShopCategory[]>([]);
@@ -393,9 +397,15 @@ export default function AdminDashboardPage() {
           const data = docSnap.data();
           const customer = data.customer || {};
           
-          // Determine friendly string status based on either raw 'status' or numeric 'statusIndex' from checkouts
-          let computedStatus: Order['status'] = data.status || 'Placed';
-          if (!data.status && typeof data.statusIndex === 'number') {
+          const canonicalToAdmin: Record<string, Order['status']> = {
+            placed: 'Placed', confirmed: 'Processed', processing: 'Processed', packed: 'Processed',
+            shipped: 'Shipped', 'in-transit': 'Shipped', 'out-for-delivery': 'Out for Delivery', delivered: 'Delivered',
+          };
+          const statusRank: Record<Order['status'], number> = { Placed: 0, Processed: 1, Shipped: 2, 'Out for Delivery': 3, Delivered: 4 };
+          const canonicalStatus = canonicalToAdmin[String(data.currentStatus || '').toLowerCase()] || 'Placed';
+          const legacyStatus = (data.status || 'Placed') as Order['status'];
+          let computedStatus: Order['status'] = statusRank[legacyStatus] > statusRank[canonicalStatus] ? legacyStatus : canonicalStatus;
+          if (!data.currentStatus && !data.status && typeof data.statusIndex === 'number') {
             const index = data.statusIndex;
             computedStatus = 
               index === 0 ? 'Placed' :
@@ -885,8 +895,15 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setActionLoading(true);
 
-    if (!prodForm.name || !prodForm.price || prodForm.images.length === 0) {
-      triggerToast("Please provide name, retail price, and at least one product image file.", "error");
+    const galleryImages = Object.values(adminColorGalleries).flat();
+    const missingColorGallery = prodForm.colors.find((colorId) => !(adminColorGalleries[colorId]?.length));
+    if (!prodForm.name || !prodForm.price || (prodForm.images.length === 0 && galleryImages.length === 0)) {
+      triggerToast("Please provide name, retail price, and at least one product image.", "error");
+      setActionLoading(false);
+      return;
+    }
+    if (missingColorGallery) {
+      triggerToast("Every selected color needs at least one product image.", "error");
       setActionLoading(false);
       return;
     }
@@ -911,8 +928,9 @@ export default function AdminDashboardPage() {
         retailPrice: priceNum,
         discountPrice: prodForm.discountPrice ? Number(prodForm.discountPrice) : null,
         cat: prodForm.cat || activeProductCategories[0]?.slug || 'tops',
-        img: prodForm.images[0],
-        images: prodForm.images,
+        img: galleryImages[0]?.dataUrl || galleryImages[0]?.url || prodForm.images[0],
+        images: galleryImages.length ? galleryImages.map((image) => image.dataUrl || image.url).filter(Boolean) : prodForm.images,
+        colorGalleries: Object.fromEntries(Object.entries(adminColorGalleries).filter(([colorId]) => prodForm.colors.includes(colorId))),
         colors: prodForm.colors,
         sizes: prodForm.sizes,
         description: prodForm.description || "Indulge in absolute luxury and impeccable tailoring with this premium piece from Colossal Rigout.",
@@ -932,6 +950,7 @@ export default function AdminDashboardPage() {
         }
       }
       setVariantStocks({});
+      setAdminColorGalleries({});
 
       triggerToast(`Successfully added dynamic product "${added.name}"!`);
       
@@ -970,19 +989,21 @@ export default function AdminDashboardPage() {
       cat: p.cat,
       img: p.img,
       images: p.images || [],
-      colors: p.colors || [],
-      sizes: p.sizes || [],
+      colors: p.colorIds || [],
+      sizes: p.sizeIds || [],
       description: p.description || '',
       collections: p.collections || [],
       isBestseller: p.isBestseller || false,
       sizeGuideId: p.sizeGuideId || ''
     });
+    setAdminColorGalleries(p.colorGalleries || {});
     setActiveTab('add-product');
   };
 
   // Cancel edit mode
   const cancelEditProduct = () => {
     setEditingProduct(null);
+    setAdminColorGalleries({});
     setProdForm({
       name: '',
       price: '',
@@ -1024,6 +1045,7 @@ export default function AdminDashboardPage() {
         cat: prodForm.cat,
         img: prodForm.img,
         images: prodForm.images.length > 0 ? prodForm.images : [prodForm.img],
+        colorGalleries: Object.fromEntries(Object.entries(adminColorGalleries).filter(([colorId]) => prodForm.colors.includes(colorId))),
         colors: prodForm.colors,
         sizes: prodForm.sizes,
         description: prodForm.description,
@@ -1046,6 +1068,7 @@ export default function AdminDashboardPage() {
 
       triggerToast(`Product "${prodForm.name}" updated successfully!`);
       setEditingProduct(null);
+      setAdminColorGalleries({});
       
       // Reset form
       setProdForm({
@@ -1091,20 +1114,23 @@ export default function AdminDashboardPage() {
   const handleUpdateOrderStatus = async (orderId: string, newStatus: Order['status']) => {
     setActionLoading(true);
     try {
-      const docRef = doc(db, 'orders', orderId);
-      
-      // Compute statusIndex for customer track-order compatibility
-      const statusIndex = 
-        newStatus === 'Placed' ? 0 :
-        newStatus === 'Processed' ? 1 :
-        newStatus === 'Shipped' ? 2 :
-        newStatus === 'Out for Delivery' ? 3 :
-        newStatus === 'Delivered' ? 4 : 0;
-
-      await updateDoc(docRef, { 
-        status: newStatus,
-        statusIndex: statusIndex
+      const statusMap = {
+        Placed: 'placed', Processed: 'processing', Shipped: 'shipped',
+        'Out for Delivery': 'out-for-delivery', Delivered: 'delivered',
+      } as const;
+      const token = await auth.currentUser?.getIdToken();
+      const isLocalDemo = localStorage.getItem('cr_admin_session') === 'demo';
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/tracking-events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(isLocalDemo ? { 'X-Admin-Demo': '1' } : {}),
+        },
+        body: JSON.stringify({ status: statusMap[newStatus], title: '', description: '', visibleToCustomer: true, notifyCustomer: true }),
       });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to update tracking status.');
       
       setOrders((prev) =>
         prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord))
@@ -1524,9 +1550,9 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-5 text-neutral-600 font-medium">{o.shippingCity}</td>
                           <td className="py-3.5 px-5 text-neutral-500 font-semibold">
-                            {o.items?.reduce((sum, item) => sum + item.quantity, 0)} item(s)
+                            {o.items?.reduce((sum, item) => sum + Number(item.qty ?? item.quantity ?? 0), 0) || 0} item(s)
                           </td>
-                          <td className="py-3.5 px-5 font-bold text-neutral-900">${o.total?.toFixed(2)}</td>
+                          <td className="py-3.5 px-5 font-bold text-neutral-900">{formatPkr(Number(o.total || 0))}</td>
                           <td className="py-3.5 px-5">
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                               o.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
@@ -1961,6 +1987,14 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
+              {/* PER-COLOR GALLERY MANAGER */}
+              <ProductColorGalleryManager
+                selectedColorIds={prodForm.colors}
+                availableColors={commerceColors}
+                colorGalleries={adminColorGalleries}
+                onChange={(updated) => setAdminColorGalleries(updated)}
+              />
+
               {/* SIZES MULTI-SELECT */}
               <div>
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
@@ -2226,7 +2260,7 @@ export default function AdminDashboardPage() {
                                   Size: <span className="font-bold text-neutral-800">{item.size}</span> | Color: <span className="font-bold text-neutral-800">{item.color}</span>
                                 </p>
                                 <p className="text-[10px] font-bold text-neutral-800 mt-0.5">
-                                  {item.quantity} × ${item.price?.toFixed(2)}
+                                  {item.quantity} × {formatPkr(item.price || 0)}
                                 </p>
                               </div>
                             </div>

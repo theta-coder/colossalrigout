@@ -5,9 +5,11 @@ export interface ProductDocument {
   description: string;
   categoryId: string;
   categorySlug: string;
+  audienceId?: string;
+  audienceSlug?: string;
   retailPrice: number;
   discountPrice: number | null;
-  currency: 'USD' | 'PKR';
+  currency: 'PKR';
   imageIds: string[];
   primaryImageId: string | null;
   colorIds: string[];
@@ -28,14 +30,20 @@ export interface ProductDocument {
 export interface ProductImageDocument {
   id: string;
   productId?: string;
-  storagePath: string;
-  url: string;
-  originalName: string;
-  mimeType: string;
-  size: number;
+  colorId?: string | null;
+  storagePath?: string;
+  url?: string;
+  dataUrl?: string;
+  originalName?: string;
+  mimeType?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  altText?: string;
   role: 'primary' | 'gallery';
   order: number;
-  createdAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ColorDocument {

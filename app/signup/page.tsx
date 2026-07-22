@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { User, Mail, Lock, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, UserPlus, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 function SignupContent() {
   const { signup, loginWithGoogle, loginOffline, currentUser, isLoaded } = useAuth();
@@ -72,53 +73,38 @@ function SignupContent() {
     }
   };
 
-  const handleOfflineSignup = async () => {
-    setError(null);
-    setSuccess(null);
-    setIsLoading(true);
-
-    try {
-      const res = await loginOffline(name || 'New Customer', email || 'demo@colossalrigout.pk');
-      setIsLoading(false);
-      setSuccess(res.message);
-      setTimeout(() => {
-        router.push(redirectPath);
-      }, 800);
-    } catch (err: any) {
-      setIsLoading(false);
-      setError(err.message || 'Offline registration failed.');
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">
-      <div className="w-full max-w-md bg-white border border-neutral-200/80 rounded-xl shadow-sm p-6 sm:p-8 animate-fade-up">
-        {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+    <div className="min-h-screen bg-[#f4f4f3] flex flex-col items-center justify-center p-4 py-12 font-sans">
+      <div className="w-full max-w-md mb-4 flex justify-between items-center">
+        <Link href="/" className="text-xs font-semibold text-neutral-500 hover:text-black flex items-center gap-1.5 transition">
+          <ArrowLeft className="w-3.5 h-3.5" /> Return to Store
+        </Link>
+      </div>
+
+      <div className="w-full max-w-md bg-white border border-neutral-200/80 rounded-2xl shadow-sm p-6 sm:p-8 animate-fade-up">
+        {/* Brand Logo & Title */}
+        <div className="text-center mb-7">
+          <Link href="/" className="inline-flex items-center gap-2 mb-3">
+            <span className="relative block h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-black shadow-xs ring-1 ring-black/10">
+              <Image src="/colossal-rigout-logo.png" alt="Logo" fill className="object-cover scale-[1.75]" />
+            </span>
+            <span className="font-display text-xl font-bold tracking-tight">
+              Colossal<span className="text-neutral-400">Rigout</span>
+            </span>
+          </Link>
+          <h1 className="font-display text-2xl font-extrabold text-neutral-900 tracking-tight">
             CREATE ACCOUNT
           </h1>
-          <p className="text-neutral-500 text-xs sm:text-sm mt-1.5 font-light">
+          <p className="text-neutral-500 text-xs sm:text-sm mt-1 font-light">
             Sign up to build your wardrobe, track orders, and view history.
           </p>
         </div>
 
         {/* Alert Messages */}
         {error && (
-          <div className="mb-5 p-4 bg-red-50 border border-red-200 text-red-600 rounded text-xs flex flex-col gap-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-none mt-0.5" />
-              <span className="whitespace-pre-line leading-relaxed">{error}</span>
-            </div>
-            {error.includes("disabled in your Firebase project") && (
-              <button
-                onClick={handleOfflineSignup}
-                type="button"
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition tracking-wider uppercase cursor-pointer"
-              >
-                Bypass with Offline Demo Mode
-              </button>
-            )}
+          <div className="mb-5 p-4 bg-red-50 border border-red-200 text-red-600 rounded text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 flex-none mt-0.5" />
+            <span className="whitespace-pre-line leading-relaxed">{error}</span>
           </div>
         )}
 
@@ -221,17 +207,7 @@ function SignupContent() {
           SIGN UP WITH GOOGLE
         </button>
 
-        {/* Quick Demo Access Bar */}
-        <div className="mt-6 pt-5 border-t border-neutral-100 text-center space-y-2">
-          <p className="text-[11px] text-neutral-400 font-light">Want to test without Firebase setup?</p>
-          <button
-            onClick={handleOfflineSignup}
-            type="button"
-            className="inline-flex items-center justify-center gap-1 bg-black text-white hover:bg-neutral-800 text-[10px] font-bold px-4 py-1.5 rounded transition uppercase tracking-wider cursor-pointer shadow-sm"
-          >
-            Offline Demo Mode
-          </button>
-        </div>
+
 
         {/* Login Link */}
         <div className="mt-6 text-center text-xs sm:text-sm text-neutral-500">

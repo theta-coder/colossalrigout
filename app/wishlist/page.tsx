@@ -7,6 +7,7 @@ import { useCart } from '../../context/CartContext';
 import { useProducts } from '../../context/ProductsContext';
 import { Product as CatalogProduct } from '../../lib/products';
 import { Heart, ShoppingBag, ArrowRight, Trash2, HelpCircle } from 'lucide-react';
+import { formatPkr } from '../../lib/utils';
 
 const colorClasses: Record<string, string> = {
   Black: 'bg-black',
@@ -134,7 +135,7 @@ export default function WishlistPage() {
                   </Link>
                   
                   <div className="flex items-center justify-between mt-1">
-                    <p className="text-xs sm:text-sm text-neutral-800 font-bold">${p.price.toFixed(2)}</p>
+                    <p className="text-xs sm:text-sm text-neutral-800 font-bold">{formatPkr(p.price)}</p>
                     <span className="text-[10px] text-neutral-400 capitalize bg-neutral-100 px-2 py-0.5 rounded font-medium">
                       {p.cat}
                     </span>

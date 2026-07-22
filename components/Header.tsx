@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,13 +8,26 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, Search, Heart, ShoppingBag, MapPin, HelpCircle, User } from 'lucide-react';
 
-export default function Header() {
+import { AnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS } from '../lib/storefront-settings';
+
+interface HeaderProps {
+  announcement?: AnnouncementSettings;
+}
+
+export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }: HeaderProps) {
   const { cart, wishlist } = useCart();
   const { currentUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const [searchValue, setSearchValue] = useState('');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const activeUser = mounted ? currentUser : null;
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -30,31 +43,67 @@ export default function Header() {
     { label: 'MEN', href: '/shop?cat=men' },
     { label: 'KIDS', href: '/shop?cat=kids' },
     { label: 'SALE', href: '/shop?cat=sale', isSale: true },
-    { label: 'ADMIN', href: '/admin', isAdminLink: true },
   ];
+
+  if (pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <>
       {/* TOP ANNOUNCEMENT BAR */}
-      <div className="bg-black text-white text-[11px] sm:text-xs">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
-          <span className="hidden sm:block"></span>
-          <p className="mx-auto tracking-wide font-normal">
-            FREE SHIPPING ON ORDERS OVER $75 &nbsp;|&nbsp; EASY RETURNS
-          </p>
-          <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-300">
-            <span className="hover:text-white cursor-pointer flex items-center gap-1">
-              <MapPin className="w-3 h-3" /> Store Locator
-            </span>
-            <Link href="/faq" className="hover:text-white flex items-center gap-1">
-              <HelpCircle className="w-3 h-3" /> Help
-            </Link>
+      {announcement?.enabled !== false && (
+        <div className="bg-black text-white text-[11px] sm:text-xs">
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
+            <span className="hidden sm:block"></span>
+            <p className="mx-auto tracking-wide font-normal truncate px-2">
+              {announcement.linkHref ? (
+                <Link
+                  href={announcement.linkHref}
+                  target={announcement.openInNewTab ? '_blank' : undefined}
+                  rel={announcement.openInNewTab ? 'noopener noreferrer' : undefined}
+                  className="hover:underline flex items-center justify-center gap-1.5 inline-flex"
+                >
+                  <span>{announcement.message}</span>
+                  {announcement.secondaryMessage && (
+                    <span>
+                      &nbsp;{announcement.separator || '|'}&nbsp;{announcement.secondaryMessage}
+                    </span>
+                  )}
+                  {announcement.linkLabel && (
+                    <span className="font-semibold underline underline-offset-2 ml-1">
+                      {announcement.linkLabel}
+                    </span>
+                  )}
+                </Link>
+              ) : (
+                <>
+                  <span>{announcement.message}</span>
+                  {announcement.secondaryMessage && (
+                    <span>
+                      &nbsp;{announcement.separator || '|'}&nbsp;{announcement.secondaryMessage}
+                    </span>
+                  )}
+                </>
+              )}
+            </p>
+            <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-300">
+              <span className="hover:text-white cursor-pointer flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> Store Locator
+              </span>
+              <Link href="/faq" className="hover:text-white flex items-center gap-1">
+                <HelpCircle className="w-3 h-3" /> Help
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* STICKY MAIN HEADER */}
-      <header className="border-b border-white/50 sticky top-0 bg-white/82 backdrop-blur-md shadow-[0_1px_12px_rgba(0,0,0,0.04)] z-40">
+      <header
+        className="border-b border-white/50 sticky top-0 bg-white/82 backdrop-blur-md shadow-[0_1px_12px_rgba(0,0,0,0.04)] z-40"
+        suppressHydrationWarning
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Hamburger button */}
@@ -145,10 +194,11 @@ export default function Header() {
             <Link
               href="/order-history"
               className="relative p-1 hover:bg-neutral-200/50 rounded-full transition flex items-center gap-1"
-              title={currentUser ? `Logged in as ${currentUser.name}` : 'Order History & Login'}
+              title={activeUser ? `Logged in as ${activeUser.name}` : 'Order History & Login'}
+              suppressHydrationWarning
             >
-              <User className={`w-5 h-5 ${currentUser ? 'text-neutral-900 fill-neutral-900/10' : 'text-neutral-900'}`} />
-              {currentUser && (
+              <User className={`w-5 h-5 ${activeUser ? 'text-neutral-900 fill-neutral-900/10' : 'text-neutral-900'}`} />
+              {activeUser && (
                 <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-[#f4f4f3]"></span>
               )}
             </Link>
@@ -217,8 +267,9 @@ export default function Header() {
                 href="/order-history"
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-1 border-b border-neutral-200/50 text-neutral-900 font-semibold text-xs flex items-center gap-1.5"
+                suppressHydrationWarning
               >
-                <User className="w-3.5 h-3.5" /> {currentUser ? `Order History (${currentUser.name})` : 'Order History / Login'}
+                <User className="w-3.5 h-3.5" /> {activeUser ? `Order History (${activeUser.name})` : 'Order History / Login'}
               </Link>
             </nav>
           </div>

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../../../lib/firebase';
 import { requireAdmin } from '../../../../../lib/serverAuth';
@@ -55,6 +56,14 @@ export async function PATCH(
     // Rebuild product review aggregates
     await recalculateProductReviewSummary(reviewData.productId);
 
+    try {
+      revalidatePath('/');
+      if (reviewData.productSlugSnapshot) revalidatePath(`/product/${reviewData.productSlugSnapshot}`);
+      revalidateTag('homepage');
+      revalidateTag('homepage:reviews');
+      revalidateTag(`product:${reviewData.productId}`);
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: 'Review moderated successfully.',
@@ -98,6 +107,14 @@ export async function DELETE(
 
     // Rebuild aggregates
     await recalculateProductReviewSummary(reviewData.productId);
+
+    try {
+      revalidatePath('/');
+      if (reviewData.productSlugSnapshot) revalidatePath(`/product/${reviewData.productSlugSnapshot}`);
+      revalidateTag('homepage');
+      revalidateTag('homepage:reviews');
+      revalidateTag(`product:${reviewData.productId}`);
+    } catch {}
 
     return NextResponse.json({
       success: true,
