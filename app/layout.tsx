@@ -3,6 +3,7 @@ import { Poppins, Playfair_Display } from 'next/font/google';
 import { AuthProvider } from '../context/AuthContext';
 import { ProductsProvider } from '../context/ProductsContext';
 import { CartProvider } from '../context/CartContext';
+import { ToastProvider } from '../context/ToastContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getAnnouncementSettings, getFooterSettings } from '../lib/server/storefront-settings';
@@ -143,17 +144,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="bg-[#f4f4f3] text-neutral-900 font-sans" suppressHydrationWarning>
-        <AuthProvider>
-          <ProductsProvider>
-            <CartProvider>
-              <div className="flex flex-col min-h-screen">
-                <Header announcement={announcement} />
-                <main className="flex-grow">{children}</main>
-                <Footer settings={footer} />
-              </div>
-            </CartProvider>
-          </ProductsProvider>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ProductsProvider>
+              <CartProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Header announcement={announcement} />
+                  <main className="flex-grow">{children}</main>
+                  <Footer settings={footer} />
+                </div>
+              </CartProvider>
+            </ProductsProvider>
+          </AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

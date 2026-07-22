@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 import { Product as CatalogProduct } from '@/lib/products';
 import { ColorDocument, ReviewDocument } from '@/types/commerce';
 import { formatPkr } from '@/lib/utils';
@@ -39,6 +40,7 @@ export default function ProductDetailsClient({
   initialActiveCampaigns = [],
 }: ProductDetailsClientProps) {
   const { addToCart, toggleWishlist, wishlist } = useCart();
+  const { showToast } = useToast();
 
   // Basic States
   const [selectedSize, setSelectedSize] = useState<string>(
@@ -330,19 +332,19 @@ export default function ProductDetailsClient({
 
   const handleAddToCart = () => {
     if (variantsLoading) {
-      alert('Stock is still loading. Please try again in a moment.');
+      showToast('Stock is still loading. Please try again in a moment.', { type: 'info' });
       return;
     }
     if (requiresVariant && !selectedVariant) {
-      alert('This color and size combination is unavailable. Please select another option.');
+      showToast('This color and size combination is unavailable. Please select another option.', { type: 'error' });
       return;
     }
     if (isCurrentVariantOutOfStock) {
-      alert('Selected size and color combination is currently out of stock.');
+      showToast('Selected size and color combination is currently out of stock.', { type: 'error' });
       return;
     }
     if (availableStock < quantity) {
-      alert(`Only ${availableStock} units available in stock for this combination.`);
+      showToast(`Only ${availableStock} units available in stock for this combination.`, { type: 'error' });
       return;
     }
 
@@ -361,7 +363,11 @@ export default function ProductDetailsClient({
       qty: quantity,
     });
 
-    alert(`Added ${product.name} (${selectedSize}, ${selectedColorDoc?.name || 'Default'}) x${quantity} to Cart!`);
+    showToast(`Added ${product.name} (${selectedSize}, ${selectedColorDoc?.name || 'Default'}) to Cart`, {
+      type: 'cart',
+      actionUrl: '/cart',
+      actionLabel: 'View Cart',
+    });
   };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {

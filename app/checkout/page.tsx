@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useCart, Order } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { Lock, CheckCircle2, User } from 'lucide-react';
 import { formatPkr } from '../../lib/utils';
 import { defaultShippingSettings, ShippingPolicySettings } from '../../lib/shipping-policy';
@@ -13,6 +14,7 @@ import CheckoutSkeleton from '@/components/checkout/CheckoutSkeleton';
 export default function Checkout() {
   const { cart, promoDiscount, placeOrder, isLoaded } = useCart();
   const { currentUser } = useAuth();
+  const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -92,7 +94,7 @@ export default function Checkout() {
       const order = await placeOrder({ name, address, city, phone, email }, finalShipCost, 'Cash on Delivery');
       setPlacedOrder(order);
     } catch (error: any) {
-      alert(error.message || 'Checkout failed because inventory changed.');
+      showToast(error.message || 'Checkout failed because inventory changed.', { type: 'error' });
     }
   };
 

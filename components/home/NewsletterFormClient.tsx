@@ -6,12 +6,16 @@ import {
   DEFAULT_NEWSLETTER_SETTINGS,
   interpolateNewsletterMessage,
 } from '@/lib/storefront-settings';
+import { useToast } from '@/context/ToastContext';
 
 interface NewsletterFormClientProps {
   settings?: NewsletterSettings;
 }
 
 export default function NewsletterFormClient({ settings = DEFAULT_NEWSLETTER_SETTINGS }: NewsletterFormClientProps) {
+  const { showToast } = useToast();
+  const [successBanner, setSuccessBanner] = React.useState<string | null>(null);
+
   if (settings?.enabled === false) {
     return null;
   }
@@ -24,7 +28,8 @@ export default function NewsletterFormClient({ settings = DEFAULT_NEWSLETTER_SET
       settings.discountType,
       settings.discountValue
     );
-    alert(alertMessage);
+    setSuccessBanner(alertMessage);
+    showToast(alertMessage, { type: 'success', duration: 5000 });
     e.currentTarget.reset();
   };
 
@@ -49,6 +54,11 @@ export default function NewsletterFormClient({ settings = DEFAULT_NEWSLETTER_SET
           <p className="text-neutral-600 text-sm font-light leading-relaxed">
             {description}
           </p>
+        )}
+        {successBanner && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold p-3.5 rounded-lg my-3 animate-fade-in shadow-2xs">
+            {successBanner}
+          </div>
         )}
         <form
           onSubmit={handleSubmit}

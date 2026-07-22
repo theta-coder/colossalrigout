@@ -6,6 +6,7 @@ import ImageWithFallback from '@/components/ui/ImageWithFallback';
 import dynamic from 'next/dynamic';
 import { ChevronLeft, ChevronRight, Heart, Star } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 import type { ProductCardData } from '@/lib/server/homepage';
 import { Product } from '@/lib/products';
 import { formatPkr } from '@/lib/utils';
@@ -45,6 +46,7 @@ export default function ProductCarouselClient({
   showBestsellerBadge = false,
 }: Props) {
   const { toggleWishlist, wishlist, addToCart } = useCart();
+  const { showToast } = useToast();
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [quickAddProduct, setQuickAddProduct] = React.useState<Product | null>(null);
   const [inView, setInView] = React.useState(true);
@@ -319,7 +321,11 @@ export default function ProductCarouselClient({
           onClose={() => setQuickAddProduct(null)}
           onAddToCart={(item) => {
             addToCart(item);
-            alert(`Added ${item.name} (${item.size}, ${item.color}) to your Cart!`);
+            showToast(`Added ${item.name} (${item.size}, ${item.color}) to Cart`, {
+              type: 'cart',
+              actionUrl: '/cart',
+              actionLabel: 'View Cart',
+            });
           }}
         />
       )}

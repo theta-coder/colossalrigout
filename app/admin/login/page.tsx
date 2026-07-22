@@ -45,23 +45,8 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
 
-    const isPrimaryAdminUser = email === 'who1sdanish011@gmail.com';
-
     try {
-      let userCredential;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
-      } catch (authErr: any) {
-        // If Email/Password auth is disabled in the Firebase Console, provide a secure sandbox bypass for the primary admin
-        if (authErr.code === 'auth/operation-not-allowed' && isPrimaryAdminUser) {
-          console.warn("Firebase Auth Email/Password provider is disabled in Firebase console. Bypassing securely for Primary Admin.");
-          localStorage.setItem('cr_admin_session', 'demo');
-          router.push('/admin');
-          return;
-        }
-        throw authErr;
-      }
-
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       // Verify if they are an admin
@@ -80,18 +65,13 @@ export default function AdminLoginPage() {
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid admin credentials. Please try again.');
       } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Firebase Email/Password Auth is disabled in Firebase Console. Please use the "Demo Offline Admin Bypass" below or enable it.');
+        setError('Firebase Email/Password Auth is disabled in Firebase Console. Please contact the system administrator.');
       } else {
         setError(err.message || 'An unexpected error occurred during login.');
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDemoAdminLogin = () => {
-    localStorage.setItem('cr_admin_session', 'demo');
-    router.push('/admin');
   };
 
   if (checkingAuth) {
@@ -193,32 +173,6 @@ export default function AdminLoginPage() {
               </button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                <div className="w-full border-t border-neutral-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-neutral-400 font-bold tracking-wider">
-                  Test Portal Bypasses
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={handleDemoAdminLogin}
-                className="w-full bg-amber-500 text-black py-3 px-4 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-amber-400 active:scale-95 transition flex items-center justify-center gap-2"
-              >
-                ⚡ DEMO OFFLINE ADMIN BYPASS
-              </button>
-              <p className="text-[10px] text-center text-neutral-400 mt-2 font-light">
-                One-click instant login bypass to preview and test all Admin Panel features.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

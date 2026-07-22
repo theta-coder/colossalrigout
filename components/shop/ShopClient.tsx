@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../../context/CartContext';
+import { useToast } from '../../context/ToastContext';
 import { useProducts } from '../../context/ProductsContext';
 import { Product as CatalogProduct } from '../../lib/products';
 import { Heart, SlidersHorizontal, Star, X, ChevronDown } from 'lucide-react';
@@ -28,6 +29,7 @@ import ShopSkeleton from '../../components/shop/ShopSkeleton';
 
 function ShopContent() {
   const { toggleWishlist, wishlist, addToCart } = useCart();
+  const { showToast } = useToast();
   const { products, loading: productsLoading } = useProducts();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1453,7 +1455,11 @@ function ShopContent() {
                   variantId: quickVariant.id,
                 });
                 setQuickAddProduct(null);
-                alert(`Added ${quickAddProduct.name} (${quickSize}, ${quickSelectedColorDoc?.name || 'Default'}) to your Cart!`);
+                showToast(`Added ${quickAddProduct.name} (${quickSize}, ${quickSelectedColorDoc?.name || 'Default'}) to Cart`, {
+                  type: 'cart',
+                  actionUrl: '/cart',
+                  actionLabel: 'View Cart',
+                });
               }}
               disabled={!quickVariant || Number(quickVariant.availableStock ?? quickVariant.stock ?? quickVariant.stockOnHand ?? 0) < 1}
               className="w-full bg-black disabled:bg-neutral-300 disabled:cursor-not-allowed text-white text-xs font-bold py-3.5 rounded-lg hover:bg-neutral-800 transition tracking-wider uppercase active:scale-[0.98] cursor-pointer"

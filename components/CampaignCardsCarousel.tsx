@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { auth } from '../lib/firebase';
+import { useToast } from '../context/ToastContext';
 
 interface CampaignCard {
   id: string;
@@ -42,6 +43,7 @@ export default function CampaignCardsCarousel({ initialCards }: CampaignCardsCar
   const sectionRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const router = useRouter();
+  const { showToast } = useToast();
   
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [visibleCount, setVisibleCount] = useState(3);
@@ -188,7 +190,7 @@ export default function CampaignCardsCarousel({ initialCards }: CampaignCardsCar
         // Redirect to login page and return back to home/origin
         router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
       } else if (json.success && !json.eligible) {
-        window.alert(json.reason || 'This offer is not available for your account.');
+        showToast(json.reason || 'This offer is not available for your account.', { type: 'info' });
       } else {
         router.push(targetPath);
       }
