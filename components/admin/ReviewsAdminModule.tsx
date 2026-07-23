@@ -21,6 +21,7 @@ import {
 import { auth } from '../../lib/firebase';
 import { ReviewDocument } from '../../types/commerce';
 import { Product } from '../../lib/products';
+import AdminPagination from './AdminPagination';
 
 async function adminHeaders(includeJson = false): Promise<HeadersInit> {
   const token = await auth.currentUser?.getIdToken();
@@ -856,56 +857,16 @@ export default function ReviewsAdminModule() {
         </div>
       )}
 
-      {/* 6. PAGINATION NAVIGATION */}
+      {/* 5. PAGINATION */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-neutral-200 bg-[#fcfcfb] px-4 py-3 sm:px-6 rounded-xl shadow-sm">
-          <div className="flex flex-1 justify-between sm:hidden">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="relative inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="relative ml-3 inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs text-neutral-500">
-                Showing <span className="font-bold text-neutral-900">{(page - 1) * 10 + 1}</span> to{' '}
-                <span className="font-bold text-neutral-900">
-                  {Math.min(page * 10, totalCount)}
-                </span>{' '}
-                of <span className="font-bold text-neutral-900">{totalCount}</span> records
-              </p>
-            </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm gap-1" aria-label="Pagination">
-                {Array.from({ length: totalPages }).map((_, idx) => {
-                  const pageNum = idx + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
-                        page === pageNum
-                          ? 'bg-black text-white border-black'
-                          : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          </div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+          <AdminPagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalCount}
+            pageSize={10}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

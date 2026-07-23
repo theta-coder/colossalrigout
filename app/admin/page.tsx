@@ -12,6 +12,7 @@ import { formatPkr } from '../../lib/utils';
 import CommerceAdminModule from '../../components/admin/CommerceAdminModule';
 import ProductColorGalleryManager, { ManagedColorImage } from '../../components/admin/ProductColorGalleryManager';
 import GuidedSizeColorBuilder from '../../components/admin/GuidedSizeColorBuilder';
+import AdminPagination from '../../components/admin/AdminPagination';
 import dynamic from 'next/dynamic';
 const PromoCampaignsModule = dynamic(() => import('../../components/admin/PromoCampaignsModule'), { ssr: false });
 const CampaignCardsModule = dynamic(() => import('../../components/admin/CampaignCardsModule'), { ssr: false });
@@ -68,7 +69,8 @@ import {
   CreditCard,
   ShieldCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Menu
 } from 'lucide-react';
 import { ShopCategory } from '../../lib/category';
 
@@ -204,6 +206,15 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [adminColorGalleries, setAdminColorGalleries] = useState<Record<string, ManagedColorImage[]>>({});
+
+  // Mobile Drawer State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Pagination States for Admin Modules
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [overviewOrdersPage, setOverviewOrdersPage] = useState(1);
+  const [categoriesPage, setCategoriesPage] = useState(1);
+  const [heroPage, setHeroPage] = useState(1);
 
   // Shop Categories Management State
   const [categoriesList, setCategoriesList] = useState<ShopCategory[]>([]);
@@ -1263,19 +1274,183 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex flex-col md:flex-row font-sans text-neutral-900">
       
-      {/* SIDEBAR */}
-      <aside className="w-full md:w-64 bg-black text-white shrink-0 flex flex-col border-r border-neutral-800">
+      {/* MOBILE STICKY HEADER (Visible on screens < md) */}
+      <header className="md:hidden bg-black text-white px-4 py-3 border-b border-neutral-800 flex items-center justify-between z-40 sticky top-0 shadow-md">
+        <div>
+          <h1 className="font-display font-extrabold text-xs tracking-widest text-white">COLOSSAL ADMIN</h1>
+          <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wider">
+            {isDemoMode ? '⚡ Sandbox Mode' : '🔐 Secured'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-lg bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 transition flex items-center gap-1.5 text-xs font-bold border border-neutral-700 cursor-pointer"
+            aria-label="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4 text-amber-400" />}
+            <span className="uppercase text-[10px] tracking-wider">{isMobileMenuOpen ? 'Close' : 'Menu'}</span>
+          </button>
+        </div>
+      </header>
+
+      {/* MOBILE DRAWER OVERLAY (Visible on mobile when menu is open) */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 top-[49px] bg-black/95 text-white z-40 overflow-y-auto p-4 flex flex-col justify-between animate-fade-in border-b border-neutral-800">
+          <nav className="space-y-1">
+            <button
+              onClick={() => { setActiveTab('overview'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'overview' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard Overview
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('products'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'products' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              Manage Inventory
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('add-product'); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'add-product' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <PlusCircle className="w-4 h-4" />
+              {editingProduct ? 'Edit Selected Product' : 'Add New Product'}
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('orders'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'orders' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              Order fulfillment
+              {stats.pending > 0 && (
+                <span className="ml-auto bg-amber-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                  {stats.pending}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('promotions'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <Ticket className="w-4 h-4" />
+              Promotions & Rules
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('campaigns'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'campaigns' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <Megaphone className="w-4 h-4" />
+              Promo Campaigns
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('campaign-cards'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              Campaign Cards
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('stores'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+              Store Locations
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('hero'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'hero' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <LayoutTemplate className="w-4 h-4" />
+              Hero Slides
+            </button>
+
+            <button
+              onClick={() => { setActiveTab('categories'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                activeTab === 'categories' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+              Shop Categories
+            </button>
+
+            {([
+              ['colors', 'Color Library', Palette],
+              ['sizes', 'Sizes', Ruler],
+              ['size-guides', 'Size Guides', Ruler],
+              ['collections', 'Collections', Layers3],
+              ['reviews', 'Reviews', Star],
+              ['trust-benefits', 'Trust Benefits', ShieldCheck],
+              ['inventory', 'Stock Inventory', Boxes],
+              ['about-page', 'About Us Page', FileText],
+              ['shipping-policy', 'Shipping Policy', Truck],
+              ['returns-policy', 'Returns & Exchanges', RefreshCw],
+              ['faq-manager', 'FAQ Manager', HelpCircle],
+              ['contact-inquiries', 'Customer Inquiries', Mail],
+              ['storefront-content', 'Storefront Content', LayoutTemplate],
+            ] as const).map(([tab, label, Icon]) => (
+              <button
+                key={tab}
+                onClick={() => { setActiveTab(tab); setEditingProduct(null); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
+                  activeTab === tab ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="pt-4 border-t border-neutral-800 mt-4">
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-neutral-800 text-neutral-300 hover:text-white hover:bg-red-950/30 text-xs font-bold uppercase transition cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 text-red-400" /> Sign Out Admin Session
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DESKTOP SIDEBAR (Hidden on screens < md) */}
+      <aside className="hidden md:flex w-64 bg-black text-white shrink-0 flex-col border-r border-neutral-800 min-h-screen">
         <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
           <div>
             <h1 className="font-display font-extrabold text-sm tracking-widest text-white">COLOSSAL ADMIN</h1>
             <p className="text-[10px] text-amber-500 font-bold tracking-wider mt-0.5 uppercase">
               {isDemoMode ? '⚡ Sandbox Admin Mode' : '🔐 Fire-Auth Secured'}
             </p>
-          </div>
-          <div className="md:hidden">
-            <button onClick={handleSignOut} className="text-neutral-400 hover:text-white">
-              <LogOut className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
@@ -1413,19 +1588,19 @@ export default function AdminDashboardPage() {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-neutral-800 hidden md:block">
+        <div className="p-4 border-t border-neutral-800">
           <div className="flex items-center gap-3 bg-neutral-950 p-3.5 rounded-xl border border-neutral-800 mb-4">
             <div className="w-7 h-7 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
               AD
             </div>
-            <div className="overflow-hidden">
-              <p className="text-[11px] font-bold text-neutral-200 truncate leading-none">Danish Khan</p>
-              <p className="text-[9px] text-neutral-500 truncate mt-0.5">Primary Administrator</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-white truncate">Danish Khan</p>
+              <p className="text-[10px] text-neutral-400 truncate">Primary Administrator</p>
             </div>
           </div>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-red-950/20 hover:border-red-900/45 text-xs font-bold uppercase transition"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-red-950/20 hover:border-red-900/45 text-xs font-bold uppercase transition cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" /> Sign Out Session
           </button>
@@ -1602,7 +1777,7 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100 text-xs">
-                      {orders.slice(0, 5).map((o) => (
+                      {orders.slice((overviewOrdersPage - 1) * 5, overviewOrdersPage * 5).map((o) => (
                         <tr key={o.id} className="hover:bg-neutral-50/50 transition">
                           <td className="py-3.5 px-5 font-bold">{o.id}</td>
                           <td className="py-3.5 px-5">
@@ -1642,6 +1817,18 @@ export default function AdminDashboardPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {orders.length > 5 && (
+                <div className="p-4 border-t border-neutral-200 bg-[#fcfcfb]">
+                  <AdminPagination
+                    currentPage={overviewOrdersPage}
+                    totalPages={Math.ceil(orders.length / 5)}
+                    totalItems={orders.length}
+                    pageSize={5}
+                    onPageChange={setOverviewOrdersPage}
+                  />
                 </div>
               )}
             </div>
@@ -1790,80 +1977,14 @@ export default function AdminDashboardPage() {
 
               {/* PAGINATION CONTROLS */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-neutral-200 bg-[#fcfcfb] px-4 py-3 sm:px-6 rounded-b-xl">
-                  <div className="flex flex-1 justify-between sm:hidden">
-                    <button
-                      onClick={() => setInvPage(p => Math.max(1, p - 1))}
-                      disabled={invPage === 1}
-                      className="relative inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => setInvPage(p => Math.min(totalPages, p + 1))}
-                      disabled={invPage === totalPages}
-                      className="relative ml-3 inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 transition cursor-pointer"
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs text-neutral-500">
-                        Showing <span className="font-bold text-neutral-900">{startIndex + 1}</span> to{' '}
-                        <span className="font-bold text-neutral-900">
-                          {Math.min(startIndex + invItemsPerPage, filteredProducts.length)}
-                        </span>{' '}
-                        of <span className="font-bold text-neutral-900">{filteredProducts.length}</span> items
-                      </p>
-                    </div>
-                    <div>
-                      <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm gap-1" aria-label="Pagination">
-                        <button
-                          onClick={() => setInvPage(p => Math.max(1, p - 1))}
-                          disabled={invPage === 1}
-                          className="relative inline-flex items-center rounded-lg border border-neutral-200 bg-white px-2 py-2 text-neutral-500 hover:bg-neutral-50 disabled:opacity-30 transition cursor-pointer"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-
-                        {Array.from({ length: totalPages }).map((_, idx) => {
-                          const pageNum = idx + 1;
-                          if (
-                            pageNum === 1 ||
-                            pageNum === totalPages ||
-                            (pageNum >= invPage - 1 && pageNum <= invPage + 1)
-                          ) {
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setInvPage(pageNum)}
-                                className={`relative inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
-                                  invPage === pageNum
-                                    ? 'bg-black text-white border-black shadow-sm'
-                                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          }
-                          if (pageNum === 2 || pageNum === totalPages - 1) {
-                            return <span key={pageNum} className="relative inline-flex items-center px-2 py-1.5 text-xs font-semibold text-neutral-400">...</span>;
-                          }
-                          return null;
-                        })}
-
-                        <button
-                          onClick={() => setInvPage(p => Math.min(totalPages, p + 1))}
-                          disabled={invPage === totalPages}
-                          className="relative inline-flex items-center rounded-lg border border-neutral-200 bg-white px-2 py-2 text-neutral-500 hover:bg-neutral-50 disabled:opacity-30 transition cursor-pointer"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </nav>
-                    </div>
-                  </div>
+                <div className="p-4 bg-[#fcfcfb] border-t border-neutral-200">
+                  <AdminPagination
+                    currentPage={invPage}
+                    totalPages={totalPages}
+                    totalItems={filteredProducts.length}
+                    pageSize={invItemsPerPage}
+                    onPageChange={setInvPage}
+                  />
                 </div>
               )}
             </div>
@@ -2177,7 +2298,7 @@ export default function AdminDashboardPage() {
                 return (
                   <button
                     key={flt}
-                    onClick={() => setOrderFilter(flt)}
+                    onClick={() => { setOrderFilter(flt); setOrdersPage(1); }}
                     className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
                       orderFilter === flt
                         ? 'bg-black text-white shadow-sm'
@@ -2202,132 +2323,146 @@ export default function AdminDashboardPage() {
                   No orders matched the active filter selection.
                 </div>
               ) : (
-                filteredOrders.map((ord) => (
-                  <div
-                    key={ord.id}
-                    className="bg-white border border-neutral-200/65 rounded-xl shadow-xs overflow-hidden"
-                  >
-                    {/* Header bar of card */}
-                    <div className="bg-[#fcfcfb] border-b border-neutral-150 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-3.5">
-                        <span className="font-display font-extrabold text-neutral-900 text-sm">
-                          ORDER {ord.id}
-                        </span>
-                        <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${
-                          ord.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                          ord.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                          ord.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                          ord.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {ord.status}
-                        </span>
-                      </div>
+                <>
+                  {filteredOrders.slice((ordersPage - 1) * 10, ordersPage * 10).map((ord) => (
+                    <div
+                      key={ord.id}
+                      className="bg-white border border-neutral-200/65 rounded-xl shadow-xs overflow-hidden"
+                    >
+                      {/* Header bar of card */}
+                      <div className="bg-[#fcfcfb] border-b border-neutral-150 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-3.5">
+                          <span className="font-display font-extrabold text-neutral-900 text-sm">
+                            ORDER {ord.id}
+                          </span>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${
+                            ord.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                            ord.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
+                            ord.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                            ord.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {ord.status}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center gap-2.5 self-start sm:self-center">
-                        <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Update:</span>
-                        <select
-                          value={ord.status}
-                          onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value as any)}
-                          className="text-xs font-bold bg-white border border-neutral-300 rounded-md px-3 py-1.5 focus:border-black outline-none transition cursor-pointer"
-                        >
-                          <option value="Placed">Placed</option>
-                          <option value="Processed">Processed</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Out for Delivery">Out for Delivery</option>
-                          <option value="Delivered">Delivered</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Content inside card */}
-                    <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs">
-                      
-                      {/* Products List inside order */}
-                      <div className="lg:col-span-6 space-y-3">
-                        <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
-                          Items Purchased ({ord.items?.reduce((sum, item) => sum + item.quantity, 0)})
-                        </p>
-                        <div className="space-y-3.5">
-                          {ord.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-3">
-                              <div className="relative w-10 h-13 rounded bg-neutral-50 border border-neutral-200 overflow-hidden shrink-0">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                              </div>
-                              <div className="overflow-hidden">
-                                <h5 className="font-bold text-neutral-900 truncate">{item.name}</h5>
-                                <p className="text-[10px] text-neutral-500 mt-0.5">
-                                  Size: <span className="font-bold text-neutral-800">{item.size}</span> | Color: <span className="font-bold text-neutral-800">{item.color}</span>
-                                </p>
-                                <p className="text-[10px] font-bold text-neutral-800 mt-0.5">
-                                  {item.quantity} × {formatPkr(item.price || 0)}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="flex items-center gap-2.5 self-start sm:self-center">
+                          <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Update:</span>
+                          <select
+                            value={ord.status}
+                            onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value as any)}
+                            className="text-xs font-bold bg-white border border-neutral-300 rounded-md px-3 py-1.5 focus:border-black outline-none transition cursor-pointer"
+                          >
+                            <option value="Placed">Placed</option>
+                            <option value="Processed">Processed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Out for Delivery">Out for Delivery</option>
+                            <option value="Delivered">Delivered</option>
+                          </select>
                         </div>
                       </div>
 
-                      {/* Customer & Address Details */}
-                      <div className="lg:col-span-3 space-y-2">
-                        <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
-                          Customer Specs
-                        </p>
-                        <div className="space-y-1">
-                          <p className="font-bold text-neutral-900">{ord.customerName}</p>
-                          <p className="text-neutral-500 font-medium">{ord.customerEmail}</p>
-                          {ord.customerPhone && (
-                            <p className="text-neutral-500 font-medium">Cell: {ord.customerPhone}</p>
+                      {/* Content inside card */}
+                      <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs">
+                        
+                        {/* Products List inside order */}
+                        <div className="lg:col-span-6 space-y-3">
+                          <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
+                            Items Purchased ({ord.items?.reduce((sum, item) => sum + item.quantity, 0)})
+                          </p>
+                          <div className="space-y-3.5">
+                            {ord.items?.map((item, idx) => (
+                              <div key={idx} className="flex gap-3">
+                                <div className="relative w-10 h-13 rounded bg-neutral-50 border border-neutral-200 overflow-hidden shrink-0">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="overflow-hidden">
+                                  <h5 className="font-bold text-neutral-900 truncate">{item.name}</h5>
+                                  <p className="text-[10px] text-neutral-500 mt-0.5">
+                                    Size: <span className="font-bold text-neutral-800">{item.size}</span> | Color: <span className="font-bold text-neutral-800">{item.color}</span>
+                                  </p>
+                                  <p className="text-[10px] font-bold text-neutral-800 mt-0.5">
+                                    {item.quantity} × {formatPkr(item.price || 0)}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Customer & Address Details */}
+                        <div className="lg:col-span-3 space-y-2">
+                          <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
+                            Customer Specs
+                          </p>
+                          <div className="space-y-1">
+                            <p className="font-bold text-neutral-900">{ord.customerName}</p>
+                            <p className="text-neutral-500 font-medium">{ord.customerEmail}</p>
+                            {ord.customerPhone && (
+                              <p className="text-neutral-500 font-medium">Cell: {ord.customerPhone}</p>
+                            )}
+                          </div>
+
+                          <div className="pt-2">
+                            <p className="font-bold text-[9px] text-neutral-400 uppercase tracking-wider">
+                              Shipping Destination
+                            </p>
+                            <p className="text-neutral-600 mt-1 leading-relaxed font-semibold">
+                              {ord.shippingAddress}, {ord.shippingCity}, {ord.shippingPostalCode}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Invoice summary info */}
+                        <div className="lg:col-span-3 bg-neutral-50 p-4.5 rounded-xl space-y-2 border">
+                          <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
+                            Invoice Summary
+                          </p>
+                          <div className="space-y-1.5 text-neutral-600 font-medium">
+                            <div className="flex justify-between">
+                              <span>Subtotal:</span>
+                              <span>${ord.subtotal?.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Fulfillment Shipping:</span>
+                              <span>{ord.shippingCost === 0 ? 'FREE' : `$${ord.shippingCost?.toFixed(2)}`}</span>
+                            </div>
+                            {ord.promoApplied && (
+                              <div className="flex justify-between text-emerald-600 font-semibold">
+                                <span>Promo ({ord.promoApplied}):</span>
+                                <span>-${ord.promoDiscount?.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <div className="border-t pt-1.5 flex justify-between font-bold text-neutral-900 text-sm">
+                              <span>Total Charged:</span>
+                              <span>${ord.total?.toFixed(2)}</span>
+                            </div>
+                          </div>
+
+                          {ord.createdAt && (
+                            <div className="pt-2 text-[9px] text-neutral-400 text-right">
+                              Logged: {new Date(ord.createdAt).toLocaleString()}
+                            </div>
                           )}
                         </div>
 
-                        <div className="pt-2">
-                          <p className="font-bold text-[9px] text-neutral-400 uppercase tracking-wider">
-                            Shipping Destination
-                          </p>
-                          <p className="text-neutral-600 mt-1 leading-relaxed font-semibold">
-                            {ord.shippingAddress}, {ord.shippingCity}, {ord.shippingPostalCode}
-                          </p>
-                        </div>
                       </div>
-
-                      {/* Invoice summary info */}
-                      <div className="lg:col-span-3 bg-neutral-50 p-4.5 rounded-xl space-y-2 border">
-                        <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
-                          Invoice Summary
-                        </p>
-                        <div className="space-y-1.5 text-neutral-600 font-medium">
-                          <div className="flex justify-between">
-                            <span>Subtotal:</span>
-                            <span>${ord.subtotal?.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Fulfillment Shipping:</span>
-                            <span>{ord.shippingCost === 0 ? 'FREE' : `$${ord.shippingCost?.toFixed(2)}`}</span>
-                          </div>
-                          {ord.promoApplied && (
-                            <div className="flex justify-between text-emerald-600 font-semibold">
-                              <span>Promo ({ord.promoApplied}):</span>
-                              <span>-${ord.promoDiscount?.toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="border-t pt-1.5 flex justify-between font-bold text-neutral-900 text-sm">
-                            <span>Total Charged:</span>
-                            <span>${ord.total?.toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        {ord.createdAt && (
-                          <div className="pt-2 text-[9px] text-neutral-400 text-right">
-                            Logged: {new Date(ord.createdAt).toLocaleString()}
-                          </div>
-                        )}
-                      </div>
-
                     </div>
-                  </div>
-                ))
+                  ))}
+
+                  {filteredOrders.length > 0 && (
+                    <div className="bg-white border border-neutral-200/65 rounded-xl p-4 shadow-xs">
+                      <AdminPagination
+                        currentPage={ordersPage}
+                        totalPages={Math.ceil(filteredOrders.length / 10)}
+                        totalItems={filteredOrders.length}
+                        pageSize={10}
+                        onPageChange={setOrdersPage}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -2732,7 +2867,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   <div className="p-5 space-y-4">
-                    {heroSlidesList.map((slide) => (
+                    {heroSlidesList.slice((heroPage - 1) * 5, heroPage * 5).map((slide) => (
                       <div
                         key={slide.id}
                         className="border border-neutral-200 rounded-xl overflow-hidden bg-[#fafafa]/40 flex flex-col md:flex-row"
@@ -2807,6 +2942,18 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     ))}
+
+                    {heroSlidesList.length > 5 && (
+                      <div className="pt-2">
+                        <AdminPagination
+                          currentPage={heroPage}
+                          totalPages={Math.ceil(heroSlidesList.length / 5)}
+                          totalItems={heroSlidesList.length}
+                          pageSize={5}
+                          onPageChange={setHeroPage}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3058,7 +3205,7 @@ export default function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-neutral-200">
-                  {categoriesList.map((cat, idx) => (
+                  {categoriesList.slice((categoriesPage - 1) * 8, categoriesPage * 8).map((cat, idx) => (
                     <div
                       key={cat.id}
                       className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition ${
@@ -3162,6 +3309,18 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                   ))}
+
+                  {categoriesList.length > 8 && (
+                    <div className="p-4 border-t border-neutral-200 bg-[#fcfcfb]">
+                      <AdminPagination
+                        currentPage={categoriesPage}
+                        totalPages={Math.ceil(categoriesList.length / 8)}
+                        totalItems={categoriesList.length}
+                        pageSize={8}
+                        onPageChange={setCategoriesPage}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

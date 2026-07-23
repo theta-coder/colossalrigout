@@ -4,6 +4,8 @@ import React from 'react';
 import { Edit2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { adminApiFetch } from '../../lib/admin-api';
 
+import AdminPagination from './AdminPagination';
+
 type Module = 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits';
 const titles: Record<Module, string> = { colors: 'Color Library', sizes: 'Size Library', 'size-guides': 'Size Guides', collections: 'Collections', reviews: 'Review Moderation', inventory: 'Stock Inventory', 'trust-benefits': 'Homepage Trust Benefits' };
 
@@ -33,6 +35,9 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
   const [editing, setEditing] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [message, setMessage] = React.useState('');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const pageSize = 10;
+
   const endpoint = module === 'trust-benefits' ? '/api/trust-benefits' : `/api/commerce/${module}`;
 
   const load = React.useCallback(async () => {
@@ -40,7 +45,8 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
     try { const response = module === 'trust-benefits' ? await adminApiFetch(`${endpoint}?admin=true`) : await fetch(endpoint); const data = await response.json(); setRecords(data.data || []); }
     finally { setLoading(false); }
   }, [module, endpoint]);
-  React.useEffect(() => { setForm(emptyForm(module)); setEditing(null); load(); }, [module, load]);
+
+  React.useEffect(() => { setForm(emptyForm(module)); setEditing(null); setCurrentPage(1); load(); }, [module, load]);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -81,8 +87,11 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
     </label>
   );
 
+  const totalPages = Math.ceil(records.length / pageSize);
+  const paginatedRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-up">
-    <form onSubmit={save} className="bg-white border rounded-xl p-6 space-y-4 self-start">
+    <form onSubmit={save} className="bg-white border rounded-xl p-4 sm:p-6 space-y-4 self-start shadow-xs">
       <h3 className="font-display font-extrabold uppercase">{editing ? 'Edit' : 'Add'} {titles[module]}</h3>
       {module === 'colors' && <>{field('name', 'Color Name *')}<div className="grid grid-cols-[72px_1fr] gap-3"><input type="color" value={form.hex} onChange={e => setForm({ ...form, hex: e.target.value })} className="w-full h-10" />{field('hex', 'HEX *')}</div>{field('secondaryHex', 'Second HEX (optional)')}{field('order', 'Order', 'number')}</>}
       {module === 'sizes' && <>{field('name', 'Display Name *')}{field('code', 'Size Code *')}<label className="block text-[10px] font-bold uppercase">Type<select value={form.type} onChange={e => setForm({...form,type:e.target.value})} className="mt-1 w-full border rounded-lg px-3 py-2"><option>clothing</option><option>shoe</option><option>kids</option><option>accessory</option><option>custom</option></select></label>{field('order','Order','number')}</>}
@@ -93,18 +102,51 @@ export default function CommerceAdminModule({ module }: { module: Module }) {
       {module === 'reviews' && <>{field('productId','Product ID')}{field('customerName','Customer')}{field('rating','Rating','number')}{field('title','Title')}{field('body','Review')}<label className="block text-[10px] font-bold uppercase">Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value})} className="mt-1 w-full border rounded-lg px-3 py-2"><option>pending</option><option>approved</option><option>rejected</option></select></label></>}
       {module !== 'reviews' && <label className="text-xs font-bold flex gap-2"><input type="checkbox" checked={form.active !== false} onChange={e=>setForm({...form,active:e.target.checked})}/> Active</label>}
       {message && <p className="text-xs text-neutral-500">{message}</p>}
-      <button className="w-full bg-black text-white rounded-lg py-2.5 text-xs font-bold uppercase flex justify-center gap-2"><Plus className="w-4 h-4"/>{editing ? 'Update' : 'Save'}</button>
+      <button className="w-full bg-black text-white rounded-lg py-2.5 text-xs font-bold uppercase flex justify-center gap-2 cursor-pointer hover:bg-neutral-800 transition"><Plus className="w-4 h-4"/>{editing ? 'Update' : 'Save'}</button>
     </form>
-    <div className="xl:col-span-2 bg-white border rounded-xl overflow-hidden">
-      <div className="p-5 border-b flex justify-between"><div><h3 className="font-display font-extrabold uppercase">{titles[module]}</h3><p className="text-xs text-neutral-400">{records.length} database records</p></div><button onClick={load}><RefreshCw className={`w-4 h-4 ${loading?'animate-spin':''}`}/></button></div>
-      <div className="divide-y max-h-[680px] overflow-auto">{records.map(record => <div key={record.id} className="p-4 flex items-center gap-4 text-xs">
-        {module === 'colors' && <span className="w-9 h-9 rounded-full border" style={{background: record.secondaryHex ? `linear-gradient(135deg,${record.hex} 50%,${record.secondaryHex} 50%)` : record.hex}}/>}
-        <div className="flex-1 min-w-0"><p className="font-bold text-sm">{record.name || record.sku || record.title || record.id}</p><p className="text-neutral-400 truncate">{record.subtitle || record.hex || record.code || record.slug || `${record.productId || ''} ${record.status || ''}`}</p></div>
-        {module === 'inventory' && <span className={`font-bold ${record.availableStock <= record.reorderLevel?'text-red-600':'text-emerald-600'}`}>{record.availableStock} available</span>}
-        {module === 'reviews' && <span className="uppercase font-bold">{record.status}</span>}
-        <button onClick={()=>{setEditing(record.id);setForm(record)}} className="p-2 border rounded"><Edit2 className="w-3.5 h-3.5"/></button>
-        <button onClick={()=>remove(record.id)} className="p-2 border border-red-100 text-red-500 rounded"><Trash2 className="w-3.5 h-3.5"/></button>
-      </div>)}{!loading && records.length===0 && <p className="p-12 text-center text-neutral-400 text-xs">No records yet.</p>}</div>
+
+    <div className="xl:col-span-2 bg-white border rounded-xl overflow-hidden shadow-xs flex flex-col justify-between">
+      <div>
+        <div className="p-4 sm:p-5 border-b flex justify-between items-center">
+          <div>
+            <h3 className="font-display font-extrabold uppercase text-sm sm:text-base">{titles[module]}</h3>
+            <p className="text-xs text-neutral-400">{records.length} database records</p>
+          </div>
+          <button onClick={load} className="p-2 hover:bg-neutral-100 rounded-lg transition cursor-pointer">
+            <RefreshCw className={`w-4 h-4 ${loading?'animate-spin':''}`}/>
+          </button>
+        </div>
+
+        <div className="divide-y overflow-x-auto">
+          {paginatedRecords.map(record => <div key={record.id} className="p-3.5 sm:p-4 flex items-center justify-between gap-3 text-xs min-w-[320px]">
+            {module === 'colors' && <span className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border shrink-0" style={{background: record.secondaryHex ? `linear-gradient(135deg,${record.hex} 50%,${record.secondaryHex} 50%)` : record.hex}}/>}
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-xs sm:text-sm text-neutral-900 truncate">{record.name || record.sku || record.title || record.id}</p>
+              <p className="text-neutral-500 truncate text-[11px]">{record.subtitle || record.hex || record.code || record.slug || `${record.productId || ''} ${record.status || ''}`}</p>
+            </div>
+            {module === 'inventory' && <span className={`font-bold shrink-0 text-xs ${record.availableStock <= record.reorderLevel?'text-red-600':'text-emerald-600'}`}>{record.availableStock} available</span>}
+            {module === 'reviews' && <span className="uppercase font-bold shrink-0">{record.status}</span>}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button onClick={()=>{setEditing(record.id);setForm(record)}} className="p-2 border border-neutral-300 rounded hover:bg-neutral-50 transition cursor-pointer"><Edit2 className="w-3.5 h-3.5"/></button>
+              <button onClick={()=>remove(record.id)} className="p-2 border border-red-100 text-red-500 rounded hover:bg-red-50 transition cursor-pointer"><Trash2 className="w-3.5 h-3.5"/></button>
+            </div>
+          </div>)}
+          {!loading && records.length === 0 && <p className="p-12 text-center text-neutral-400 text-xs">No records found.</p>}
+        </div>
+      </div>
+
+      {records.length > 0 && (
+        <div className="p-4 bg-neutral-50 border-t border-neutral-200">
+          <AdminPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={records.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   </div>;
 }
+
