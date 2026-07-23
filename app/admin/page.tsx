@@ -389,13 +389,6 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const adminSession = localStorage.getItem('cr_admin_session');
-      
-      if (adminSession === 'demo') {
-        setIsAdmin(true);
-        setIsDemoMode(true);
-        setLoading(false);
-        return;
-      }
 
       if (adminSession === 'true') {
         setIsAdmin(true);
@@ -913,6 +906,7 @@ export default function AdminDashboardPage() {
   }, [isAdmin]);
 
   const handleSignOut = async () => {
+    await fetch('/api/admin/session', { method: 'DELETE' });
     await auth.signOut();
     localStorage.removeItem('cr_admin_session');
     router.push('/admin/login');

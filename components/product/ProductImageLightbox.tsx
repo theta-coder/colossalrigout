@@ -27,6 +27,18 @@ export default function ProductImageLightbox({
   const dragStart = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const pinchStart = useRef<{ distance: number; scale: number } | null>(null);
 
+  const handleNext = () => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+    onSelectIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
+    onSelectIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -40,22 +52,10 @@ export default function ProductImageLightbox({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [currentIndex, images.length]);
+  }, [currentIndex, images.length, onClose]);
 
   const currentImg = images[currentIndex] || images[0];
   if (!currentImg) return null;
-
-  const handleNext = () => {
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
-    onSelectIndex((currentIndex + 1) % images.length);
-  };
-
-  const handlePrev = () => {
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
-    onSelectIndex((currentIndex - 1 + images.length) % images.length);
-  };
 
   return (
     <div role="dialog" aria-modal="true" aria-label="Product image viewer" className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 select-none animate-fade-in">

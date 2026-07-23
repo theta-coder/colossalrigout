@@ -11,8 +11,8 @@ import {
   updateProfile,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 export interface User {
   name: string;
@@ -25,7 +25,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
-  loginOffline: (name: string, email: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   isLoaded: boolean;
 }
@@ -47,26 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return null;
   });
 
-  const [isLoaded, setIsLoaded] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('cr_local_user');
-    }
-    return false;
-  });
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Monitor Firebase Authentication State
   useEffect(() => {
-    // If we initialized loaded state from localStorage, we don't need to block
-    // but we can still register onAuthStateChanged to pick up Firebase logins if they sign out/in
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      // If there is an offline/local session active, ignore firebase auth state changes
-      if (typeof window !== 'undefined' && localStorage.getItem('cr_local_user')) {
-        setIsLoaded(true);
-        return;
-      }
-
       if (firebaseUser) {
-        // Sync user profile from Firestore or Auth details
         let name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User';
         const email = firebaseUser.email || '';
         
@@ -76,23 +61,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = userDoc.data();
             if (data.name) name = data.name;
           } else {
-            // Write to Firestore if profile doesn't exist
+            // Write to Firestore profile without password field
             await setDoc(doc(db, 'users', firebaseUser.uid), {
+              uid: firebaseUser.uid,
               name,
               email,
               createdAt: new Date().toISOString()
             });
           }
         } catch (err) {
-          console.error("Firestore connection testing or user document read failed:", err);
+          console.error("Firestore user document read/write error:", err);
         }
 
-        setCurrentUser({
+        const authenticatedUser = {
           name,
           email,
           uid: firebaseUser.uid
-        });
+        };
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cr_local_user', JSON.stringify(authenticatedUser));
+        }
+        setCurrentUser(authenticatedUser);
       } else {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('cr_local_user');
+        }
         setCurrentUser(null);
       }
       setIsLoaded(true);
@@ -120,32 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(localUser);
       return { success: true, message: 'Welcome back!' };
     } catch (e: any) {
-      console.error("Firebase Login Error, attempting Firestore fallback:", e);
-
-      // Firestore Database Fallback
-      try {
-        const usersSnap = await getDocs(query(collection(db, 'users'), where('email', '==', cleanEmail)));
-        if (!usersSnap.empty) {
-          const userDoc = usersSnap.docs[0];
-          const userData = userDoc.data();
-          if (!userData.password || userData.password === cleanPassword) {
-            const localUser = {
-              name: userData.name || cleanEmail.split('@')[0],
-              email: cleanEmail,
-              uid: userDoc.id,
-            };
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('cr_local_user', JSON.stringify(localUser));
-            }
-            setCurrentUser(localUser);
-            return { success: true, message: 'Welcome back!' };
-          }
-        }
-      } catch (fsErr) {
-        console.error("Firestore Login Fallback Error:", fsErr);
+      console.error("Firebase Login Error:", e);
+      let errorMsg = 'Invalid email or password.';
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        errorMsg = 'Invalid email or password.';
+      } else if (e.code === 'auth/too-many-requests') {
+        errorMsg = 'Access to this account has been temporarily disabled due to many failed login attempts. Reset your password or try again later.';
       }
-
-      return { success: false, message: 'Invalid email or password.' };
+      return { success: false, message: errorMsg };
     }
   };
 
@@ -169,13 +145,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       await updateProfile(user, { displayName: cleanName });
 
-      // 2. Save User Profile in Firestore
+      // 2. Save User Profile in Firestore (NO PLAINTEXT PASSWORD)
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
         uid: user.uid,
         name: cleanName,
         email: cleanEmail,
-        password: cleanPassword,
         createdAt: new Date().toISOString()
       }, { merge: true });
 
@@ -187,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true, message: 'Account successfully created!' };
     } catch (e: any) {
-      console.error("Firebase Signup Error, attempting Firestore DB creation:", e);
+      console.error("Firebase Signup Error:", e);
 
       if (e.code === 'auth/email-already-in-use') {
         return { success: false, message: 'An account with this email already exists.' };
@@ -195,36 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (e.code === 'auth/invalid-email') {
         return { success: false, message: 'The email address is invalid.' };
       }
-
-      // Firestore Direct Registration Fallback (works seamlessly even when Firebase Auth providers are unconfigured)
-      try {
-        const usersSnap = await getDocs(query(collection(db, 'users'), where('email', '==', cleanEmail)));
-        if (!usersSnap.empty) {
-          return { success: false, message: 'An account with this email already exists.' };
-        }
-
-        const fallbackUid = 'usr_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-        const newUserDoc = {
-          uid: fallbackUid,
-          name: cleanName,
-          email: cleanEmail,
-          password: cleanPassword,
-          createdAt: new Date().toISOString(),
-        };
-
-        await setDoc(doc(db, 'users', fallbackUid), newUserDoc);
-
-        const localUser = { name: cleanName, email: cleanEmail, uid: fallbackUid };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('cr_local_user', JSON.stringify(localUser));
-        }
-        setCurrentUser(localUser);
-
-        return { success: true, message: 'Account successfully created!' };
-      } catch (fsErr: any) {
-        console.error("Firestore Backup Signup Error:", fsErr);
-        return { success: false, message: fsErr.message || 'Registration failed.' };
+      if (e.code === 'auth/weak-password') {
+        return { success: false, message: 'The password is too weak. Choose at least 6 characters.' };
       }
+
+      return { success: false, message: e.message || 'Registration failed. Please try again.' };
     }
   };
 
@@ -255,48 +205,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (e: any) {
       console.error("Google Sign-In Error:", e);
 
-      // Smooth fallback if Firebase domain authorization is pending
-      if (
-        e.code === 'auth/unauthorized-domain' ||
-        e.code === 'auth/operation-not-allowed' ||
-        e.code === 'auth/admin-restricted-operation'
-      ) {
-        if (typeof window !== 'undefined') {
-          const inputEmail = window.prompt(
-            'Google OAuth domain authorization is pending in Firebase. Please enter your Google email address to sign in instantly:',
-            'user@gmail.com'
-          );
-
-          if (inputEmail && inputEmail.trim()) {
-            const cleanEmail = inputEmail.trim().toLowerCase();
-            const cleanName = cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-            const uid = 'goog_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-
-            try {
-              await setDoc(
-                doc(db, 'users', uid),
-                {
-                  uid,
-                  name: cleanName,
-                  email: cleanEmail,
-                  provider: 'google',
-                  createdAt: new Date().toISOString(),
-                },
-                { merge: true }
-              );
-
-              const localUser = { name: cleanName, email: cleanEmail, uid };
-              localStorage.setItem('cr_local_user', JSON.stringify(localUser));
-              setCurrentUser(localUser);
-
-              return { success: true, message: 'Signed in with Google successfully!' };
-            } catch (fsErr: any) {
-              console.error("Firestore Google Sign-in Fallback Error:", fsErr);
-            }
-          }
-        }
-      }
-
       let errorMsg = 'Google Sign-In failed.';
       if (e.code === 'auth/popup-closed-by-user') {
         errorMsg = 'Google Sign-In popup was closed.';
@@ -305,24 +213,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return { success: false, message: errorMsg };
     }
-  };
-
-  const loginOffline = async (name: string, email: string) => {
-    const cleanName = name.trim() || 'Demo User';
-    const cleanEmail = email.trim() || 'demo@colossalrigout.pk';
-    
-    const localUser = {
-      name: cleanName,
-      email: cleanEmail,
-      uid: 'offline_demo_user'
-    };
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cr_local_user', JSON.stringify(localUser));
-    }
-    
-    setCurrentUser(localUser);
-    return { success: true, message: 'Welcome to Colossal Rigout (Offline Demo Session)!' };
   };
 
   const logout = async () => {
@@ -338,7 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, signup, loginWithGoogle, loginOffline, logout, isLoaded }}>
+    <AuthContext.Provider value={{ currentUser, login, signup, loginWithGoogle, logout, isLoaded }}>
       {children}
     </AuthContext.Provider>
   );
@@ -353,7 +243,6 @@ export function useAuth() {
       login: async () => ({ success: false, message: '' }),
       signup: async () => ({ success: false, message: '' }),
       loginWithGoogle: async () => ({ success: false, message: '' }),
-      loginOffline: async () => ({ success: false, message: '' }),
       logout: async () => {},
     };
   }

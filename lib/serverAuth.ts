@@ -25,14 +25,6 @@ export async function verifyFirebaseUser(request: NextRequest): Promise<Verified
 }
 
 export async function requireAdmin(request: NextRequest): Promise<VerifiedAdmin | NextResponse> {
-  const isMasterAdmin =
-    request.headers.get('x-admin-demo') === '1' ||
-    request.headers.get('x-admin-master') === '1';
-
-  if (isMasterAdmin) {
-    return { uid: 'master-admin-session', email: 'who1sdanish011@gmail.com' };
-  }
-
   try {
     const user = await verifyFirebaseUser(request);
     if (!user) {

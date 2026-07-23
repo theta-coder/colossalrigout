@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../../../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '../../../lib/firebase';
 import { Lock, Mail, AlertCircle, ArrowLeft, ShieldAlert } from 'lucide-react';
 
 export default function AdminLoginPage() {
@@ -22,11 +21,17 @@ export default function AdminLoginPage() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Check if user is admin
-          const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-          const isPrimaryAdmin = user.email === 'who1sdanish011@gmail.com';
-          
-          if (adminDoc.exists() || isPrimaryAdmin) {
+          const idToken = await user.getIdToken();
+          const sessionResponse = await fetch('/api/admin/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+
+          if (sessionResponse.ok) {
+            localStorage.setItem('cr_admin_session', 'true');
             router.push('/admin');
             return;
           }
@@ -48,16 +53,8 @@ export default function AdminLoginPage() {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
 
-    // Master Admin Direct Access Key Check
-    const isMasterAdminEmail =
-      cleanEmail === 'who1sdanish011@gmail.com' ||
-      cleanEmail === 'admin@colossalrigout.com' ||
-      cleanEmail === 'test@test.com' ||
-      cleanEmail.startsWith('admin');
-
-    if (isMasterAdminEmail) {
-      localStorage.setItem('cr_admin_session', 'true');
-      router.push('/admin');
+    if (!cleanEmail || !cleanPassword) {
+      setError('Please enter both email and password.');
       setLoading(false);
       return;
     }
@@ -65,32 +62,34 @@ export default function AdminLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
       const user = userCredential.user;
+      const idToken = await user.getIdToken();
 
-      // Verify if they are an admin
-      const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-      const isPrimaryAdmin = user.email === 'who1sdanish011@gmail.com';
+      const sessionResponse = await fetch('/api/admin/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
 
-      if (adminDoc.exists() || isPrimaryAdmin) {
-        localStorage.setItem('cr_admin_session', 'true');
-        router.push('/admin');
-      } else {
-        setError('Access Denied: You do not have administrator permissions.');
+      if (!sessionResponse.ok) {
+        const sessionData = await sessionResponse.json();
         await auth.signOut();
-      }
-    } catch (err: any) {
-      console.error("Admin signin error:", err);
-
-      if (isMasterAdminEmail) {
-        localStorage.setItem('cr_admin_session', 'true');
-        router.push('/admin');
-        setLoading(false);
+        setError(sessionData.message || 'Access Denied: You do not have administrator permissions.');
         return;
       }
+
+      localStorage.setItem('cr_admin_session', 'true');
+      router.push('/admin');
+    } catch (err: any) {
+      console.error("Admin signin error:", err);
 
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Invalid admin credentials. Please try again.');
       } else if (err.code === 'auth/operation-not-allowed') {
         setError('Firebase Email/Password Auth is disabled in Firebase Console.');
+      } else if (err.code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
       } else {
         setError(err.message || 'An unexpected error occurred during login.');
       }

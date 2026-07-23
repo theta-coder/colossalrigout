@@ -143,8 +143,9 @@ export default function GuidedSizeColorBuilder({
         const file = fileArray[i];
         if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) continue;
         const dataUrl = await optimizeProductGalleryImage(file);
+        const safeName = (file.name || 'img').replace(/[^a-z0-9]/gi, '_').toLowerCase();
         newImages.push({
-          id: `img_${colorId}_${Date.now()}_${i}`,
+          id: `img_${colorId}_${i}_${safeName}_${file.size || 0}`,
           colorId,
           dataUrl,
           url: dataUrl,

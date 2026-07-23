@@ -73,11 +73,6 @@ export default function CampaignCardsModule() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchCards();
-    loadResources();
-  }, []);
-
   const loadResources = async () => {
     try {
       const [prodRes, catRes, colRes, storeRes, promoRes] = await Promise.all([
@@ -112,6 +107,11 @@ export default function CampaignCardsModule() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchCards();
+    loadResources();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -682,7 +682,7 @@ export default function CampaignCardsModule() {
           </div>
         ) : cards.length === 0 ? (
           <div className="text-center py-16 text-neutral-500 font-medium">
-            No campaign cards found. Click 'Add Campaign Card' to create one.
+            No campaign cards found. Click &apos;Add Campaign Card&apos; to create one.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">

@@ -89,11 +89,6 @@ export default function PromotionsModule() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    fetchPromotions();
-    loadResources();
-  }, []);
-
   const loadResources = async () => {
     try {
       const [prodRes, catRes, colRes, storeRes] = await Promise.all([
@@ -126,6 +121,11 @@ export default function PromotionsModule() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPromotions();
+    loadResources();
+  }, []);
 
   const fetchRedemptions = async () => {
     try {
@@ -708,7 +708,7 @@ export default function PromotionsModule() {
               </div>
             ) : filteredPromos.length === 0 ? (
               <div className="text-center py-16 text-neutral-500 font-medium">
-                No promotions found. Click 'Create Promotion' to start.
+                No promotions found. Click &apos;Create Promotion&apos; to start.
               </div>
             ) : (
               <div className="overflow-x-auto">

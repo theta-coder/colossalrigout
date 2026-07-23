@@ -110,11 +110,6 @@ export default function StorefrontContentModule() {
   // Interactive newsletter preview input
   const [newsletterPreviewSubmitted, setNewsletterPreviewSubmitted] = useState(false);
 
-  useEffect(() => {
-    loadSettings();
-    loadPromotions();
-  }, []);
-
   const loadSettings = async () => {
     setLoading(true);
     setStatusMessage(null);
@@ -166,6 +161,11 @@ export default function StorefrontContentModule() {
       // Non-blocking
     }
   };
+
+  useEffect(() => {
+    loadSettings();
+    loadPromotions();
+  }, []);
 
   // Check coupon validity against loaded promotions
   useEffect(() => {

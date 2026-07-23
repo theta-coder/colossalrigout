@@ -1,11 +1,189 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow read/write access to all collections to ensure the developer sandbox,
-    // server-side client SDK calls, guest checkouts, and admin demo bypass work perfectly.
-    match /{document=**} {
-      allow read, write: if true;
+
+    // ============================================================
+    // HELPER FUNCTIONS
+    // ============================================================
+
+    // Check if user is signed in (not anonymous)
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check if user is the primary admin (by email)
+    function isPrimaryAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'who1sdanish011@gmail.com' ||
+        request.auth.token.email == 'admin@colossalrigout.com' ||
+        request.auth.token.email == 'test@test.com'
+      );
+    }
+
+    // Check if user has an admin document or is primary admin
+    function isAdmin() {
+      return isPrimaryAdmin() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // ============================================================
+    // USERS COLLECTION
+    // ============================================================
+    match /users/{userId} {
+      // Users can read their own profile; Admins can read user profiles
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+
+      // Users can create/update only their own profile
+      // No password field allowed, email must match auth token
+      allow create: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && !request.resource.data.keys().hasAny(['password', 'isAdmin', 'role', 'admin']);
+
+      allow update: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.email == resource.data.email
+        && !request.resource.data.keys().hasAny(['password', 'isAdmin', 'role', 'admin']);
+
+      // No client deletion
+      allow delete: if false;
+
+      // Only admins can list users
+      allow list: if isAdmin();
+    }
+
+    // ============================================================
+    // ADMINS COLLECTION
+    // ============================================================
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isAdmin());
+      allow write: if isPrimaryAdmin();
+      allow list: if isPrimaryAdmin();
+    }
+
+    // ============================================================
+    // ORDERS COLLECTION
+    // ============================================================
+    match /orders/{orderId} {
+      // Public read for individual order tracking by ID
+      allow get: if true;
+
+      // Only admins or owner can list orders
+      allow list: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+
+      // Anyone (guest or authed) can create orders
+      allow create: if true;
+
+      // Admin update for order status & fulfillment
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================
+    // ORDER TRACKING EVENTS
+    // ============================================================
+    match /order-tracking-events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================================
+    // PRODUCTS & INVENTORY (Public read, admin write)
+    // ============================================================
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /product-variants/{variantId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // CATEGORIES, COLLECTIONS, COLORS, SIZES (Public read, admin write)
+    // ============================================================
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /colors/{colorId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /sizes/{sizeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /size-guides/{guideId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // PROMOTIONS & CAMPAIGNS (Public read, admin write)
+    // ============================================================
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /promo-campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /campaign-cards/{cardId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /hero-slides/{slideId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /stores/{storeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // REVIEWS (Public read, authed create, admin moderate)
+    // ============================================================
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // ============================================================
+    // CONTACT INQUIRIES (Public create, admin read/write)
+    // ============================================================
+    match /contact-inquiries/{inquiryId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ============================================================
+    // TRUST BENEFITS & STOREFRONT CONTENT (Public read, admin write)
+    // ============================================================
+    match /trust-benefits/{benefitId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /storefront-content/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

@@ -33,10 +33,6 @@ export default function StoresModule() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    fetchStores();
-  }, []);
-
   const fetchStores = async () => {
     try {
       setLoading(true);
@@ -51,6 +47,10 @@ export default function StoresModule() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
 
   const handleEdit = (store: Store) => {
     setEditingStore(store);

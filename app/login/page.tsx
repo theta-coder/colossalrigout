@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, LogIn, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 function LoginContent() {
-  const { login, loginWithGoogle, loginOffline, currentUser, isLoaded } = useAuth();
+  const { login, loginWithGoogle, currentUser, isLoaded } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
