@@ -40,9 +40,16 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
   }, [quickSize, quickColor, product.id]);
 
   useEffect(() => {
-    fetch('/api/commerce/inventory')
+    // Fetch variants specific to this product using the dedicated inventory API
+    fetch(`/api/inventory?productId=${encodeURIComponent(String(product.id))}`)
       .then((res) => res.json())
       .then((payload) => {
+        // /api/inventory returns { variants: [...] }
+        if (Array.isArray(payload.variants)) {
+          setVariants(payload.variants);
+          return;
+        }
+        // Fallback: /api/commerce/inventory returns { success: true, data: [...] }
         if (payload.success && Array.isArray(payload.data)) {
           setVariants(payload.data.filter((variant: any) => String(variant.productId) === String(product.id)));
         }
@@ -52,30 +59,48 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
 
   const selectedVariant = useMemo(() => {
     if (variants.length === 0) return null;
-    const colorIndex = product.colors.indexOf(quickColor);
-    const sizeIndex = product.sizes.indexOf(quickSize);
-    const colorId = product.colorIds?.[colorIndex] || quickColor;
-    const sizeId = product.sizeIds?.[sizeIndex] || quickSize;
+    const colorIndex = product.colors.findIndex(
+      (c) => String(c).trim().toLowerCase() === String(quickColor).trim().toLowerCase()
+    );
+    const sizeIndex = product.sizes.findIndex(
+      (s) => String(s).trim().toLowerCase() === String(quickSize).trim().toLowerCase()
+    );
+    const colorId = colorIndex >= 0 ? product.colorIds?.[colorIndex] || quickColor : quickColor;
+    const sizeId = sizeIndex >= 0 ? product.sizeIds?.[sizeIndex] || quickSize : quickSize;
 
     return variants.find(
       (variant) =>
-        (variant.colorId === colorId || variant.colorName === quickColor) &&
-        (variant.sizeId === sizeId || variant.sizeName === quickSize)
+        (variant.colorId === colorId ||
+          variant.colorName === quickColor ||
+          String(variant.colorName || '').trim().toLowerCase() === String(quickColor || '').trim().toLowerCase() ||
+          String(variant.colorId || '').trim().toLowerCase() === String(colorId || '').trim().toLowerCase() ||
+          String(variant.colorId || '').trim().toLowerCase() === String(quickColor || '').trim().toLowerCase()) &&
+        (variant.sizeId === sizeId ||
+          variant.sizeName === quickSize ||
+          String(variant.sizeName || '').trim().toLowerCase() === String(quickSize || '').trim().toLowerCase() ||
+          String(variant.sizeId || '').trim().toLowerCase() === String(sizeId || '').trim().toLowerCase() ||
+          String(variant.sizeId || '').trim().toLowerCase() === String(quickSize || '').trim().toLowerCase())
     );
   }, [product, quickColor, quickSize, variants]);
 
   const isAvailable = useMemo(() => {
     if (variants.length > 0) {
-      if (!selectedVariant) return false;
+      if (!selectedVariant) {
+        // No matching variant found — fall back to product-level stock
+        const totalStock = (product as any).totalStock;
+        if (typeof totalStock === 'number') return totalStock > 0;
+        return true; // assume in stock if no variant info
+      }
       const stock = Number(selectedVariant.availableStock ?? selectedVariant.stockOnHand ?? selectedVariant.stock ?? 0);
       return stock > 0;
     }
 
+    // No variants loaded at all — use product-level fields
     if ((product as any).inStock === false) return false;
     if (typeof (product as any).totalStock === 'number' && (product as any).totalStock <= 0) return false;
     if (typeof (product as any).stock === 'number' && (product as any).stock <= 0) return false;
 
-    return true;
+    return true; // Default to available when no stock data
   }, [variants, selectedVariant, product]);
 
   const stockCount = selectedVariant

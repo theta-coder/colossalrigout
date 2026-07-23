@@ -162,6 +162,19 @@ export default function CampaignCardsCarousel({ initialCards }: CampaignCardsCar
   };
 
   const checkEligibilityAndNavigate = async (card: CampaignCard) => {
+    let targetPath = '/shop';
+    if (card.actionType === 'product' && card.productId) {
+      targetPath = `/product?id=${card.productId}`;
+    } else if (card.actionType === 'collection' && card.collectionId) {
+      targetPath = `/shop?collection=${card.collectionId}`;
+    } else if (card.actionType === 'campaign-products' && card.promotionId) {
+      targetPath = `/shop?promotion=${card.promotionId}`;
+    } else if (card.actionType === 'store-location' && card.storeId) {
+      targetPath = `/contact?store=${card.storeId}`;
+    } else if (card.actionType === 'custom-page' && card.internalPath) {
+      targetPath = card.internalPath;
+    }
+
     try {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/promotions/eligibility', {
@@ -172,30 +185,21 @@ export default function CampaignCardsCarousel({ initialCards }: CampaignCardsCar
         }),
       });
       const json = await res.json();
-      
-      let targetPath = '/shop';
-      if (card.actionType === 'product' && card.productId) {
-        targetPath = `/product?id=${card.productId}`;
-      } else if (card.actionType === 'collection' && card.collectionId) {
-        targetPath = `/shop?collection=${card.collectionId}`;
-      } else if (card.actionType === 'campaign-products' && card.promotionId) {
-        targetPath = `/shop?promotion=${card.promotionId}`;
-      } else if (card.actionType === 'store-location' && card.storeId) {
-        targetPath = `/contact?store=${card.storeId}`;
-      } else if (card.actionType === 'custom-page' && card.internalPath) {
-        targetPath = card.internalPath;
-      }
 
       if (json.success && !json.eligible && json.loginRequired) {
         // Redirect to login page and return back to home/origin
         router.push(`/login?returnTo=${encodeURIComponent(targetPath)}`);
       } else if (json.success && !json.eligible) {
-        showToast(json.reason || 'This offer is not available for your account.', { type: 'info' });
+        showToast(json.reason || 'This offer is currently not active.', { type: 'info' });
+        // Fallback navigation to shop so user isn't stuck
+        const fallbackPath = targetPath.includes('promotion=') ? '/shop' : targetPath;
+        router.push(fallbackPath);
       } else {
         router.push(targetPath);
       }
     } catch (err) {
       console.error('Error validating eligibility on card click:', err);
+      router.push(targetPath);
     }
   };
 

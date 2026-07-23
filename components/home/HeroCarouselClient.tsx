@@ -57,10 +57,64 @@ export default function HeroCarouselClient({ slides }: Props) {
     };
   }, [slides.length, inView]);
 
+  // Touch swipe support for mobile & touch devices
+  const touchStartX = React.useRef<number | null>(null);
+  const touchEndX = React.useRef<number | null>(null);
+  const minSwipeDistance = 40; // px threshold
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      setCurrent(prev => (prev + 1) % slides.length);
+    } else if (isRightSwipe) {
+      setCurrent(prev => (prev === 0 ? slides.length - 1 : prev - 1));
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.clientX;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (touchStartX.current !== null) {
+      touchEndX.current = e.clientX;
+    }
+  };
+
+  const handleMouseUp = () => {
+    handleTouchEnd();
+  };
+
   if (slides.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="relative bg-[#f4efe9] overflow-hidden">
+    <section
+      ref={sectionRef}
+      className="relative bg-[#f4efe9] overflow-hidden select-none touch-pan-y"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
       <div className="relative w-full aspect-[4/5] sm:aspect-[16/9] md:aspect-[21/9] lg:h-[520px] min-h-[350px] max-h-[85vh]">
         {slides.map((slide, idx) => {
           const isActive = current === idx;

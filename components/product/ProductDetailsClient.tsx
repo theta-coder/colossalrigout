@@ -129,8 +129,8 @@ export default function ProductDetailsClient({
 
   // Variant matching
   const selectedColorIndex = product.colorIds?.indexOf(selectedColorId) ?? -1;
-  const selectedSizeIndex = product.sizes?.indexOf(selectedSize) ?? -1;
-  const targetSizeId = product.sizeIds?.[selectedSizeIndex] || selectedSize;
+  const selectedSizeIndex = product.sizes?.findIndex((s) => String(s).trim().toLowerCase() === String(selectedSize).trim().toLowerCase()) ?? -1;
+  const targetSizeId = selectedSizeIndex >= 0 ? product.sizeIds?.[selectedSizeIndex] || selectedSize : selectedSize;
 
   const selectedVariant = useMemo(() => {
     if (variants.length === 0) return null;
@@ -138,8 +138,17 @@ export default function ProductDetailsClient({
       const matchColor =
         !product.colorIds?.length ||
         v.colorId === selectedColorId ||
-        (selectedColorDoc && (v.colorName === selectedColorDoc.name || v.colorId === selectedColorDoc.id));
-      const matchSize = v.sizeId === targetSizeId || v.sizeName === selectedSize;
+        String(v.colorId || '').trim().toLowerCase() === String(selectedColorId || '').trim().toLowerCase() ||
+        (selectedColorDoc && (
+          v.colorName === selectedColorDoc.name ||
+          v.colorId === selectedColorDoc.id ||
+          String(v.colorName || '').trim().toLowerCase() === String(selectedColorDoc.name || '').trim().toLowerCase()
+        ));
+      const matchSize =
+        v.sizeId === targetSizeId ||
+        v.sizeName === selectedSize ||
+        String(v.sizeId || '').trim().toLowerCase() === String(targetSizeId || '').trim().toLowerCase() ||
+        String(v.sizeName || '').trim().toLowerCase() === String(selectedSize || '').trim().toLowerCase();
       return matchColor && matchSize;
     });
   }, [variants, product.colorIds, selectedColorId, selectedColorDoc, targetSizeId, selectedSize]);

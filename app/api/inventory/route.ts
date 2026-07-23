@@ -12,8 +12,28 @@ export async function GET(req: NextRequest) {
     const varCol = collection(db, 'product-variants');
     let snapshot;
     if (productId) {
+      // Try string match first (most common)
       const q = query(varCol, where('productId', '==', productId));
       snapshot = await getDocs(q);
+
+      // If no results, try numeric match (in case stored as number)
+      if (snapshot.empty && !isNaN(Number(productId))) {
+        const qNum = query(varCol, where('productId', '==', Number(productId)));
+        snapshot = await getDocs(qNum);
+      }
+
+      // If still empty, fetch all and filter by both string/number comparison
+      if (snapshot.empty) {
+        const allSnap = await getDocs(varCol);
+        const allVariants: ProductVariantDocument[] = [];
+        allSnap.forEach((docSnap) => {
+          const data = docSnap.data() as ProductVariantDocument;
+          if (String(data.productId) === String(productId)) {
+            allVariants.push(data);
+          }
+        });
+        return NextResponse.json({ variants: allVariants });
+      }
     } else {
       snapshot = await getDocs(varCol);
     }
