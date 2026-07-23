@@ -13,8 +13,8 @@ export const shippingInfoSchema = z.object({
 
 // Cart Item Schema
 export const checkoutItemSchema = z.object({
-  id: z.string().optional(),
-  productId: z.string().optional(),
+  id: z.union([z.string(), z.number()]).optional(),
+  productId: z.union([z.string(), z.number()]).optional(),
   variantId: z.string().min(1, 'Inventory variant ID is required.'),
   name: z.string().min(1, 'Product name is required.'),
   price: z.number().nonnegative('Price must be non-negative.'),
@@ -30,7 +30,7 @@ export const checkoutItemSchema = z.object({
 export const checkoutInputSchema = z.object({
   shippingInfo: shippingInfoSchema,
   shipCost: z.number().nonnegative().optional().default(0),
-  payMethod: z.enum(['cod', 'online', 'card']).optional().default('cod'),
+  payMethod: z.string().optional().default('Cash on Delivery'),
   items: z.array(checkoutItemSchema).min(1, 'Cart is empty. Select items to proceed.'),
   ownerId: z.string().nullable().optional(),
   promoCodeApplied: z.string().nullable().optional(),
