@@ -4,6 +4,8 @@ import { db } from '../../../lib/firebase';
 import { verifyFirebaseUser } from '../../../lib/serverAuth';
 import { generatePublicTrackingId, toNormalizedEmail } from '../../../lib/order-tracking';
 import { queueOrderNotification } from '../../../lib/server/orders';
+import { checkoutInputSchema } from '../../../lib/validations/api-schemas';
+import { sendCustomerOrderReceipt, sendAdminOrderNotification } from '../../../lib/server/email';
 
 const PROMOTIONS_COL = 'promotions';
 const REDEMPTIONS_COL = 'promotion-redemptions';
@@ -12,23 +14,22 @@ const USAGE_COL = 'promotion-user-usage';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { shippingInfo, shipCost, payMethod, items, ownerId: requestedOwnerId, promoCodeApplied } = body;
+
+    // 1. Strict Zod Schema Input Validation
+    const validationResult = checkoutInputSchema.safeParse(body);
+    if (!validationResult.success) {
+      const firstError = validationResult.error.issues[0]?.message || 'Invalid checkout payload.';
+      return NextResponse.json({ error: firstError, details: validationResult.error.format() }, { status: 400 });
+    }
+
+    const { shippingInfo, shipCost, payMethod, items, ownerId: requestedOwnerId, promoCodeApplied } = validationResult.data;
     const verifiedUser = await verifyFirebaseUser(request);
     const ownerId = verifiedUser?.uid || null;
     if (requestedOwnerId && requestedOwnerId !== ownerId) {
       return NextResponse.json({ error: 'Your login session could not be verified. Please sign in again.' }, { status: 401 });
     }
     
-    if (!Array.isArray(items) || !items.length) {
-      return NextResponse.json({ error: 'Cart is empty.' }, { status: 400 });
-    }
-    if (!shippingInfo?.name || !shippingInfo?.address || !shippingInfo?.email) {
-      return NextResponse.json({ error: 'Incomplete shipping information.' }, { status: 400 });
-    }
     const normalizedCheckoutEmail = toNormalizedEmail(shippingInfo.email);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedCheckoutEmail)) {
-      return NextResponse.json({ error: 'A valid checkout email address is required.' }, { status: 400 });
-    }
     if (items.some(item => !item.variantId)) {
       return NextResponse.json({ error: 'One or more cart items have no inventory variant. Add them again.' }, { status: 400 });
     }
@@ -466,6 +467,23 @@ export async function POST(request: NextRequest) {
         template: 'order-confirmation',
         templateData: { customerName: order.customer.name, orderId: order.orderId, trackingId: order.publicTrackingId, trackingPath: `/track-order?order=${order.publicTrackingId}`, total: order.total, estimatedDeliveryAt: order.estimatedDeliveryAt },
       });
+
+      // Send transactional customer receipt & admin notification email
+      const emailPayload = {
+        orderId: order.orderId,
+        publicTrackingId: order.publicTrackingId,
+        customerName: order.customer?.name || 'Valued Customer',
+        customerEmail: order.customerEmailNormalized,
+        shippingAddress: order.customer?.address || '',
+        city: order.customer?.city || '',
+        items: order.items.map((i: any) => ({ name: i.name, size: i.size, color: i.color, price: i.price, quantity: i.qty })),
+        subtotal: order.subtotal,
+        shipCost: order.shippingCost,
+        totalAmount: order.total,
+        createdAt: order.createdAt,
+      };
+      sendCustomerOrderReceipt(emailPayload).catch(err => console.error('[Resend Customer Email Error]:', err));
+      sendAdminOrderNotification(emailPayload).catch(err => console.error('[Resend Admin Alert Error]:', err));
     } catch (notificationError) {
       console.error('[Checkout] Confirmation notification could not be queued:', notificationError);
     }
