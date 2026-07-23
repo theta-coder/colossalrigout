@@ -40,18 +40,23 @@ export default function QuickAddModal({ product, onClose, onAddToCart }: QuickAd
   }, [quickSize, quickColor, product.id]);
 
   useEffect(() => {
-    // Fetch variants specific to this product using the dedicated inventory API
-    fetch(`/api/inventory?productId=${encodeURIComponent(String(product.id))}`)
+    // Use the same endpoint as ProductDetailsClient which works on the detail page
+    fetch('/api/commerce/inventory')
       .then((res) => res.json())
       .then((payload) => {
-        // /api/inventory returns { variants: [...] }
-        if (Array.isArray(payload.variants)) {
-          setVariants(payload.variants);
+        // /api/commerce/inventory returns { success: true, data: [...] }
+        if (payload.success && Array.isArray(payload.data)) {
+          const matching = payload.data.filter(
+            (v: any) => String(v.productId) === String(product.id) && v.active !== false
+          );
+          setVariants(matching);
           return;
         }
-        // Fallback: /api/commerce/inventory returns { success: true, data: [...] }
-        if (payload.success && Array.isArray(payload.data)) {
-          setVariants(payload.data.filter((variant: any) => String(variant.productId) === String(product.id)));
+        // Fallback: /api/inventory returns { variants: [...] }
+        if (Array.isArray(payload.variants)) {
+          setVariants(
+            payload.variants.filter((v: any) => String(v.productId) === String(product.id))
+          );
         }
       })
       .catch(() => setVariants([]));
