@@ -101,6 +101,17 @@ export async function sendCustomerOrderReceipt(order: OrderEmailData) {
 
     if (error) {
       console.error(`Resend Customer Email Error for ${order.orderId}:`, error);
+      // Resend Free Tier restriction: onboarding@resend.dev can only send to registered Resend account owner.
+      // If customer email is different, fallback send to adminEmail so the receipt can be inspected during testing.
+      if (order.customerEmail !== adminEmail) {
+        console.log(`[Resend Test Mode Fallback]: Forwarding customer receipt for ${order.customerEmail} to ${adminEmail}`);
+        await resend.emails.send({
+          from: `Colossal Rigout <${fromEmail}>`,
+          to: [adminEmail],
+          subject: `[Customer Copy for ${order.customerEmail}] Order Confirmation #${order.orderId} — Colossal Rigout`,
+          html,
+        });
+      }
       return { success: false, error };
     }
     return { success: true, data };
