@@ -176,21 +176,32 @@ export async function POST(request: NextRequest) {
 
       // Process items and calculate pricing
       for (const item of items) {
-        const [variantSnapshot, productSnapshot] = await Promise.all([
-          transaction.get(doc(db, 'product-variants', item.variantId)),
-          transaction.get(doc(db, 'products', String(item.id)))
-        ]);
+        const productRef = doc(db, 'products', String(item.id));
+        const variantRef = item.variantId ? doc(db, 'product-variants', item.variantId) : null;
+        
+        const productSnapshot = await transaction.get(productRef);
+        const variantSnapshot = variantRef ? await transaction.get(variantRef) : null;
 
-        if (!variantSnapshot.exists() || !productSnapshot.exists()) {
+        if (!productSnapshot.exists()) {
           throw new Error(`${item.name} is no longer available.`);
         }
 
-        const variant = variantSnapshot.data();
         const product = productSnapshot.data();
+        const variant = variantSnapshot && variantSnapshot.exists() ? variantSnapshot.data() : null;
         const quantity = Math.max(1, Number(item.qty || 1));
-        const stockOnHand = Number(variant.stockOnHand ?? variant.stock ?? variant.availableStock ?? 0);
-        const reservedStock = Number(variant.reservedStock ?? variant.reserved ?? 0);
-        const available = Number(variant.availableStock ?? Math.max(stockOnHand - reservedStock, 0));
+
+        let available = 999;
+        if (variant) {
+          const stockOnHand = Number(variant.stockOnHand ?? variant.stock ?? variant.availableStock ?? 0);
+          const reservedStock = Number(variant.reservedStock ?? variant.reserved ?? 0);
+          available = Number(variant.availableStock ?? Math.max(stockOnHand - reservedStock, 0));
+        } else if (typeof product.totalStock === 'number') {
+          available = product.totalStock;
+        } else if (typeof product.stock === 'number') {
+          available = product.stock;
+        } else if (product.inStock === false) {
+          available = 0;
+        }
 
         if (available < quantity) {
           throw new Error(`Only ${available} units of ${item.name} are available.`);
@@ -333,7 +344,7 @@ export async function POST(request: NextRequest) {
       }
 
       const finalSubtotal = Math.max(0, rawSubtotal);
-      const serverShippingCost = retailSubtotal >= 75 ? 0 : 5;
+      const serverShippingCost = typeof shipCost === 'number' ? Math.max(0, Number(shipCost)) : 0;
       const deliveryDays = 6;
       const deliveryDate = new Date(); 
       deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
