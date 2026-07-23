@@ -7,6 +7,8 @@ import { ToastProvider } from '../context/ToastContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { getAnnouncementSettings, getFooterSettings } from '../lib/server/storefront-settings';
+import WhatsAppFloatingButton from '../components/WhatsAppFloatingButton';
+import GoogleAnalytics from '../components/GoogleAnalytics';
 import './globals.css';
 
 const poppins = Poppins({
@@ -132,6 +134,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
+        <GoogleAnalytics />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script
@@ -152,6 +155,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Header announcement={announcement} />
                   <main className="flex-grow">{children}</main>
                   <Footer settings={footer} />
+                  <WhatsAppFloatingButton />
                 </div>
               </CartProvider>
             </ProductsProvider>

@@ -327,18 +327,29 @@ export async function queueOrderNotification(input: {
   const storedTemplateData = { ...input.templateData };
   if ('code' in storedTemplateData) storedTemplateData.code = '[REDACTED]';
   await setDoc(ref, { id: ref.id, ...input, templateData: storedTemplateData, status: 'queued', attempts: 0, createdAt: now, updatedAt: now });
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.ORDER_EMAIL_FROM;
-  if (apiKey && from) {
+
+  // Send via Nodemailer Gmail
+  const gmailUser = process.env.GMAIL_USER || 'colossalrigout@gmail.com';
+  const gmailAppPass = process.env.GMAIL_APP_PASSWORD;
+  if (gmailAppPass) {
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.default.createTransport({
+      service: 'gmail',
+      auth: { user: gmailUser, pass: gmailAppPass },
+    });
     const escape = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char] || char));
     const subject = input.template === 'claim-guest-orders-otp' ? 'Your Colossal Rigout verification code' : input.template === 'order-confirmation' ? `Order ${escape(input.orderId)} confirmed` : `Order ${escape(input.orderId)} status updated`;
     const body = input.template === 'claim-guest-orders-otp'
       ? `<h2>Verify your guest orders</h2><p>Your verification code is <strong>${escape(input.templateData.code)}</strong>. It expires in 10 minutes.</p>`
       : `<h2>${escape(input.templateData.title || 'Order update')}</h2><p>${escape(input.templateData.description || '')}</p><p>Order: <strong>${escape(input.orderId)}</strong></p><p>Tracking ID: <strong>${escape(input.templateData.trackingId)}</strong></p>`;
     try {
-      const response = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ from, to: [input.recipient], subject, html: body }) });
-      const result = await response.json();
-      await updateDoc(ref, { status: response.ok ? 'sent' : 'failed', attempts: 1, providerMessageId: result.id || null, lastError: response.ok ? null : String(result.message || 'Email provider rejected request'), updatedAt: new Date().toISOString() });
+      await transporter.sendMail({
+        from: `"Colossal Rigout" <${gmailUser}>`,
+        to: input.recipient,
+        subject,
+        html: body,
+      });
+      await updateDoc(ref, { status: 'sent', attempts: 1, updatedAt: new Date().toISOString() });
     } catch (error: any) {
       await updateDoc(ref, { status: 'failed', attempts: 1, lastError: String(error.message || 'Email delivery failed'), updatedAt: new Date().toISOString() });
     }

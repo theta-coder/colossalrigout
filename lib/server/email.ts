@@ -1,10 +1,23 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.ORDER_EMAIL_FROM || 'orders@colossalrigout.pk';
+const gmailUser = process.env.GMAIL_USER || 'colossalrigout@gmail.com';
+const gmailAppPass = process.env.GMAIL_APP_PASSWORD || '';
 const adminEmail = process.env.ADMIN_ALERT_EMAIL || 'who1sdanish011@gmail.com';
 
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+// Create Gmail transporter using App Password
+function getTransporter() {
+  if (!gmailAppPass) {
+    console.warn('[Email] GMAIL_APP_PASSWORD not set. Emails will be skipped.');
+    return null;
+  }
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailAppPass,
+    },
+  });
+}
 
 export interface OrderEmailData {
   orderId: string;
@@ -28,12 +41,14 @@ export interface OrderEmailData {
 
 /** Sends a styled HTML Order Receipt to the customer */
 export async function sendCustomerOrderReceipt(order: OrderEmailData) {
-  if (!resend) {
-    console.log(`[Email Service Notice]: RESEND_API_KEY is not set. Order email skipped for ${order.orderId}.`);
-    return { success: false, reason: 'RESEND_API_KEY missing' };
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.log(`[Email] GMAIL_APP_PASSWORD not set. Order email skipped for ${order.orderId}.`);
+    return { success: false, reason: 'GMAIL_APP_PASSWORD missing' };
   }
 
-  const trackingUrl = `https://colossalrigout.pk/track-order?trackingId=${encodeURIComponent(order.publicTrackingId)}&email=${encodeURIComponent(order.customerEmail)}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.vercel.app';
+  const trackingUrl = `${siteUrl}/track-order?trackingId=${encodeURIComponent(order.publicTrackingId)}&email=${encodeURIComponent(order.customerEmail)}`;
 
   const itemsHtml = order.items.map(item => `
     <tr>
@@ -87,43 +102,29 @@ export async function sendCustomerOrderReceipt(order: OrderEmailData) {
       </div>
 
       <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0 15px 0;" />
-      <p style="font-size: 11px; color: #888; text-align: center;">If you have any questions, contact us at support@colossalrigout.pk.</p>
+      <p style="font-size: 11px; color: #888; text-align: center;">If you have any questions, contact us at colossalrigout@gmail.com or WhatsApp: 0322-0714148</p>
     </div>
   `;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: `Colossal Rigout <${fromEmail}>`,
-      to: [order.customerEmail],
+    await transporter.sendMail({
+      from: `"Colossal Rigout" <${gmailUser}>`,
+      to: order.customerEmail,
       subject: `Order Confirmation #${order.orderId} — Colossal Rigout`,
       html,
     });
-
-    if (error) {
-      console.error(`Resend Customer Email Error for ${order.orderId}:`, error);
-      // Resend Free Tier restriction: onboarding@resend.dev can only send to registered Resend account owner.
-      // If customer email is different, fallback send to adminEmail so the receipt can be inspected during testing.
-      if (order.customerEmail !== adminEmail) {
-        console.log(`[Resend Test Mode Fallback]: Forwarding customer receipt for ${order.customerEmail} to ${adminEmail}`);
-        await resend.emails.send({
-          from: `Colossal Rigout <${fromEmail}>`,
-          to: [adminEmail],
-          subject: `[Customer Copy for ${order.customerEmail}] Order Confirmation #${order.orderId} — Colossal Rigout`,
-          html,
-        });
-      }
-      return { success: false, error };
-    }
-    return { success: true, data };
+    console.log(`[Email] Customer receipt sent to ${order.customerEmail} for order ${order.orderId}`);
+    return { success: true };
   } catch (err: any) {
-    console.error(`Error sending customer email:`, err);
+    console.error(`[Email] Error sending customer email for ${order.orderId}:`, err.message);
     return { success: false, error: err.message };
   }
 }
 
 /** Sends an instant notification email to Admin on new orders */
 export async function sendAdminOrderNotification(order: OrderEmailData) {
-  if (!resend) return { success: false, reason: 'RESEND_API_KEY missing' };
+  const transporter = getTransporter();
+  if (!transporter) return { success: false, reason: 'GMAIL_APP_PASSWORD missing' };
 
   const html = `
     <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0;">
@@ -132,20 +133,21 @@ export async function sendAdminOrderNotification(order: OrderEmailData) {
       <p><strong>Shipping Address:</strong> ${order.shippingAddress}, ${order.city}</p>
       <p><strong>Total Value:</strong> Rs. ${order.totalAmount.toLocaleString()}</p>
       <p><strong>Items Ordered:</strong> ${order.items.length}</p>
-      <a href="https://colossalrigout.pk/admin" style="display: inline-block; background: #000; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-top: 10px;">View Order in Admin Dashboard</a>
+      <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.vercel.app'}/admin" style="display: inline-block; background: #000; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-top: 10px;">View Order in Admin Dashboard</a>
     </div>
   `;
 
   try {
-    await resend.emails.send({
-      from: `Colossal Rigout Admin <${fromEmail}>`,
-      to: [adminEmail],
+    await transporter.sendMail({
+      from: `"Colossal Rigout Admin" <${gmailUser}>`,
+      to: adminEmail,
       subject: `🚨 NEW ORDER #${order.orderId} - Rs. ${order.totalAmount.toLocaleString()}`,
       html,
     });
+    console.log(`[Email] Admin notification sent for order ${order.orderId}`);
     return { success: true };
   } catch (err: any) {
-    console.error("Admin Email Notification Error:", err);
+    console.error('[Email] Admin notification error:', err.message);
     return { success: false };
   }
 }
