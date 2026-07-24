@@ -6,7 +6,9 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult, 
   GoogleAuthProvider,
   updateProfile,
   User as FirebaseUser
@@ -48,6 +50,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Check for Google Auth Redirect Result on load
+  useEffect(() => {
+    getRedirectResult(auth).then(async (result) => {
+      if (result?.user) {
+        const user = result.user;
+        const userName = user.displayName || user.email?.split('@')[0] || 'Google User';
+        const userEmail = user.email || '';
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, {
+          uid: user.uid,
+          name: userName,
+          email: userEmail,
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+
+        const localUser = { name: userName, email: userEmail, uid: user.uid };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cr_local_user', JSON.stringify(localUser));
+        }
+        setCurrentUser(localUser);
+      }
+    }).catch((err) => console.error("Google Redirect Result Error:", err));
+  }, []);
+
   // Monitor Firebase Authentication State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
@@ -61,7 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = userDoc.data();
             if (data.name) name = data.name;
           } else {
-            // Write to Firestore profile without password field
             await setDoc(doc(db, 'users', firebaseUser.uid), {
               uid: firebaseUser.uid,
               name,
@@ -139,13 +164,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // 1. Create User via Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
       const user = userCredential.user;
 
       await updateProfile(user, { displayName: cleanName });
 
-      // 2. Save User Profile in Firestore (NO PLAINTEXT PASSWORD)
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
         uid: user.uid,
@@ -181,9 +204,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      const userCredential = await signInWithPopup(auth, provider);
-      const user = userCredential.user;
+      provider.setCustomParameters({ prompt: 'select_account' });
+      let userCredential;
+      try {
+        userCredential = await signInWithPopup(auth, provider);
+      } catch (popupErr: any) {
+        console.warn("signInWithPopup error/closed, checking error code...", popupErr);
+        if (popupErr.code === 'auth/unauthorized-domain') {
+          const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'domain';
+          return {
+            success: false,
+            message: `Domain '${currentHost}' is not authorized in Firebase. Add it in Firebase Console > Authentication > Settings > Authorized Domains.`
+          };
+        }
+        // Attempt redirect mode fallback
+        await signInWithRedirect(auth, provider);
+        return { success: true, message: 'Redirecting to Google Sign-In...' };
+      }
 
+      const user = userCredential.user;
       const userName = user.displayName || user.email?.split('@')[0] || 'Google User';
       const userEmail = user.email || '';
 
@@ -207,7 +246,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       let errorMsg = 'Google Sign-In failed.';
       if (e.code === 'auth/popup-closed-by-user') {
-        errorMsg = 'Google Sign-In popup was closed.';
+        errorMsg = 'Google Sign-In popup was closed. Please try again.';
+      } else if (e.code === 'auth/unauthorized-domain') {
+        const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'domain';
+        errorMsg = `Domain '${currentHost}' is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.`;
       } else if (e.message) {
         errorMsg = e.message;
       }
