@@ -91,6 +91,9 @@ export const metadata: Metadata = {
     icon: '/colossal-rigout-logo.png',
     apple: '/colossal-rigout-logo.png',
   },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'rXPhCkZA34nZd-R4RJgSBtK20Ixux201lyp5ErZ8AIs',
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
