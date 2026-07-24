@@ -12,6 +12,7 @@ import { getEffectiveProductPrice } from '@/lib/shop-filters';
 import ColorSwatch from '@/components/ui/ColorSwatch';
 import ProductPolicySummary from '@/components/product/ProductPolicySummary';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import RecentlyViewedProducts, { recordRecentlyViewed } from '@/components/product/RecentlyViewedProducts';
 import { ShippingPolicySettings } from '@/lib/shipping-policy';
 import { ReturnsPolicySettings } from '@/lib/returns-policy';
 import ProductImageGallery, { GalleryItem } from '@/components/product/ProductImageGallery';
@@ -99,6 +100,11 @@ export default function ProductDetailsClient({
     availableColors.forEach((c) => map.set(c.name.toLowerCase().trim(), c));
     return map;
   }, [availableColors]);
+
+  // Record product in Recently Viewed history
+  useEffect(() => {
+    recordRecentlyViewed(product);
+  }, [product]);
 
   // Resolved colors for this product
   const productColors = useMemo(() => {
@@ -906,6 +912,9 @@ export default function ProductDetailsClient({
           <RelatedProducts products={relatedProducts} colorsById={colorById} />
         </div>
       )}
+
+      {/* Recently Viewed Products Section */}
+      <RecentlyViewedProducts currentProductId={product.id} />
 
       {/* Size Guide Modal */}
       {sizeGuideOpen && sizeGuide && (

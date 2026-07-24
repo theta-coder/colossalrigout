@@ -9,6 +9,7 @@ import { formatPkr } from '@/lib/utils';
 import { Product } from '@/lib/products';
 import { ColorDocument } from '@/types/commerce';
 import RelatedProducts from '@/components/product/RelatedProducts';
+import RecentlyViewedProducts from '@/components/product/RecentlyViewedProducts';
 import CartSkeleton from '@/components/cart/CartSkeleton';
 import { defaultShippingSettings, ShippingPolicySettings } from '@/lib/shipping-policy';
 
@@ -165,6 +166,9 @@ export default function CartPage() {
       {recommendationsLoading ? <div className="mt-16 text-center text-xs text-neutral-500">Loading best sellers…</div> : recommendations.length > 0 && (
         <div className="mt-16"><RelatedProducts products={recommendations} colorsById={colorsById} title="BEST SELLERS" /></div>
       )}
+
+      {/* Recently Viewed Products */}
+      <RecentlyViewedProducts />
     </div>
   );
 }
