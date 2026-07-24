@@ -62,8 +62,10 @@ export default function Checkout() {
     fetch('/api/shipping-policy')
       .then((res) => res.json())
       .then((payload) => {
-        if (payload.success && payload.data) {
-          setShippingSettings(payload.data);
+        if (payload.success && payload.data?.settings) {
+          setShippingSettings({ ...defaultShippingSettings, ...payload.data.settings });
+        } else if (payload.success && payload.data?.flatRate !== undefined) {
+          setShippingSettings({ ...defaultShippingSettings, ...payload.data });
         }
       })
       .catch(() => setShippingSettings(defaultShippingSettings));
@@ -77,7 +79,7 @@ export default function Checkout() {
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
   const freeThreshold = shippingSettings.freeShippingEnabled ? Number(shippingSettings.freeShippingThreshold || 0) : 0;
-  const qualifiesForFreeShipping = subtotal === 0 || (freeThreshold > 0 && subtotal >= freeThreshold);
+  const qualifiesForFreeShipping = freeThreshold > 0 && subtotal >= freeThreshold;
   const finalShipCost = qualifiesForFreeShipping ? 0 : shippingSettings.flatRateEnabled ? Number(shippingSettings.flatRate || 0) : 0;
   const discount = subtotal * promoDiscount;
   const total = Math.max(subtotal + finalShipCost - discount, 0);
