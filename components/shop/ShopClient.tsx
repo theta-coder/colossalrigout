@@ -64,38 +64,22 @@ function ShopContent() {
   const [campaignDetails, setCampaignDetails] = useState<any | null>(null);
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [activeSaleCampaign, setActiveSaleCampaign] = useState<any | null>(null);
+  const [serverNow, setServerNow] = useState<string>(new Date().toISOString());
 
   useEffect(() => {
     fetch('/api/promo-campaigns/active')
       .then((res) => res.json())
       .then((payload) => {
-        const list = Array.isArray(payload) ? payload : Array.isArray(payload.data) ? payload.data : [];
+        if (payload?.serverNow) setServerNow(payload.serverNow);
+        const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
         if (list.length > 0) {
           setActiveSaleCampaign(list[0]);
         } else {
-          setActiveSaleCampaign({
-            id: 'mid-season-sale',
-            badgeText: 'LIMITED TIME ONLY',
-            heading: 'Mid Season Sale',
-            description: 'this is summer sale',
-            highlightText: 'FLAT 30% SALE',
-            ctaText: 'SHOP THE SALE',
-            endsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-            backgroundImageUrl: '/colossal-rigout-logo.png',
-          });
+          setActiveSaleCampaign(null);
         }
       })
       .catch(() => {
-        setActiveSaleCampaign({
-          id: 'mid-season-sale',
-          badgeText: 'LIMITED TIME ONLY',
-          heading: 'Mid Season Sale',
-          description: 'this is summer sale',
-          highlightText: 'FLAT 30% SALE',
-          ctaText: 'SHOP THE SALE',
-          endsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          backgroundImageUrl: '/colossal-rigout-logo.png',
-        });
+        setActiveSaleCampaign(null);
       });
   }, []);
 
@@ -689,7 +673,7 @@ function ShopContent() {
     <div className="max-w-7xl mx-auto px-4 pb-16">
       {activeSaleCampaign && (
         <div className="my-4 rounded-2xl overflow-hidden shadow-md">
-          <PromoCampaignClient campaign={activeSaleCampaign} serverNow={new Date().toISOString()} compact />
+          <PromoCampaignClient campaign={activeSaleCampaign} serverNow={serverNow} compact />
         </div>
       )}
 
