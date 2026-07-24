@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { collection, getDocs, getDoc, doc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const CAMPAIGNS_COL = 'promo-campaigns';
 const IMAGES_COL = 'promo-campaign-images';
 

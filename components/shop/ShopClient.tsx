@@ -67,13 +67,20 @@ function ShopContent() {
   const [serverNow, setServerNow] = useState<string>(new Date().toISOString());
 
   useEffect(() => {
-    fetch('/api/promo-campaigns/active')
+    fetch('/api/promo-campaigns/active', { cache: 'no-store' })
       .then((res) => res.json())
       .then((payload) => {
         if (payload?.serverNow) setServerNow(payload.serverNow);
         const list = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : [];
         if (list.length > 0) {
-          setActiveSaleCampaign(list[0]);
+          const camp = list[0];
+          const endsMs = camp.endsAt ? new Date(camp.endsAt).getTime() : 0;
+          const serverMs = new Date(payload?.serverNow || Date.now()).getTime();
+          if (endsMs > serverMs) {
+            setActiveSaleCampaign(camp);
+          } else {
+            setActiveSaleCampaign(null);
+          }
         } else {
           setActiveSaleCampaign(null);
         }
