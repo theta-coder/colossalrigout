@@ -178,6 +178,12 @@ export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterPro
               <li>
                 <Link href="/contact" className="hover:text-white transition">Contact</Link>
               </li>
+              <li>
+                <Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-white transition">Terms &amp; Conditions</Link>
+              </li>
             </ul>
           </div>
         </div>
