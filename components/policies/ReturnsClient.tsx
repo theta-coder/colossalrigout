@@ -26,6 +26,14 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
     fetchPolicy();
   }, []);
 
+  const sanitizeText = (text?: string): string => {
+    if (!text) return '';
+    return text
+      .replace(/12-hour/gi, '2-day')
+      .replace(/12 hours/gi, '2 days')
+      .replace(/12 hour/gi, '2 day');
+  };
+
   const settings = data?.settings;
   const cta = data?.cta;
 
@@ -56,13 +64,13 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
 
       {/* MAIN POLICY CONTENT */}
       <section className="max-w-3xl mx-auto pb-16 space-y-6 animate-fade-up">
-        {/* 1. 12-HOUR RETURN WINDOW HEADER CARD */}
+        {/* 1. 2-DAY RETURN WINDOW HEADER CARD */}
         <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-8 text-center shadow-sm">
           <h2 className="font-display text-2xl font-extrabold text-neutral-900 mb-3">
-            {settings?.windowTitle || '2-Day Return Window'}
+            {sanitizeText(settings?.windowTitle) || '2-Day Return Window'}
           </h2>
           <p className="text-sm text-neutral-600 font-light leading-relaxed max-w-2xl mx-auto">
-            {settings?.windowDescription ||
+            {sanitizeText(settings?.windowDescription) ||
               'Customers may request a return or exchange within 2 days of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.'}
           </p>
         </div>

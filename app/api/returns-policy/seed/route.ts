@@ -32,7 +32,7 @@ const initialInfoSections = [
   },
   {
     title: 'Damaged or Incorrect Orders',
-    description: 'If you receive a damaged, defective, or incorrect item, contact us within 12 hours of delivery with photos. We will arrange a replacement or refund after verification.',
+    description: 'If you receive a damaged, defective, or incorrect item, contact us within 2 days of delivery with photos. We will arrange a replacement or refund after verification.',
   },
   {
     title: 'Exchange Policy',
