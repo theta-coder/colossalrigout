@@ -4,6 +4,8 @@ import ReturnsClient from '@/components/policies/ReturnsClient';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Returns & Exchanges Policy',
   description: 'Read the Colossal Rigout 12-hour return and exchange policy. Easy returns, item condition rules, and refund processing in Pakistan.',

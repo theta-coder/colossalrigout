@@ -89,11 +89,13 @@ export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterPro
   const brandAccentText = settings?.brandAccentText || DEFAULT_FOOTER_SETTINGS.brandAccentText;
   const brandDescription = settings?.brandDescription || DEFAULT_FOOTER_SETTINGS.brandDescription;
   const websiteLabel = settings?.websiteLabel || DEFAULT_FOOTER_SETTINGS.websiteLabel;
+  const currentPath = (pathname || '').toLowerCase().trim();
+  const isReturnsPage = currentPath === '/returns' || currentPath.startsWith('/returns/') || currentPath.includes('/returns');
 
   return (
     <footer className="bg-black text-white mt-0" suppressHydrationWarning>
       {/* Pillars strip */}
-      {enabledPillars.length > 0 && pathname !== '/returns' && (
+      {enabledPillars.length > 0 && !isReturnsPage && (
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-neutral-800 text-center py-8">
           {enabledPillars.map((pillar) => (
             <div key={pillar.id} className="px-6 py-3">
