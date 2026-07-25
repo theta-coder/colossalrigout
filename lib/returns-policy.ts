@@ -65,13 +65,13 @@ export interface ReturnsPolicyPayload {
 export const defaultSettings: ReturnsPolicySettings = {
   pageTitle: 'RETURNS & EXCHANGES',
   breadcrumbLabel: 'Returns & Exchanges',
-  windowTitle: '12-Hour Return Window',
-  windowDescription: 'Customers may request a return or exchange within 12 hours of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.',
+  windowTitle: '2-Day Return Window',
+  windowDescription: 'Customers may request a return or exchange within 2 days of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.',
   conditionsHeading: 'Eligible Items',
   stepsHeading: 'How to Request a Return or Exchange',
-  returnWindowDays: 1,
+  returnWindowDays: 2,
   productPageEnabled: true,
-  productPageSummary: 'Easy returns within 12 hours of receiving your order. Item must meet our return conditions.',
+  productPageSummary: 'Easy returns within 2 days of receiving your order. Item must meet our return conditions.',
   active: true,
 };
 

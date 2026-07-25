@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Returns & Exchanges Policy | Colossal Rigout',
-  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Learn about item eligibility, non-returnable items, exchange policy, refunds, return shipping costs, and step-by-step return instructions in Pakistan.',
+  description: 'Read the Colossal Rigout 2-day return and exchange policy. Learn about item eligibility, non-returnable items, exchange policy, refunds, return shipping costs, and step-by-step return instructions in Pakistan.',
   keywords: [
     'Returns & Exchanges Pakistan',
     'Colossal Rigout Return Policy',
-    '12 Hour Return Window',
+    '2 Day Return Window',
     'Item Return Eligibility',
     'Pakistani Fashion Refund',
   ],
@@ -23,13 +23,13 @@ export const metadata: Metadata = {
     type: 'website',
     url: `${siteUrl}/returns`,
     title: 'Returns & Exchanges Policy | Colossal Rigout',
-    description: 'Read the Colossal Rigout 12-hour return and exchange policy in Pakistan.',
+    description: 'Read the Colossal Rigout 2-day return and exchange policy in Pakistan.',
     images: [`${siteUrl}/colossal-rigout-logo.png`],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Returns & Exchanges Policy | Colossal Rigout',
-    description: 'Read the Colossal Rigout 12-hour return and exchange policy in Pakistan.',
+    description: 'Read the Colossal Rigout 2-day return and exchange policy in Pakistan.',
   },
 };
 

@@ -59,11 +59,11 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
         {/* 1. 12-HOUR RETURN WINDOW HEADER CARD */}
         <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-8 text-center shadow-sm">
           <h2 className="font-display text-2xl font-extrabold text-neutral-900 mb-3">
-            {settings?.windowTitle || '12-Hour Return Window'}
+            {settings?.windowTitle || '2-Day Return Window'}
           </h2>
           <p className="text-sm text-neutral-600 font-light leading-relaxed max-w-2xl mx-auto">
             {settings?.windowDescription ||
-              'Customers may request a return or exchange within 12 hours of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.'}
+              'Customers may request a return or exchange within 2 days of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.'}
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
             <li>Used or washed products</li>
             <li>Products without original tags</li>
             <li>Items damaged after delivery by the customer</li>
-            <li>Items returned after the 12-hour request window</li>
+            <li>Items returned after the 2-day request window</li>
           </ul>
         </div>
 
@@ -98,7 +98,7 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
         <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
           <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Damaged or Incorrect Orders</h2>
           <p className="text-sm text-neutral-600 leading-relaxed font-light">
-            If a customer receives a damaged, defective, or incorrect item, they must contact us within 12 hours of delivery and provide their order number, clear photos, and a description of the issue. After verification, we may offer a replacement, exchange, or refund.
+            If a customer receives a damaged, defective, or incorrect item, they must contact us within 2 days of delivery and provide their order number, clear photos, and a description of the issue. After verification, we may offer a replacement, exchange, or refund.
           </p>
         </div>
 
