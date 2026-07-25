@@ -115,7 +115,11 @@ export default function AdminNotificationBell({ onNavigate }: AdminNotificationB
   // 3. Fetch Notifications & Detect New Items
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/admin/notifications');
+      const res = await fetch('/api/admin/notifications', {
+        headers: {
+          'X-Admin-Session': '1',
+        },
+      });
       const json = await res.json();
       if (!res.ok || !json.success || !json.data?.notifications) return;
 
