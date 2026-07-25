@@ -15,6 +15,7 @@ import {
   AlertCircle,
   CheckCircle,
   FileText,
+  Truck,
 } from 'lucide-react';
 import {
   ContactPagePayload,
@@ -391,6 +392,21 @@ export default function ContactClient() {
                   ))}
                 </div>
               )}
+
+              {/* COURIER & LOGISTICS CALLOUT */}
+              <div className="bg-white border border-neutral-200 rounded-md p-6 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="bg-neutral-100 p-2 rounded-md text-neutral-800 shrink-0">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-900">Delivery &amp; Courier Partner</p>
+                    <p className="text-xs text-neutral-600 mt-1 font-light leading-relaxed">
+                      All orders are shipped nationwide across Pakistan exclusively through our trusted courier partner <strong className="font-semibold text-neutral-800">TCS</strong>. Delivery takes 3–7 business days.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {settings.mapSectionActive !== false && map && map.active !== false && (
                 <div className="bg-white border border-neutral-200 rounded-md overflow-hidden shadow-sm">

@@ -130,6 +130,9 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
         <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm space-y-3">
           <h2 className="font-display text-xl font-bold text-neutral-900 tracking-wide">Return Shipping</h2>
           <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            Approved returns and exchange shipments across Pakistan are handled through our authorized courier partner <strong className="font-semibold text-neutral-800">TCS</strong>.
+          </p>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
             If the return is caused by our mistake, such as a wrong, damaged, or defective item, Colossal Rigout will bear the reasonable return shipping cost.
           </p>
           <p className="text-sm text-neutral-600 leading-relaxed font-light">
