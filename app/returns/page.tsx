@@ -8,11 +8,11 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Returns & Exchanges Policy | Colossal Rigout',
-  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Eligible items, exchange rules, refund timelines, and return instructions in Pakistan.',
+  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Learn about item eligibility, non-returnable items, exchange policy, refunds, return shipping costs, and step-by-step return instructions in Pakistan.',
   keywords: [
-    'Returns Policy Pakistan',
-    'Colossal Rigout Exchange',
-    '12 Hour Return Policy',
+    'Returns & Exchanges Pakistan',
+    'Colossal Rigout Return Policy',
+    '12 Hour Return Window',
     'Item Return Eligibility',
     'Pakistani Fashion Refund',
   ],
