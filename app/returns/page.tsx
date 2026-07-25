@@ -7,11 +7,12 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Returns & Exchanges Policy',
-  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Easy returns, item condition rules, and refund processing in Pakistan.',
+  title: 'Returns & Exchanges Policy | Colossal Rigout',
+  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Eligible items, exchange rules, refund timelines, and return instructions in Pakistan.',
   keywords: [
     'Returns Policy Pakistan',
     'Colossal Rigout Exchange',
+    '12 Hour Return Policy',
     'Item Return Eligibility',
     'Pakistani Fashion Refund',
   ],

@@ -3,41 +3,35 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldAlert, HelpCircle, RefreshCw, AlertCircle, RotateCcw } from 'lucide-react';
 import { ReturnsPolicyPayload, validateInternalPath } from '../../lib/returns-policy';
 
-export default function ReturnsClient() {
-  const [data, setData] = useState<ReturnsPolicyPayload | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchPolicy = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/returns-policy');
-      const json = await res.json();
-      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to load returns policy.');
-      setData(json.data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load returns policy.');
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function ReturnsClient({ initialData }: { initialData?: ReturnsPolicyPayload | null }) {
+  const [data, setData] = useState<ReturnsPolicyPayload | null>(initialData || null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    const fetchPolicy = async () => {
+      try {
+        const res = await fetch('/api/returns-policy');
+        const json = await res.json();
+        if (res.ok && json.success && json.data) {
+          setData(json.data);
+        }
+      } catch {
+        // Fall back to initial/default content gracefully
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchPolicy();
   }, []);
 
   const settings = data?.settings;
-  const conditions = data?.conditions || [];
-  const steps = data?.steps || [];
-  const infoSections = data?.infoSections || [];
   const cta = data?.cta;
 
   return (
     <div className="max-w-7xl mx-auto px-4 pb-16">
+      {/* HERO BANNER */}
       <section className="relative h-40 sm:h-56 md:h-64 overflow-hidden -mx-4">
         <Image
           src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1920&q=80"
@@ -54,141 +48,148 @@ export default function ReturnsClient() {
         </div>
       </section>
 
+      {/* BREADCRUMBS */}
       <div className="py-4 text-xs sm:text-sm text-neutral-500">
         <Link href="/" className="hover:text-black">Home</Link> <span className="mx-1">/</span>{' '}
         <span className="text-neutral-900 font-medium">{settings?.breadcrumbLabel || 'Returns & Exchanges'}</span>
       </div>
 
-      {loading && (
-        <section className="max-w-3xl mx-auto pb-16">
-          <div className="flex items-center justify-center py-20">
-            <RefreshCw className="w-5 h-5 animate-spin text-neutral-400 mr-2" />
-            <span className="text-sm text-neutral-500">Loading returns policy…</span>
-          </div>
-        </section>
-      )}
+      {/* MAIN POLICY CONTENT */}
+      <section className="max-w-3xl mx-auto pb-16 space-y-6 animate-fade-up">
+        {/* 1. 12-HOUR RETURN WINDOW HEADER CARD */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-8 text-center shadow-sm">
+          <h2 className="font-display text-2xl font-extrabold text-neutral-900 mb-3">
+            {settings?.windowTitle || '12-Hour Return Window'}
+          </h2>
+          <p className="text-sm text-neutral-600 font-light leading-relaxed max-w-2xl mx-auto">
+            {settings?.windowDescription ||
+              'Customers may request a return or exchange within 12 hours of receiving their order. The request must be submitted through our Contact page. Items must remain unused, unwashed, and in their original condition with all tags and packaging attached.'}
+          </p>
+        </div>
 
-      {!loading && error && (
-        <section className="max-w-3xl mx-auto pb-16">
-          <div className="text-center py-12 bg-white rounded-md border border-neutral-200">
-            <AlertCircle className="w-6 h-6 text-red-500 mx-auto mb-2" />
-            <p className="text-sm text-neutral-600 mb-3">{error}</p>
-            <button
-              onClick={fetchPolicy}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-black text-white px-4 py-2 rounded-md hover:bg-neutral-800 transition"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              Try Again
-            </button>
-          </div>
-        </section>
-      )}
+        {/* 2. ELIGIBLE ITEMS */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">
+            {settings?.conditionsHeading || 'Eligible Items'}
+          </h2>
+          <p className="text-sm text-neutral-700 font-medium mb-3">Products are eligible only if:</p>
+          <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
+            <li>Unused and unwashed</li>
+            <li>Original tags attached</li>
+            <li>Original packaging included</li>
+            <li>No signs of wear, alteration, fragrance, stains, or customer-caused damage</li>
+          </ul>
+        </div>
 
-      {!loading && !error && settings && !settings.active && (
-        <section className="max-w-3xl mx-auto pb-16">
-          <div className="text-center py-16 bg-neutral-50 rounded-xl border border-neutral-200">
-            <RotateCcw className="w-8 h-8 text-neutral-400 mx-auto mb-3" />
-            <h3 className="font-display text-lg font-bold text-neutral-900">Returns Policy Updating</h3>
-            <p className="text-sm text-neutral-500 mt-2 max-w-sm mx-auto font-light">
-              Our returns policy is currently being updated. Please contact our support team for any queries regarding your order.
-            </p>
-            <div className="mt-6">
-              <Link href="/contact" className="inline-block bg-black text-white text-xs font-bold px-6 py-2.5 rounded-md hover:bg-neutral-800 transition">
-                CONTACT SUPPORT
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
+        {/* 3. NON-RETURNABLE ITEMS */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Non-Returnable Items</h2>
+          <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
+            <li>Sale or clearance products</li>
+            <li>Gift cards</li>
+            <li>Used or washed products</li>
+            <li>Products without original tags</li>
+            <li>Items damaged after delivery by the customer</li>
+            <li>Items returned after the 12-hour request window</li>
+          </ul>
+        </div>
 
-      {!loading && !error && settings && settings.active !== false && (
-        <section className="max-w-3xl mx-auto pb-16 animate-fade-up">
-          {settings.windowTitle && (
-            <div className="bg-white rounded-md border border-neutral-200 p-6 sm:p-8 mb-8 text-center shadow-sm">
-              <p className="font-display text-2xl font-extrabold text-neutral-900">{settings.windowTitle}</p>
-              {settings.windowDescription && (
-                <p className="text-sm text-neutral-600 mt-2 font-light whitespace-pre-line">
-                  {settings.windowDescription}
-                </p>
-              )}
-            </div>
-          )}
+        {/* 4. DAMAGED OR INCORRECT ORDERS */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Damaged or Incorrect Orders</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            If a customer receives a damaged, defective, or incorrect item, they must contact us within 12 hours of delivery and provide their order number, clear photos, and a description of the issue. After verification, we may offer a replacement, exchange, or refund.
+          </p>
+        </div>
 
-          {conditions.length > 0 && (
-            <div className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
-              <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-neutral-800" /> {settings.conditionsHeading || 'Eligible Items'}
-              </h2>
-              <p className="text-sm text-neutral-600 mb-3 font-light">Products are eligible only if:</p>
-              <ul className="space-y-2.5 text-sm text-neutral-600 list-disc pl-5 font-light">
-                {conditions.map((c) => (
-                  <li key={c.id}>{c.text}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+        {/* 5. EXCHANGE POLICY */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Exchange Policy</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            Eligible items may be exchanged for another size or colour, subject to stock availability. Exchanges are processed only after the returned item has been received and inspected.
+          </p>
+        </div>
 
-          {steps.length > 0 && (
-            <div className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
-              <h2 className="font-display text-xl font-bold mb-4 text-neutral-900 tracking-wide">
-                {settings.stepsHeading || 'Process Steps'}
-              </h2>
-              <ol className="space-y-5">
-                {steps.map((step, idx) => {
-                  const safePath = validateInternalPath(step.linkPath);
-                  return (
-                    <li key={step.id} className="flex gap-4 items-start">
-                      <span className="flex-none w-8 h-8 rounded-full bg-black text-white text-sm font-semibold flex items-center justify-center shadow-sm">
-                        {idx + 1}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-neutral-900">{step.title}</p>
-                        <p className="text-xs text-neutral-500 mt-0.5 font-light leading-relaxed whitespace-pre-line">
-                          {step.description}
-                          {step.linkLabel && safePath && (
-                            <>
-                              {' '}Go to{' '}
-                              <Link href={safePath} className="underline font-normal text-black hover:text-neutral-700">
-                                {step.linkLabel}
-                              </Link>
-                              .
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          )}
+        {/* 6. REFUND POLICY */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Refund Policy</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            Approved refunds are processed within 5–7 business days after inspection. The time required for the refund to appear may depend on the payment provider. Cash-on-delivery refunds may be issued through an agreed bank account or supported digital payment method.
+          </p>
+        </div>
 
-          {infoSections.map((sec) => (
-            <div key={sec.id} className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
-              <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">{sec.title}</h2>
-              <div className="text-sm text-neutral-600 leading-relaxed font-light whitespace-pre-line">
-                {sec.description}
-              </div>
-            </div>
-          ))}
+        {/* 7. RETURN SHIPPING */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm space-y-3">
+          <h2 className="font-display text-xl font-bold text-neutral-900 tracking-wide">Return Shipping</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            If the return is caused by our mistake, such as a wrong, damaged, or defective item, Colossal Rigout will bear the reasonable return shipping cost.
+          </p>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            If the customer is returning an item due to size preference, colour preference, change of mind, or another personal reason, the customer will pay the return shipping cost.
+          </p>
+        </div>
 
-          {cta && cta.active !== false && (
-            <div className="bg-black text-white rounded-md p-6 text-center shadow-lg flex flex-col items-center mt-10">
-              <HelpCircle className="w-5 h-5 text-purple-400 mb-1" />
-              <p className="font-semibold text-sm mb-1">{cta.heading || 'Still have questions?'}</p>
-              <p className="text-neutral-300 text-xs mb-4 max-w-xs font-light whitespace-pre-line">
-                {cta.description}
-              </p>
-              <Link
-                href={validateInternalPath(cta.buttonPath) || '/contact'}
-                className="inline-block bg-white text-black text-xs font-semibold px-6 py-2.5 rounded-md hover:bg-neutral-200 transition active:scale-95 shadow uppercase"
-              >
-                {cta.buttonLabel || 'CONTACT US'}
-              </Link>
-            </div>
-          )}
-        </section>
-      )}
+        {/* 8. HOW TO REQUEST A RETURN OR EXCHANGE */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-4 text-neutral-900 tracking-wide">How to Request a Return or Exchange</h2>
+          <ol className="space-y-3.5 text-sm text-neutral-600 font-light">
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">1</span>
+              <span className="leading-relaxed">Open the Contact page within 12 hours of delivery.</span>
+            </li>
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">2</span>
+              <span className="leading-relaxed">Provide your order number and contact details.</span>
+            </li>
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">3</span>
+              <span className="leading-relaxed">Explain whether you need a return or exchange.</span>
+            </li>
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">4</span>
+              <span className="leading-relaxed">Upload or send clear photos if the item is damaged, defective, or incorrect.</span>
+            </li>
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">5</span>
+              <span className="leading-relaxed">Wait for approval and return instructions.</span>
+            </li>
+            <li className="flex gap-3 items-start">
+              <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">6</span>
+              <span className="leading-relaxed">Do not send any item back before receiving approval.</span>
+            </li>
+          </ol>
+        </div>
+
+        {/* 9. IMPORTANT CONDITIONS */}
+        <div className="bg-white rounded-lg border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+          <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">Important Conditions</h2>
+          <p className="text-sm text-neutral-600 leading-relaxed font-light">
+            Returns sent without approval may not be accepted. Colossal Rigout reserves the right to reject a return if the product does not meet the stated conditions. Original delivery charges are non-refundable unless the order was incorrect, damaged, or defective.
+          </p>
+        </div>
+
+        {/* LAST UPDATED LINE */}
+        <div className="text-center pt-2 pb-2">
+          <p className="text-xs text-neutral-400 italic">Last updated: July 2026</p>
+        </div>
+
+        {/* NEED HELP SECTION */}
+        <div className="bg-black text-white rounded-lg p-6 sm:p-8 text-center shadow-lg flex flex-col items-center">
+          <h2 className="font-display text-xl font-bold mb-2">
+            {cta?.heading || 'Need Help?'}
+          </h2>
+          <p className="text-neutral-300 text-xs sm:text-sm mb-5 max-w-md font-light leading-relaxed">
+            {cta?.description || 'For return or exchange assistance, contact our support team through the Contact page.'}
+          </p>
+          <Link
+            href={validateInternalPath(cta?.buttonPath) || '/contact'}
+            aria-label="Contact Colossal Rigout support for returns and exchanges"
+            className="inline-block bg-white text-black text-xs font-bold px-7 py-3 rounded-md hover:bg-neutral-200 transition active:scale-95 shadow uppercase tracking-wider"
+          >
+            {cta?.buttonLabel || 'CONTACT US'}
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
