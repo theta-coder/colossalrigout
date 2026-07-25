@@ -24,13 +24,13 @@ export async function getProductPolicySummary(): Promise<ProductPolicySummary> {
     const shipping = shippingSnap?.exists() ? { ...defaultShippingSettings, ...shippingSnap.data() } : defaultShippingSettings;
     const returns = returnsSnap?.exists() ? { ...defaultReturnsSettings, ...returnsSnap.data() } : defaultReturnsSettings;
 
-    const freeShippingThreshold = Number(shipping.freeShippingThreshold ?? 5000);
-    const flatRate = Number(shipping.flatRate ?? 500);
-    const deliveryMinDays = Number(shipping.deliveryMinBusinessDays ?? 4);
-    const deliveryMaxDays = Number(shipping.deliveryMaxBusinessDays ?? 6);
-    const returnWindowDays = Number(returns.returnWindowDays ?? 30);
+    const freeShippingThreshold = Number(shipping.freeShippingThreshold ?? 0);
+    const flatRate = Number(shipping.flatRate ?? 0);
+    const deliveryMinDays = Number(shipping.deliveryMinBusinessDays ?? 3);
+    const deliveryMaxDays = Number(shipping.deliveryMaxBusinessDays ?? 7);
+    const returnWindowDays = Number(returns.returnWindowDays ?? 2);
 
-    const shippingText = `Free shipping on orders over ${formatPkr(freeShippingThreshold)}. Standard delivery in ${deliveryMinDays}–${deliveryMaxDays} business days for ${formatPkr(flatRate)} flat rate.${shipping.productPageNote ? ' ' + shipping.productPageNote : ''}`;
+    const shippingText = `Free nationwide delivery across Pakistan on all orders via TCS. Delivered within ${deliveryMinDays}–${deliveryMaxDays} business days.`;
     const returnsText = `Easy ${returnWindowDays}-day returns & exchanges — item must meet our return conditions with original tags attached.`;
 
     return {
@@ -44,13 +44,13 @@ export async function getProductPolicySummary(): Promise<ProductPolicySummary> {
     };
   } catch {
     return {
-      shippingText: `Free shipping on orders over ${formatPkr(5000)}. Standard delivery in 4–6 business days for ${formatPkr(500)} flat.`,
-      returnsText: 'Easy 30-day returns & exchanges — item must meet our return conditions with original tags attached.',
-      freeShippingThreshold: 5000,
-      flatRate: 500,
-      deliveryMinDays: 4,
-      deliveryMaxDays: 6,
-      returnWindowDays: 30,
+      shippingText: 'Free nationwide delivery across Pakistan on all orders via TCS. Delivered within 3–7 business days.',
+      returnsText: 'Easy 2-day returns & exchanges — item must meet our return conditions with original tags attached.',
+      freeShippingThreshold: 0,
+      flatRate: 0,
+      deliveryMinDays: 3,
+      deliveryMaxDays: 7,
+      returnWindowDays: 2,
     };
   }
 }

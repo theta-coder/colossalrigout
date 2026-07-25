@@ -4,11 +4,11 @@ import { db } from '../../../../lib/firebase';
 import { requireAdmin } from '../../../../lib/serverAuth';
 
 const defaults = [
-  ['Delivery Times','Orders are typically processed within 1–2 business days. Standard delivery takes 4–6 business days once dispatched. Delivery estimates are shown at checkout based on your location.','truck'],
-  ['Shipping Charges','Standard shipping is PKR 500 within Pakistan. Orders over PKR 5,000 qualify for free standard shipping automatically at checkout. Charges are shown before order confirmation.','dollar'],
-  ['Order Tracking','Once your order is placed, use your tracking ID together with the checkout email address on our Track Order page to follow real database status updates.','package'],
-  ['International Shipping','At this time, Colossal Rigout ships within Pakistan only. We are working on expanding to international destinations.','globe'],
-  ['Delays & Exceptions','Deliveries may occasionally be delayed due to weather, public holidays, courier disruption, or high order volume. Contact support if your order takes longer than expected.','alert'],
+  ['Delivery Times','Orders are shipped through TCS and are generally delivered within 3–7 business days across Pakistan.','truck'],
+  ['Shipping Charges','We offer free delivery across Pakistan on all products. There are no delivery charges or minimum purchase thresholds.','dollar'],
+  ['Order Tracking','Once your order is placed, use your tracking ID together with your checkout email address on our Track Order page to follow real-time status updates.','package'],
+  ['Nationwide Shipping','Colossal Rigout ships nationwide across Pakistan only via TCS.','globe'],
+  ['Delays & Exceptions','Delivery times may occasionally be affected by circumstances outside our control, including public holidays, harsh weather, remote locations, or courier transit delays.','alert'],
 ] as const;
 
 export async function POST(request: NextRequest) {

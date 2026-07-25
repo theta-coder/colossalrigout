@@ -133,7 +133,7 @@ export default function PrivacyClient() {
               We do not sell, rent, or trade your personal information to third parties for marketing purposes. Your information is shared only with trusted service partners required to operate our business:
             </p>
             <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
-              <li><strong className="font-medium text-neutral-800">Logistics &amp; Courier Companies:</strong> Delivery partners in Pakistan (such as TCS, Leopard, Trax, and CallCourier) receive your name, address, and phone number exclusively for order delivery.</li>
+              <li><strong className="font-medium text-neutral-800">Logistics &amp; Courier Partner:</strong> Orders are shipped through TCS. Necessary customer details (name, delivery address, and phone number) are shared with TCS solely for order delivery and tracking.</li>
               <li><strong className="font-medium text-neutral-800">Infrastructure Providers:</strong> Secure hosting, database, and cloud services (Vercel, Firebase) that process data under strict confidentiality standards.</li>
               <li><strong className="font-medium text-neutral-800">Legal Compliance:</strong> We may disclose information if required by law enforcement or regulatory authorities in the Islamic Republic of Pakistan.</li>
             </ul>
@@ -169,14 +169,17 @@ export default function PrivacyClient() {
                 Contact Support Page
               </Link>
               <a
-                href="mailto:support@colossalrigout.pk"
+                href="mailto:colossalrigout@gmail.com"
                 className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-neutral-300 text-neutral-800 text-xs font-bold uppercase tracking-wider rounded hover:bg-neutral-100 transition"
               >
                 Email Privacy Team
               </a>
             </div>
             <p className="text-xs text-neutral-400 mt-4 font-light">
-              Official Store Address: Gulberg III, Lahore, Pakistan &bull; Phone: +92 300 1234567
+              Official Location: Kareem Block, Iqbal Town, Lahore, Pakistan &bull; Phone:{' '}
+              <a href="tel:+923284844309" className="hover:text-neutral-900 underline">
+                03284844309
+              </a>
             </p>
           </div>
         </section>

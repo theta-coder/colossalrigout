@@ -6,10 +6,10 @@ import { requireAdmin } from '../../../lib/serverAuth';
 const COLLECTION = 'trust-benefits';
 const ICONS = ['truck', 'returns', 'shield', 'store', 'support', 'gift'] as const;
 const defaults = [
-  { id: 'free-shipping', title: 'Free Shipping', subtitle: 'On orders over PKR 5,000', icon: 'truck', order: 1, active: true },
-  { id: 'easy-returns', title: 'Easy Returns', subtitle: '30-day return policy', icon: 'returns', order: 2, active: true },
+  { id: 'free-shipping', title: 'Free Shipping', subtitle: 'On all orders across Pakistan', icon: 'truck', order: 1, active: true },
+  { id: 'easy-returns', title: 'Easy Returns', subtitle: '2-day return policy', icon: 'returns', order: 2, active: true },
   { id: 'secure-payment', title: 'Secure Payment', subtitle: '100% secure checkout', icon: 'shield', order: 3, active: true },
-  { id: 'our-store', title: 'Our Store', subtitle: 'Gulberg, Lahore & more', icon: 'store', order: 4, active: true },
+  { id: 'our-store', title: 'Our Location', subtitle: 'Iqbal Town, Lahore', icon: 'store', order: 4, active: true },
 ];
 
 const cleanId = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

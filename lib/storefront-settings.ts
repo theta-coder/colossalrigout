@@ -75,7 +75,7 @@ export interface StorefrontSettingsBundle {
 export const DEFAULT_ANNOUNCEMENT_SETTINGS: AnnouncementSettings = {
   id: 'announcement',
   enabled: true,
-  message: 'FREE SHIPPING ON ORDERS OVER PKR 5,000',
+  message: 'FREE NATIONWIDE SHIPPING ON ALL ORDERS',
   secondaryMessage: 'EASY RETURNS',
   separator: '|',
   linkLabel: '',

@@ -18,11 +18,11 @@ export default function ProductPolicySummary({
 }: ProductPolicySummaryProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const freeThreshold = shipping?.freeShippingThreshold ?? 5000;
-  const flatRate = shipping?.flatRate ?? 500;
-  const minDays = shipping?.deliveryMinBusinessDays ?? 4;
-  const maxDays = shipping?.deliveryMaxBusinessDays ?? 6;
-  const returnDays = returns?.returnWindowDays ?? 30;
+  const freeThreshold = shipping?.freeShippingThreshold ?? 0;
+  const flatRate = shipping?.flatRate ?? 0;
+  const minDays = shipping?.deliveryMinBusinessDays ?? 3;
+  const maxDays = shipping?.deliveryMaxBusinessDays ?? 7;
+  const returnDays = returns?.returnWindowDays ?? 2;
 
   return (
     <div className="border border-neutral-200 rounded-xl overflow-hidden bg-neutral-50/50">
@@ -48,12 +48,10 @@ export default function ProductPolicySummary({
             <Truck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="font-semibold text-neutral-900">
-                {shipping?.freeShippingEnabled !== false
-                  ? `Free shipping on orders over ${formatPkr(freeThreshold)}.`
-                  : `Flat rate delivery across Pakistan.`}
+                Free Nationwide Delivery Across Pakistan
               </p>
               <p className="text-neutral-500 font-light leading-relaxed">
-                Standard delivery within {minDays}–{maxDays} business days for {formatPkr(flatRate)} flat rate.
+                Shipped through TCS. Standard delivery within {minDays}–{maxDays} business days.
               </p>
               {shipping?.productPageNote && (
                 <p className="text-[11px] text-neutral-400 italic mt-1">{shipping.productPageNote}</p>

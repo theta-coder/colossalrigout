@@ -37,10 +37,10 @@ export default function FaqPage() {
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'What are the delivery charges across Pakistan?',
+        name: 'What are the delivery charges and shipping times across Pakistan?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We offer nationwide shipping across Pakistan. Orders over PKR 5,000 qualify for free delivery.',
+          text: 'We offer free delivery across Pakistan on all products. Orders are shipped through TCS and delivered within 3–7 business days.',
         },
       },
       {
@@ -48,7 +48,7 @@ export default function FaqPage() {
         name: 'What is your exchange and return policy?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We offer a hassle-free return and exchange policy within 7 days of delivery for unused items with original tags.',
+          text: 'We offer a 2-day return and exchange policy from the date of delivery for unused items in original packaging with tags attached.',
         },
       },
     ],

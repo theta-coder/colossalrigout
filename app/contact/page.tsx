@@ -44,7 +44,8 @@ export default function ContactPage() {
       contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer service',
-        email: 'support@colossalrigout.pk',
+        telephone: '+923284844309',
+        email: 'colossalrigout@gmail.com',
         areaServed: 'PK',
       },
     },

@@ -161,8 +161,8 @@ export const defaultContactSettings: ContactPageSettings = {
 
 export const defaultContactMapSettings: ContactMapSettings = {
   mapImageUrl: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80',
-  mapImageAlt: 'Gulberg Lahore Map Location',
-  mapUrl: 'https://maps.google.com/?q=Gulberg+III+Lahore+Pakistan',
+  mapImageAlt: 'Kareem Block Iqbal Town Lahore Location',
+  mapUrl: 'https://maps.google.com/?q=Kareem+Block+Iqbal+Town+Lahore+Pakistan',
   ctaLabel: 'FIND A STORE NEAR YOU',
   active: true,
 };

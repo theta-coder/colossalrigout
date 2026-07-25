@@ -84,8 +84,8 @@ export async function calculateCartQuote(
     shippingSettings = { ...defaultShippingSettings, ...shipSnap.data() };
   }
 
-  const freeThreshold = shippingSettings.freeShippingThreshold ?? 5000;
-  const flatRate = shippingSettings.flatRate ?? 500;
+  const freeThreshold = shippingSettings.freeShippingThreshold ?? 0;
+  const flatRate = shippingSettings.flatRate ?? 0;
 
   const lines: QuotedCartLine[] = [];
   let totalQty = 0;
@@ -228,10 +228,9 @@ export async function calculateCartQuote(
     }
   }
 
-  // Shipping calculation
-  const remainingForFreeShipping = Math.max(0, freeThreshold - subtotal);
-  const isFreeShipping = shippingSettings.freeShippingEnabled !== false && subtotal >= freeThreshold && subtotal > 0;
-  const shippingAmount = isFreeShipping ? 0 : (subtotal > 0 ? flatRate : 0);
+  // Shipping calculation (Free delivery across Pakistan on all orders)
+  const remainingForFreeShipping = 0;
+  const shippingAmount = 0;
 
   const total = Math.max(0, subtotal + shippingAmount - totalDiscountAmount);
 

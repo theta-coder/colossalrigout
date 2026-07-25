@@ -276,7 +276,7 @@ export default function ContactClient() {
                     <label className="text-xs font-semibold text-neutral-600 block">PHONE (OPTIONAL)</label>
                     <input
                       type="tel"
-                      placeholder="+92 300 1234567"
+                      placeholder="03284844309"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="mt-1.5 w-full border border-neutral-300 rounded-md px-3 py-2.5 text-sm outline-none focus:border-black bg-[#f4f4f3] transition text-neutral-800"
@@ -397,13 +397,13 @@ export default function ContactClient() {
                   <div className="aspect-[16/10] bg-neutral-200 relative">
                     <Image
                       src={map.mapImageUrl || 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80'}
-                      alt={map.mapImageAlt || 'Gulberg Lahore Map Location'}
+                      alt={map.mapImageAlt || 'Kareem Block, Iqbal Town, Lahore'}
                       fill
                       className="object-cover"
                     />
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-4">
                       <a
-                        href={map.mapUrl || 'https://maps.google.com/?q=Gulberg+III+Lahore+Pakistan'}
+                        href={map.mapUrl || 'https://maps.google.com/?q=Kareem+Block+Iqbal+Town+Lahore+Pakistan'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="bg-white text-black text-xs font-semibold px-4 py-2.5 rounded-md shadow hover:bg-neutral-100 transition active:scale-95 text-center uppercase"

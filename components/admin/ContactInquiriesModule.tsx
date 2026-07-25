@@ -1219,7 +1219,7 @@ export default function ContactInquiriesModule() {
                     type="text"
                     value={detailForm.value}
                     onChange={(e) => setDetailForm({ ...detailForm, value: e.target.value })}
-                    placeholder="e.g. 12-C, Gulberg III, Lahore or +92 300 1234567"
+                    placeholder="e.g. Kareem Block, Iqbal Town, Lahore or 03284844309"
                     maxLength={500}
                     className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:border-black outline-none transition"
                   />
@@ -1231,7 +1231,7 @@ export default function ContactInquiriesModule() {
                     type="text"
                     value={detailForm.href}
                     onChange={(e) => setDetailForm({ ...detailForm, href: e.target.value })}
-                    placeholder="tel:+923001234567 or mailto:support@example.com"
+                    placeholder="tel:+923284844309 or mailto:colossalrigout@gmail.com"
                     className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:border-black outline-none transition"
                   />
                   <p className="text-[10px] text-neutral-400 mt-0.5">Auto-generated if left empty for phone, email & WhatsApp.</p>
@@ -1353,7 +1353,7 @@ export default function ContactInquiriesModule() {
                     type="email"
                     value={subjectForm.recipientEmail}
                     onChange={(e) => setSubjectForm({ ...subjectForm, recipientEmail: e.target.value })}
-                    placeholder="support@colossalrigout.pk"
+                    placeholder="colossalrigout@gmail.com"
                     className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:border-black outline-none transition"
                   />
                 </div>

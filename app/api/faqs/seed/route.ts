@@ -17,16 +17,16 @@ const seedCategories: Omit<FaqCategory, 'createdAt' | 'updatedAt'>[] = [
 
 const seedFaqs: Omit<FaqItem, 'createdAt' | 'updatedAt'>[] = [
   { id: 'faq-orders-1', categoryId: 'orders', question: 'How do I place an order?', answer: 'Browse the shop, select your size and color, add to cart, and complete checkout with your shipping and payment details.', order: 1, active: true },
-  { id: 'faq-orders-2', categoryId: 'orders', question: 'Can I cancel or change my order?', answer: 'Orders can be changed or cancelled within 2 hours of placing them. Contact us immediately with your order number.', order: 2, active: true },
-  { id: 'faq-shipping-1', categoryId: 'shipping', question: 'How long does delivery take?', answer: 'Standard delivery takes 3\u20135 business days within major cities and 5\u20137 days for other areas.', order: 1, active: true },
-  { id: 'faq-shipping-2', categoryId: 'shipping', question: 'Do you offer free shipping?', answer: 'Yes, all orders over PKR 5,000 ship free. Orders below that have a flat shipping fee at checkout.', order: 2, active: true },
-  { id: 'faq-shipping-3', categoryId: 'shipping', question: 'Do you ship internationally?', answer: 'Currently we only ship within Pakistan. International shipping is coming soon.', order: 3, active: true },
-  { id: 'faq-returns-1', categoryId: 'returns', question: 'What is your return policy?', answer: 'We offer a 30-day return window on unworn items with tags attached. See our Returns & Exchanges page for full details.', order: 1, active: true },
-  { id: 'faq-returns-2', categoryId: 'returns', question: 'How do I start a return?', answer: "Go to the Track Order page, enter your order details, and select 'Start a Return', or contact our support team.", order: 2, active: true },
-  { id: 'faq-payments-1', categoryId: 'payments', question: 'What payment methods do you accept?', answer: 'We accept Cash on Delivery.', order: 1, active: true },
+  { id: 'faq-orders-2', categoryId: 'orders', question: 'Can I cancel or change my order?', answer: 'Orders can be changed or cancelled prior to courier dispatch. Contact us immediately at 03284844309 or colossalrigout@gmail.com.', order: 2, active: true },
+  { id: 'faq-shipping-1', categoryId: 'shipping', question: 'How long does delivery take?', answer: 'Orders are shipped through TCS and are generally delivered within 3–7 business days across Pakistan.', order: 1, active: true },
+  { id: 'faq-shipping-2', categoryId: 'shipping', question: 'Do you offer free shipping?', answer: 'Yes, we offer free delivery across Pakistan on all products. There are no minimum purchase requirements.', order: 2, active: true },
+  { id: 'faq-shipping-3', categoryId: 'shipping', question: 'Do you ship internationally?', answer: 'Currently we ship nationwide across Pakistan only via TCS.', order: 3, active: true },
+  { id: 'faq-returns-1', categoryId: 'returns', question: 'What is your return policy?', answer: 'We offer a 2-day return window on unworn items with original tags attached. See our Returns & Exchanges page for full details.', order: 1, active: true },
+  { id: 'faq-returns-2', categoryId: 'returns', question: 'How do I start a return?', answer: "Contact our customer support team via our Contact page or call 03284844309 within 2 days of delivery.", order: 2, active: true },
+  { id: 'faq-payments-1', categoryId: 'payments', question: 'What payment methods do you accept?', answer: 'We accept Cash on Delivery across Pakistan.', order: 1, active: true },
   { id: 'faq-payments-2', categoryId: 'payments', question: 'Is Cash on Delivery available?', answer: 'Yes, COD is available on all orders within Pakistan at no extra charge.', order: 2, active: true },
   { id: 'faq-sizing-1', categoryId: 'sizing', question: 'How do I find my size?', answer: 'Check the Size Guide linked on every product page for a full chest, waist, and length chart with measuring tips.', order: 1, active: true },
-  { id: 'faq-sizing-2', categoryId: 'sizing', question: "What if the size doesn't fit?", answer: 'No problem \u2014 exchange it for a different size within 30 days, free of charge.', order: 2, active: true },
+  { id: 'faq-sizing-2', categoryId: 'sizing', question: "What if the size doesn't fit?", answer: 'No problem — exchange it for a different size within 2 days of delivery.', order: 2, active: true },
 ];
 
 export async function POST(request: NextRequest) {

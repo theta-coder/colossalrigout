@@ -116,6 +116,23 @@ export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterPro
             <p className="text-neutral-400 text-xs leading-relaxed">
               {brandDescription}
             </p>
+            <div className="mt-4 space-y-1.5 text-xs text-neutral-400 font-light">
+              <p>
+                <strong className="text-neutral-300 font-medium">Location:</strong> Kareem Block, Iqbal Town, Lahore, Pakistan
+              </p>
+              <p>
+                <strong className="text-neutral-300 font-medium">Phone:</strong>{' '}
+                <a href="tel:+923284844309" className="hover:text-white transition">
+                  03284844309
+                </a>
+              </p>
+              <p>
+                <strong className="text-neutral-300 font-medium">Email:</strong>{' '}
+                <a href="mailto:colossalrigout@gmail.com" className="hover:text-white transition">
+                  colossalrigout@gmail.com
+                </a>
+              </p>
+            </div>
             {activeSocials.length > 0 && (
               <div className="flex flex-wrap gap-3 mt-5">
                 {activeSocials.map((social) => {

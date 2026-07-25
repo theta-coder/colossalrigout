@@ -5,8 +5,8 @@ import ShippingPolicyClient from '@/components/policies/ShippingPolicyClient';
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 
 export const metadata: Metadata = {
-  title: 'Shipping & Delivery Policy',
-  description: 'Learn about Colossal Rigout nationwide shipping policy in Pakistan, delivery timelines, free shipping thresholds, and order dispatching.',
+  title: 'Shipping & Delivery Policy | Colossal Rigout',
+  description: 'Learn about Colossal Rigout free nationwide shipping policy in Pakistan on all products, delivered via TCS in 3–7 business days.',
   keywords: [
     'Shipping Policy Pakistan',
     'Colossal Rigout Delivery',

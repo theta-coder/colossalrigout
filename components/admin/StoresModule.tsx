@@ -182,7 +182,7 @@ export default function StoresModule() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Gulberg Flagship Store"
+                  placeholder="e.g. Iqbal Town Store"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg outline-none focus:border-black transition"

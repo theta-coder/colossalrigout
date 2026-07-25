@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
     const rawMapUrl = String(map?.mapUrl || '').trim();
     const ctaLabel = String(map?.ctaLabel || '').trim();
 
-    const mapUrl = validateInternalOrExternalUrl(rawMapUrl) || 'https://maps.google.com/?q=Gulberg+III+Lahore+Pakistan';
+    const mapUrl = validateInternalOrExternalUrl(rawMapUrl) || 'https://maps.google.com/?q=Kareem+Block+Iqbal+Town+Lahore+Pakistan';
 
     const now = new Date().toISOString();
     const savedMap: ContactMapSettings = {
       mapImageUrl: mapImageUrl || 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80',
-      mapImageAlt: mapImageAlt || 'Gulberg Lahore Map Location',
+      mapImageAlt: mapImageAlt || 'Kareem Block Iqbal Town Lahore Location',
       mapUrl,
       ctaLabel: ctaLabel || 'FIND A STORE NEAR YOU',
       active: map?.active !== false,

@@ -115,8 +115,9 @@ export default function TermsClient() {
               Deliveries are fulfilled nationwide across Pakistan:
             </p>
             <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
-              <li>Standard nationwide shipping fee is <strong className="font-semibold text-neutral-800">PKR 250</strong>. Orders totaling over PKR 5,000 qualify for free nationwide shipping.</li>
-              <li>Standard delivery takes 3 to 5 business days for major cities (Lahore, Karachi, Islamabad) and 5 to 7 days for regional territories.</li>
+              <li>Shipping is <strong className="font-semibold text-neutral-800">FREE across Pakistan</strong> on all products. There are no hidden delivery fees or minimum order thresholds.</li>
+              <li>Orders are shipped through <strong className="font-semibold text-neutral-800">TCS</strong> and are generally delivered within <strong className="font-semibold text-neutral-800">3 to 7 business days</strong>.</li>
+              <li>Delivery times may occasionally be affected by circumstances outside our control, including public holidays, harsh weather, remote locations, or courier transit delays.</li>
               <li>For complete logistics guidelines, please consult our official <Link href="/shipping-policy" className="underline font-medium hover:text-black">Shipping Policy</Link>.</li>
             </ul>
           </div>
@@ -131,7 +132,7 @@ export default function TermsClient() {
             </p>
             <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
               <li>Returns and exchanges must be requested within <strong className="font-semibold text-neutral-800">2 days</strong> of receiving your order.</li>
-              <li>Items must be unused, unwashed, and returned in original condition with all original tags attached.</li>
+              <li>Items must be unused, unwashed, and returned in original condition with all original tags attached. Approved refunds are processed within 5 to 7 business days.</li>
               <li>For complete return eligibility and step-by-step guidance, please review our official <Link href="/returns" className="underline font-medium hover:text-black">Returns &amp; Exchanges Policy</Link>.</li>
             </ul>
           </div>
@@ -173,14 +174,17 @@ export default function TermsClient() {
                 Contact Support Page
               </Link>
               <a
-                href="mailto:support@colossalrigout.pk"
+                href="mailto:colossalrigout@gmail.com"
                 className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-neutral-300 text-neutral-800 text-xs font-bold uppercase tracking-wider rounded hover:bg-neutral-100 transition"
               >
                 Email Support Team
               </a>
             </div>
             <p className="text-xs text-neutral-400 mt-4 font-light">
-              Official Store Address: Gulberg III, Lahore, Pakistan &bull; Phone: +92 300 1234567
+              Official Location: Kareem Block, Iqbal Town, Lahore, Pakistan &bull; Phone:{' '}
+              <a href="tel:+923284844309" className="hover:text-neutral-900 underline">
+                03284844309
+              </a>
             </p>
           </div>
         </section>
