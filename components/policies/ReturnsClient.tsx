@@ -135,7 +135,7 @@ export default function ReturnsClient({ initialData }: { initialData?: ReturnsPo
           <ol className="space-y-3.5 text-sm text-neutral-600 font-light">
             <li className="flex gap-3 items-start">
               <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">1</span>
-              <span className="leading-relaxed">Open the Contact page within 12 hours of delivery.</span>
+              <span className="leading-relaxed">Open the Contact page within 2 days of delivery.</span>
             </li>
             <li className="flex gap-3 items-start">
               <span className="flex-none w-6 h-6 rounded-full bg-black text-white text-xs font-semibold flex items-center justify-center mt-0.5">2</span>
