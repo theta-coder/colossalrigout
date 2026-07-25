@@ -47,7 +47,7 @@ export async function sendCustomerOrderReceipt(order: OrderEmailData) {
     return { success: false, reason: 'GMAIL_APP_PASSWORD missing' };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.vercel.app';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
   const trackingUrl = `${siteUrl}/track-order?trackingId=${encodeURIComponent(order.publicTrackingId)}&email=${encodeURIComponent(order.customerEmail)}`;
 
   const itemsHtml = order.items.map(item => `
@@ -133,7 +133,7 @@ export async function sendAdminOrderNotification(order: OrderEmailData) {
       <p><strong>Shipping Address:</strong> ${order.shippingAddress}, ${order.city}</p>
       <p><strong>Total Value:</strong> Rs. ${order.totalAmount.toLocaleString()}</p>
       <p><strong>Items Ordered:</strong> ${order.items.length}</p>
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.vercel.app'}/admin" style="display: inline-block; background: #000; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-top: 10px;">View Order in Admin Dashboard</a>
+      <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk'}/admin" style="display: inline-block; background: #000; color: #fff; padding: 10px 18px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; margin-top: 10px;">View Order in Admin Dashboard</a>
     </div>
   `;
 

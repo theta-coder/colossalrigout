@@ -92,7 +92,12 @@ export const metadata: Metadata = {
     apple: '/colossal-rigout-logo.png',
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'rXPhCkZA34nZd-R4RJgSBtK20Ixux201lyp5ErZ8AIs',
+    google: [
+      // Google Search Console
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'rXPhCkZA34nZd-R4RJgSBtK20Ixux201lyp5ErZ8AIs',
+      // Google Merchant Center
+      'rXPhCkZA34nZd-RARJg5BtK20IkuxZQ1iyp5Erz0Ais',
+    ],
   },
 };
 
