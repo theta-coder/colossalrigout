@@ -25,6 +25,7 @@ const ReturnsPolicyModule = dynamic(() => import('../../components/admin/Returns
 const FaqManagerModule = dynamic(() => import('../../components/admin/FaqManagerModule'), { ssr: false });
 const ContactInquiriesModule = dynamic(() => import('../../components/admin/ContactInquiriesModule'), { ssr: false });
 const StorefrontContentModule = dynamic(() => import('../../components/admin/StorefrontContentModule'), { ssr: false });
+import AdminNotificationBell from '../../components/admin/AdminNotificationBell';
 import {
   LayoutDashboard,
   Package,
@@ -1675,6 +1676,9 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
+          <div className="flex items-center gap-3">
+            <AdminNotificationBell onNavigate={(tab) => setActiveTab(tab)} />
+          </div>
         </header>
 
         {/* 1. TAB: OVERVIEW */}
