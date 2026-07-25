@@ -205,7 +205,7 @@ export default function ProductDetailsClient({
             id: 'mid-season-sale',
             badgeText: 'LIMITED TIME ONLY',
             heading: 'Mid Season Sale',
-            description: 'this is summer sale',
+            description: 'Exclusive seasonal offer on select menswear collections.',
             highlightText: 'FLAT 30% SALE',
             ctaText: 'SHOP THE SALE',
             discountMode: 'automatic',

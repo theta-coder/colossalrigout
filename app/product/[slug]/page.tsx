@@ -82,7 +82,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const effPrice = getEffectiveProductPrice(product);
 
-  // Schema.org Product JSON-LD
+  // Schema.org Product JSON-LD (GMC & Google Shopping Compliant)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -98,8 +98,48 @@ export default async function ProductPage({ params }: ProductPageProps) {
       '@type': 'Offer',
       priceCurrency: 'PKR',
       price: String(effPrice),
+      itemCondition: 'https://schema.org/NewCondition',
       availability: (product.totalStock ?? 1) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       url: `${siteUrl}/product/${product.slug || slug}`,
+      seller: {
+        '@type': 'Organization',
+        name: 'Colossal Rigout',
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: '0',
+          currency: 'PKR',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'PK',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 1,
+            maxValue: 2,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 3,
+            maxValue: 7,
+            unitCode: 'DAY',
+          },
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'PK',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 2,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+      },
     },
     ...(Number(product.reviews || 0) > 0
       ? {
