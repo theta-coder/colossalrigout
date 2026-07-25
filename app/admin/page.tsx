@@ -199,7 +199,7 @@ async function optimizeProductImage(file: File): Promise<string> {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts } = useProducts();
+  const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts, refreshProducts } = useProducts();
   
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits' | 'about-page' | 'shipping-policy' | 'returns-policy' | 'faq-manager' | 'contact-inquiries' | 'storefront-content'>('overview');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -1860,6 +1860,28 @@ export default function AdminDashboardPage() {
                     <option key={c.id} value={c.slug}>{c.name}</option>
                   ))}
                 </select>
+
+                <button
+                  onClick={async () => {
+                    if (!confirm("Are you sure you want to delete all fake/demo products from Firestore?")) return;
+                    try {
+                      const res = await fetch('/api/products/seed', { method: 'DELETE' });
+                      const data = await res.json();
+                      if (res.ok) {
+                        alert(`Successfully removed ${data.deletedCount || 0} fake demo products!`);
+                        if (refreshProducts) refreshProducts();
+                      } else {
+                        alert(`Error: ${data.message || 'Failed to remove demo products'}`);
+                      }
+                    } catch (e: any) {
+                      alert(`Error: ${e.message}`);
+                    }
+                  }}
+                  className="text-xs font-bold text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg px-3 py-2 transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                  title="Purge all fake seed products"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Clear Fake Products
+                </button>
               </div>
             </div>
 

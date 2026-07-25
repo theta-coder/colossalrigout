@@ -6,7 +6,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 
 export const metadata: Metadata = {
   title: 'Returns & Exchanges Policy',
-  description: 'Read the Colossal Rigout 7-day return and exchange policy. Easy returns, item condition rules, and refund processing in Pakistan.',
+  description: 'Read the Colossal Rigout 12-hour return and exchange policy. Easy returns, item condition rules, and refund processing in Pakistan.',
   keywords: [
     'Returns Policy Pakistan',
     'Colossal Rigout Exchange',
@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     type: 'website',
     url: `${siteUrl}/returns`,
     title: 'Returns & Exchanges Policy | Colossal Rigout',
-    description: 'Read the Colossal Rigout 7-day return and exchange policy in Pakistan.',
+    description: 'Read the Colossal Rigout 12-hour return and exchange policy in Pakistan.',
     images: [`${siteUrl}/colossal-rigout-logo.png`],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Returns & Exchanges Policy | Colossal Rigout',
-    description: 'Read the Colossal Rigout 7-day return and exchange policy in Pakistan.',
+    description: 'Read the Colossal Rigout 12-hour return and exchange policy in Pakistan.',
   },
 };
 

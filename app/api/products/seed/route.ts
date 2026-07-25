@@ -94,3 +94,47 @@ export async function POST() {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE() {
+  try {
+    const { getDocs, collection } = await import('firebase/firestore');
+    const productsSnap = await getDocs(collection(db, 'products'));
+    const deletedProductIds = new Set<string>();
+
+    for (const docSnap of productsSnap.docs) {
+      if (docSnap.id === '_schema') continue;
+      const data = docSnap.data();
+      const id = docSnap.id;
+      const isNumericId = /^\d+$/.test(id);
+      const isFakeName = productNames.includes(data.name);
+      const isDemoSeed = data.demoSeed === true;
+
+      if (isNumericId || isFakeName || isDemoSeed) {
+        deletedProductIds.add(id);
+        await deleteDoc(docSnap.ref);
+      }
+    }
+
+    const variantsSnap = await getDocs(collection(db, 'product-variants'));
+    for (const docSnap of variantsSnap.docs) {
+      const data = docSnap.data();
+      const productIdStr = String(data.productId || '');
+      if (deletedProductIds.has(productIdStr) || /^\d+-/.test(docSnap.id)) {
+        await deleteDoc(docSnap.ref);
+      }
+    }
+
+    const imagesSnap = await getDocs(collection(db, 'product-images'));
+    for (const docSnap of imagesSnap.docs) {
+      const data = docSnap.data();
+      const productIdStr = String(data.productId || '');
+      if (deletedProductIds.has(productIdStr) || /^\d+-/.test(docSnap.id)) {
+        await deleteDoc(docSnap.ref);
+      }
+    }
+
+    return NextResponse.json({ success: true, deletedCount: deletedProductIds.size });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+}

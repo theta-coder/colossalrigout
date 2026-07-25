@@ -115,10 +115,11 @@ export default function ReturnsClient() {
           )}
 
           {conditions.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
               <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-neutral-800" /> {settings.conditionsHeading || 'Return Conditions'}
+                <ShieldAlert className="w-5 h-5 text-neutral-800" /> {settings.conditionsHeading || 'Eligible Items'}
               </h2>
+              <p className="text-sm text-neutral-600 mb-3 font-light">Products are eligible only if:</p>
               <ul className="space-y-2.5 text-sm text-neutral-600 list-disc pl-5 font-light">
                 {conditions.map((c) => (
                   <li key={c.id}>{c.text}</li>
@@ -128,9 +129,9 @@ export default function ReturnsClient() {
           )}
 
           {steps.length > 0 && (
-            <div className="mb-8">
+            <div className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
               <h2 className="font-display text-xl font-bold mb-4 text-neutral-900 tracking-wide">
-                {settings.stepsHeading || 'How to Return an Item'}
+                {settings.stepsHeading || 'Process Steps'}
               </h2>
               <ol className="space-y-5">
                 {steps.map((step, idx) => {
@@ -163,11 +164,11 @@ export default function ReturnsClient() {
           )}
 
           {infoSections.map((sec) => (
-            <div key={sec.id} className="mb-8">
+            <div key={sec.id} className="mb-8 bg-white rounded-md border border-neutral-200 p-6 sm:p-7 shadow-sm">
               <h2 className="font-display text-xl font-bold mb-3 text-neutral-900 tracking-wide">{sec.title}</h2>
-              <p className="text-sm text-neutral-600 leading-relaxed font-light whitespace-pre-line">
+              <div className="text-sm text-neutral-600 leading-relaxed font-light whitespace-pre-line">
                 {sec.description}
-              </p>
+              </div>
             </div>
           ))}
 

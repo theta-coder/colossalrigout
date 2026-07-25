@@ -65,19 +65,19 @@ export interface ReturnsPolicyPayload {
 export const defaultSettings: ReturnsPolicySettings = {
   pageTitle: 'RETURNS & EXCHANGES',
   breadcrumbLabel: 'Returns & Exchanges',
-  windowTitle: '30-Day Return Window',
-  windowDescription: 'Not the right fit? Send it back within 30 days of delivery for a full refund or exchange.',
-  conditionsHeading: 'Return Conditions',
-  stepsHeading: 'How to Return an Item',
-  returnWindowDays: 30,
+  windowTitle: '12-Hour Return Window',
+  windowDescription: 'Customers may request a return or exchange within 12 hours of receiving their order.',
+  conditionsHeading: 'Eligible Items',
+  stepsHeading: 'Process Steps',
+  returnWindowDays: 1,
   productPageEnabled: true,
-  productPageSummary: 'Easy returns within return window. Item must meet our return conditions.',
+  productPageSummary: 'Easy returns within 12 hours of receiving your order. Item must meet our return conditions.',
   active: true,
 };
 
 export const defaultCta: ReturnSupportCta = {
-  heading: 'Still have questions?',
-  description: 'Our support team is happy to help with any return or exchange queries.',
+  heading: 'Need Help?',
+  description: 'For return or exchange assistance, contact our support team through the Contact page.',
   buttonLabel: 'CONTACT US',
   buttonPath: '/contact',
   active: true,

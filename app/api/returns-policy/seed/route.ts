@@ -17,42 +17,34 @@ const INFO_COL = 'return-info-sections';
 const CTA_DOC = 'return-page-cta/support';
 
 const initialConditions = [
-  'Item must be unworn, unwashed, and in original condition',
-  'All original tags must still be attached',
-  'Item must be in its original packaging where possible',
-  'Sale/clearance items marked "Final Sale" are not eligible for return',
-  'Undergarments and accessories worn against skin are non-returnable for hygiene reasons',
+  'Unused and unwashed',
+  'Original tags attached',
+  'Original packaging included',
+  'No signs of wear or damage by the customer',
 ];
 
-const initialSteps = [
-  {
-    title: 'Start your return',
-    description: 'Go to Track Order and enter your order details, or contact us with your order number.',
-    linkLabel: 'Track Order',
-    linkPath: '/track-order',
-  },
-  {
-    title: 'Pack your item',
-    description: 'Repack the item with tags attached in its original or similar packaging.',
-  },
-  {
-    title: 'Hand it over for pickup',
-    description: 'Our courier partner will collect the package from your address within 2–3 days.',
-  },
-  {
-    title: 'Get your refund or exchange',
-    description: 'Once received and inspected, refunds are processed within 5–7 business days.',
-  },
-];
+const initialSteps: Array<{ title: string; description: string; linkLabel?: string; linkPath?: string }> = [];
 
 const initialInfoSections = [
   {
-    title: 'Refund Timeline',
-    description: 'Cash on Delivery orders are refunded via bank transfer or store credit within 5–7 business days of us receiving your return.',
+    title: 'Non-Returnable Items',
+    description: '• Sale items\n• Clearance products\n• Gift cards\n• Used or washed items\n• Products without original tags',
   },
   {
-    title: 'Exchanges',
-    description: 'Need a different size or color? Select "Exchange" instead of "Refund" when starting your return — we\'ll ship the replacement as soon as your original item is picked up.',
+    title: 'Damaged or Incorrect Orders',
+    description: 'If you receive a damaged, defective, or incorrect item, contact us within 12 hours of delivery with photos. We will arrange a replacement or refund after verification.',
+  },
+  {
+    title: 'Exchange Policy',
+    description: 'Items can be exchanged for another size or colour, subject to stock availability.',
+  },
+  {
+    title: 'Refund Policy',
+    description: 'After inspection and approval, refunds are processed within 5–7 business days using the original payment method.',
+  },
+  {
+    title: 'Return Shipping',
+    description: 'If the return is due to our mistake (wrong or defective item), Colossal Rigout will bear the return shipping cost.\n\nIf the customer wants to return an item for personal reasons, the customer is responsible for the return shipping cost.',
   },
 ];
 
