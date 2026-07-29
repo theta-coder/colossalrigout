@@ -351,14 +351,17 @@ export async function getActiveCampaignCards(): Promise<HomepageCampaignCard[]> 
       fetchFirestoreRestCollection({
         collectionName: 'campaign-cards',
         tags: ['homepage', 'homepage:campaign-cards'],
+        revalidate: 0,
       }),
       fetchFirestoreRestCollection({
         collectionName: 'promotions',
         tags: ['homepage', 'homepage:promotions'],
+        revalidate: 0,
       }),
       fetchFirestoreRestCollection({
         collectionName: 'stores',
         tags: ['homepage', 'homepage:stores'],
+        revalidate: 0,
       }),
     ]);
 

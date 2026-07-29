@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs, setDoc, doc, deleteDoc, getDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { requireAdmin } from '../../../lib/serverAuth';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 const CARDS_COL = 'campaign-cards';
 const IMAGES_COL = 'campaign-card-images';
 const isManagedCardImage = (value: unknown): value is string =>
   typeof value === 'string' && /^data:image\/(webp|png|jpeg);base64,/.test(value) && value.length <= 900_000;
 const isSafeInternalPath = (value: unknown) => typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\');
+const revalidateCampaignCards = () => {
+  revalidatePath('/');
+  revalidateTag('homepage');
+  revalidateTag('homepage:campaign-cards');
+};
 
 // GET: Fetch all campaign cards with their background images (Admin & Public)
 export async function GET(req: NextRequest) {
@@ -109,6 +115,7 @@ export async function POST(req: NextRequest) {
       );
     }
     await Promise.all(promises);
+    revalidateCampaignCards();
 
     console.log(`[API POST /api/campaign-cards] Created card "${cardDoc.heading}" (${id})`);
     return NextResponse.json({ success: true, data: { ...cardDoc, backgroundImageUrl: bgImageUrl } });
@@ -184,6 +191,7 @@ export async function PUT(req: NextRequest) {
       );
     }
     await Promise.all(promises);
+    revalidateCampaignCards();
 
     console.log(`[API PUT /api/campaign-cards] Updated card ${card.id}`);
     return NextResponse.json({ success: true, data: { ...updatedDoc, backgroundImageUrl: finalImageUrl } });
@@ -207,6 +215,7 @@ export async function DELETE(req: NextRequest) {
       deleteDoc(doc(db, CARDS_COL, id)),
       deleteDoc(doc(db, IMAGES_COL, id)),
     ]);
+    revalidateCampaignCards();
 
     console.log(`[API DELETE /api/campaign-cards] Deleted card ${id}`);
     return NextResponse.json({ success: true, message: 'Card deleted successfully' });
