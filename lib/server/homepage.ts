@@ -16,6 +16,7 @@ export interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
+  mobileImage: string;
   btn1Text: string;
   btn1Link: string;
   btn2Text: string;
@@ -159,6 +160,7 @@ export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
       title: String(d.data.title || ''),
       subtitle: String(d.data.subtitle || ''),
       image: homepageImageUrl('hero', d.id),
+      mobileImage: homepageImageUrl('hero-mobile', d.id),
       btn1Text: String(d.data.btn1Text || 'SHOP NOW'),
       btn1Link: String(d.data.btn1Link || '/shop'),
       btn2Text: String(d.data.btn2Text || ''),

@@ -78,6 +78,7 @@ import { ShopCategory } from '../../lib/category';
 interface HeroSlide {
   id: string;
   image: string;
+  mobileImage?: string;
   imagePath?: string;
   title: string;
   subtitle: string;
@@ -161,10 +162,10 @@ async function optimizeCategoryImage(file: File): Promise<string> {
   return canvas.toDataURL('image/webp', 0.78);
 }
 
-async function optimizeHeroImage(file: File): Promise<string> {
+async function optimizeHeroImage(file: File, viewport: 'desktop' | 'mobile' = 'desktop'): Promise<string> {
   const source = await createImageBitmap(file);
-  const maxWidth = 1400;
-  const maxHeight = 1000;
+  const maxWidth = viewport === 'mobile' ? 1080 : 1600;
+  const maxHeight = viewport === 'mobile' ? 1350 : 1000;
   const scale = Math.min(1, maxWidth / source.width, maxHeight / source.height);
   const canvas = document.createElement('canvas');
   canvas.width = Math.max(1, Math.round(source.width * scale));
@@ -280,6 +281,8 @@ export default function AdminDashboardPage() {
   const [editingHeroSlide, setEditingHeroSlide] = useState<HeroSlide | null>(null);
   const [heroSelectedFile, setHeroSelectedFile] = useState<File | null>(null);
   const [heroPreviewUrl, setHeroPreviewUrl] = useState<string>('');
+  const [heroMobileSelectedFile, setHeroMobileSelectedFile] = useState<File | null>(null);
+  const [heroMobilePreviewUrl, setHeroMobilePreviewUrl] = useState<string>('');
   const [heroForm, setHeroForm] = useState({
     title: '',
     subtitle: '',
@@ -603,7 +606,10 @@ export default function AdminDashboardPage() {
       formData.append('order', String(heroForm.order || 0));
 
       if (heroSelectedFile) {
-        formData.append('imageData', await optimizeHeroImage(heroSelectedFile));
+        formData.append('imageData', await optimizeHeroImage(heroSelectedFile, 'desktop'));
+      }
+      if (heroMobileSelectedFile) {
+        formData.append('mobileImageData', await optimizeHeroImage(heroMobileSelectedFile, 'mobile'));
       }
 
       const res = await fetch('/api/hero', {
@@ -620,6 +626,8 @@ export default function AdminDashboardPage() {
       setEditingHeroSlide(null);
       setHeroSelectedFile(null);
       setHeroPreviewUrl('');
+      setHeroMobileSelectedFile(null);
+      setHeroMobilePreviewUrl('');
       setHeroForm({
         title: '',
         subtitle: '',
@@ -2657,6 +2665,8 @@ export default function AdminDashboardPage() {
                       setEditingHeroSlide(null);
                       setHeroSelectedFile(null);
                       setHeroPreviewUrl('');
+                      setHeroMobileSelectedFile(null);
+                      setHeroMobilePreviewUrl('');
                       setHeroForm({
                         title: '',
                         subtitle: '',
@@ -2716,12 +2726,46 @@ export default function AdminDashboardPage() {
                     </label>
                   </div>
 
+                  <div className="mt-3">
+                    <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">
+                      Mobile Hero Image {editingHeroSlide ? "(Optional — leave empty to keep current)" : "(Optional)"}
+                    </label>
+                    <div className="border border-dashed border-neutral-300 rounded-xl p-3 bg-neutral-50/50 hover:bg-neutral-50 transition">
+                      <input
+                        type="file"
+                        id="hero-mobile-image-file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              triggerToast("Mobile image exceeds the 10MB limit.", "error");
+                              e.target.value = '';
+                              return;
+                            }
+                            setHeroMobileSelectedFile(file);
+                            setHeroMobilePreviewUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      <label htmlFor="hero-mobile-image-file" className="flex flex-col items-center justify-center cursor-pointer py-3 text-center">
+                        <Upload className="w-5 h-5 text-neutral-400 mb-1.5" />
+                        <span className="text-xs font-bold text-neutral-800">
+                          {heroMobileSelectedFile ? heroMobileSelectedFile.name : "Click to select mobile hero image"}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 mt-1">Recommended 1080 × 1350 px · 4:5 · WebP</span>
+                        <span className="text-[9px] text-neutral-400 mt-0.5">If omitted, the desktop image is used automatically.</span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Dual Viewport Crop Preview */}
                   {(heroPreviewUrl || (editingHeroSlide && editingHeroSlide.image)) && (
                     <div className="mt-3 p-3 bg-neutral-100/70 rounded-xl space-y-2 border border-neutral-200">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider">
-                          Automatic Crop Preview
+                          Responsive Hero Preview
                         </span>
                         {heroSelectedFile && (
                           <button
@@ -2753,13 +2797,25 @@ export default function AdminDashboardPage() {
                           <div className="relative aspect-[4/5] rounded-lg overflow-hidden bg-neutral-200 border border-neutral-300 mx-auto max-h-24">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={heroPreviewUrl || editingHeroSlide?.image}
+                              src={heroMobilePreviewUrl || editingHeroSlide?.mobileImage || heroPreviewUrl || editingHeroSlide?.image}
                               alt="Mobile Preview"
                               className="w-full h-full object-cover object-center"
                             />
                           </div>
                         </div>
                       </div>
+                      {heroMobileSelectedFile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroMobileSelectedFile(null);
+                            setHeroMobilePreviewUrl('');
+                          }}
+                          className="text-[10px] text-red-500 font-bold hover:underline"
+                        >
+                          Remove Mobile Image
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2922,6 +2978,8 @@ export default function AdminDashboardPage() {
                                   setEditingHeroSlide(slide);
                                   setHeroSelectedFile(null);
                                   setHeroPreviewUrl('');
+                                  setHeroMobileSelectedFile(null);
+                                  setHeroMobilePreviewUrl('');
                                   setHeroForm({
                                     title: slide.title,
                                     subtitle: slide.subtitle,

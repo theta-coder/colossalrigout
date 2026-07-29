@@ -21,6 +21,7 @@ import { TrustBenefitsSkeleton } from '@/components/home/skeletons/TrustBenefits
 import { Metadata } from 'next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
+const brandLogoUrl = `${siteUrl}/colossal-rigout-logo-2026.png`;
 
 export const metadata: Metadata = {
   title: 'Colossal Rigout | Premium Men Fashion & Apparel in Pakistan',
@@ -33,12 +34,20 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: 'Colossal Rigout | Premium Men Fashion & Apparel in Pakistan',
     description: 'Shop modern menswear, luxury casuals, shirts, t-shirts, and bottoms online in Pakistan.',
-    images: [`${siteUrl}/colossal-rigout-logo.png`],
+    images: [
+      {
+        url: brandLogoUrl,
+        width: 1536,
+        height: 1536,
+        alt: 'Colossal Rigout logo',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Colossal Rigout | Premium Men Fashion & Apparel in Pakistan',
     description: 'Shop modern menswear, luxury casuals, shirts, t-shirts, and bottoms online in Pakistan.',
+    images: [brandLogoUrl],
   },
 };
 

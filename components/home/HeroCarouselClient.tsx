@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import ImageWithFallback from '@/components/ui/ImageWithFallback';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { HeroSlide } from '@/lib/server/homepage';
@@ -125,15 +124,16 @@ export default function HeroCarouselClient({ slides }: Props) {
                 isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
-              <ImageWithFallback
-                src={slide.image}
-                alt={slide.subtitle || slide.title || 'Hero Banner'}
-                fill
-                priority={idx === 0}
-                fetchPriority={idx === 0 ? 'high' : 'auto'}
-                sizes="100vw"
-                className="absolute inset-0 object-cover object-center"
-              />
+              <picture className="absolute inset-0 block">
+                <source media="(max-width: 639px)" srcSet={slide.mobileImage || slide.image} />
+                <img
+                  src={slide.image}
+                  alt={slide.subtitle || slide.title || 'Hero Banner'}
+                  fetchPriority={idx === 0 ? 'high' : 'auto'}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  className="h-full w-full object-cover object-center"
+                />
+              </picture>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent sm:bg-gradient-to-r sm:from-black/65 sm:via-black/20 sm:to-transparent" />
 
               <div className="relative z-20 max-w-7xl mx-auto h-full flex flex-col justify-end sm:justify-center px-4 sm:px-6 pb-12 sm:pb-0">

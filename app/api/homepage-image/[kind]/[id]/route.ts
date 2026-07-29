@@ -2,8 +2,9 @@ import { NextResponse, NextRequest } from 'next/server';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-const sources: Record<string, { collection: string; field: string }> = {
+const sources: Record<string, { collection: string; field: string; fallbackField?: string }> = {
   hero: { collection: 'hero-slide-images', field: 'dataUrl' },
+  'hero-mobile': { collection: 'hero-slide-images', field: 'mobileDataUrl', fallbackField: 'dataUrl' },
   category: { collection: 'shop-category-images', field: 'dataUrl' },
   product: { collection: 'product-images', field: 'dataUrl' },
   promo: { collection: 'promo-campaign-images', field: 'dataUrl' },
@@ -21,7 +22,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const snapshot = await getDoc(doc(db, source.collection, id));
-    const dataUrl = snapshot.exists() ? String(snapshot.data()?.[source.field] || '') : '';
+    const storedData = snapshot.exists() ? snapshot.data() : undefined;
+    const dataUrl = String(storedData?.[source.field] || (source.fallbackField ? storedData?.[source.fallbackField] : '') || '');
     const match = /^data:image\/(jpeg|png|webp);base64,([a-zA-Z0-9+/=]+)$/.exec(dataUrl);
     if (!match || dataUrl.length > 800_000) {
       return NextResponse.redirect(fallbackUrl, 302);
@@ -39,4 +41,3 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.redirect(fallbackUrl, 302);
   }
 }
-

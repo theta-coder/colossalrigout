@@ -70,9 +70,12 @@ export async function GET() {
 
     const imageSnapshot = await getDocs(collection(db, slideImagesCollection));
     const images = new Map<string, string>();
+    const mobileImages = new Map<string, string>();
     imageSnapshot.forEach(imageDoc => {
       const dataUrl = imageDoc.data().dataUrl;
       if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')) images.set(imageDoc.id, dataUrl);
+      const mobileDataUrl = imageDoc.data().mobileDataUrl;
+      if (typeof mobileDataUrl === 'string' && mobileDataUrl.startsWith('data:image/')) mobileImages.set(imageDoc.id, mobileDataUrl);
     });
 
     const loaded: any[] = [];
@@ -84,7 +87,8 @@ export async function GET() {
         imagePath: data.imagePath || '',
         // Public storefront only receives managed Firestore image data.
         // Legacy/external image URLs are intentionally not exposed.
-        image: images.get(docSnap.id) || ''
+        image: images.get(docSnap.id) || '',
+        mobileImage: mobileImages.get(docSnap.id) || ''
       });
     });
 
@@ -131,6 +135,8 @@ export async function POST(req: NextRequest) {
     const order = Number(formData.get('order')) || 0;
     const imageDataValue = formData.get('imageData');
     const imageData = typeof imageDataValue === 'string' ? imageDataValue : '';
+    const mobileImageDataValue = formData.get('mobileImageData');
+    const mobileImageData = typeof mobileImageDataValue === 'string' ? mobileImageDataValue : '';
 
     if (!title || !subtitle) {
       return NextResponse.json({ error: "Slide title and subtitle are required." }, { status: 400 });
@@ -154,10 +160,15 @@ export async function POST(req: NextRequest) {
     if (imageData && (!imageData.startsWith('data:image/webp;base64,') || imageData.length > 750_000)) {
       return NextResponse.json({ error: 'Invalid or oversized optimized hero image.' }, { status: 400 });
     }
+    if (mobileImageData && (!mobileImageData.startsWith('data:image/webp;base64,') || mobileImageData.length > 750_000)) {
+      return NextResponse.json({ error: 'Invalid or oversized optimized mobile hero image.' }, { status: 400 });
+    }
 
     const existingImageSnap = await getDoc(doc(db, slideImagesCollection, slideId));
     const storedImageData = existingImageSnap.exists() ? String(existingImageSnap.data().dataUrl || '') : '';
+    const storedMobileImageData = existingImageSnap.exists() ? String(existingImageSnap.data().mobileDataUrl || '') : '';
     const finalImageData = imageData || storedImageData;
+    const finalMobileImageData = mobileImageData || storedMobileImageData;
     const imagePath = finalImageData ? `${slideImagesCollection}/${slideId}` : '';
     const legacyImage = finalImageData ? '' : (existingData?.imageUrl || existingData?.image || '');
 
@@ -178,6 +189,7 @@ export async function POST(req: NextRequest) {
       writes.push(setDoc(doc(db, slideImagesCollection, slideId), {
         slideId,
         dataUrl: finalImageData,
+        mobileDataUrl: finalMobileImageData,
         updatedAt: new Date().toISOString()
       }));
     }
@@ -189,7 +201,7 @@ export async function POST(req: NextRequest) {
     } catch {}
     console.log(`[API POST /api/hero] Saved slide ${slideId} successfully.`);
 
-    return NextResponse.json({ success: true, slide: { ...updatedSlide, image: finalImageData || legacyImage } });
+    return NextResponse.json({ success: true, slide: { ...updatedSlide, image: finalImageData || legacyImage, mobileImage: finalMobileImageData } });
   } catch (error: any) {
     console.error("[API POST /api/hero] Error saving slide:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
