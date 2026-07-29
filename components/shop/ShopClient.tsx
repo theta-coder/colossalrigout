@@ -300,9 +300,12 @@ function ShopContent() {
 
   const dynamicCollections = useMemo(() => {
     const productCols = (products || []).flatMap((p) => p.collections || []);
-    const configuredNames = storeCollections.map((item) => item.name).filter(Boolean);
-    const merged = Array.from(new Set(configuredNames.length > 0 ? configuredNames : productCols)).filter(Boolean);
-    return merged;
+    if (storeCollections.length > 0) {
+      return storeCollections.map((item) => ({ id: item.id, slug: item.slug, name: item.name }));
+    }
+    return Array.from(new Set(productCols))
+      .filter(Boolean)
+      .map((value) => ({ id: String(value), slug: String(value), name: String(value) }));
   }, [products, storeCollections]);
 
   const selectedCollectionAliases = useMemo(() => {
@@ -605,7 +608,10 @@ function ShopContent() {
       list.push({ id: 'special', label: `Tag: ${specialTag}`, clear: () => setSpecialTag('All') });
     }
     if (selectedCollection) {
-      list.push({ id: 'collection', label: `Collection: ${selectedCollection}`, clear: () => setSelectedCollection('') });
+      const configured = storeCollections.find((item) =>
+        [item.id, item.slug, item.name].some((value) => String(value || '').trim().toLowerCase() === selectedCollection.trim().toLowerCase())
+      );
+      list.push({ id: 'collection', label: `Collection: ${configured?.name || selectedCollection}`, clear: () => setSelectedCollection('') });
     }
     if (selectedSize) {
       list.push({ id: 'size', label: `Size: ${selectedSize}`, clear: () => setSelectedSize(null) });
@@ -636,6 +642,7 @@ function ShopContent() {
     categories,
     specialTag,
     selectedCollection,
+    storeCollections,
     selectedSize,
     selectedColorId,
     colorById,
@@ -887,13 +894,14 @@ function ShopContent() {
                     </span>
                   </div>
                   <ul className="space-y-2 text-xs text-neutral-600 pl-2 font-medium">
-                    {dynamicCollections.map((colName, idx) => {
-                      const isSelected = specialTag === colName;
+                    {dynamicCollections.map((collection) => {
+                      const isSelected = selectedCollectionAliases.has(collection.id.trim().toLowerCase());
                       return (
-                        <li key={idx}>
+                        <li key={collection.id}>
                           <button
                             onClick={() => {
-                              setSpecialTag(isSelected ? 'All' : colName);
+                              setSelectedCollection(isSelected ? '' : collection.id);
+                              setSpecialTag('All');
                               setIsFromHome(false);
                               setVisibleCount(6);
                             }}
@@ -902,7 +910,7 @@ function ShopContent() {
                             }`}
                           >
                             <span className={isSelected ? 'border-b-2 border-black pb-0.5 font-bold text-black' : ''}>
-                              {colName}
+                              {collection.name}
                             </span>
                           </button>
                         </li>
