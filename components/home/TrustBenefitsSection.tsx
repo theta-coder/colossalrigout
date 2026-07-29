@@ -12,7 +12,7 @@ export default async function TrustBenefitsSection() {
   return (
     <div className="border-t border-neutral-200 bg-[#fbfbfa] py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-3 text-center md:text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-3 text-center md:text-left">
           {benefits.map((benefit) => {
             const Icon =
               benefit.icon === 'truck'
