@@ -10,9 +10,9 @@ export default async function TrustBenefitsSection() {
   }
 
   return (
-    <div className="border-t border-neutral-200 bg-[#fbfbfa] py-6 sm:py-8">
+    <div className="border-t border-neutral-200 bg-[#fbfbfa] py-4 sm:py-7">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-4 gap-x-3 text-center md:text-left">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-x sm:divide-y-0 divide-neutral-200">
           {benefits.map((benefit) => {
             const Icon =
               benefit.icon === 'truck'
@@ -30,10 +30,10 @@ export default async function TrustBenefitsSection() {
             return (
               <div
                 key={benefit.id}
-                className="flex flex-col sm:flex-row items-center gap-2.5 justify-center md:justify-start"
+                className="flex min-h-16 w-full items-center justify-center gap-3 px-4 py-4 sm:min-h-14 sm:py-2"
               >
                 <Icon className="w-5 h-5 text-neutral-800 shrink-0" aria-hidden="true" />
-                <div>
+                <div className="min-w-0 text-left">
                   <p className="font-display font-bold text-xs uppercase tracking-wider text-neutral-900">
                     {benefit.title}
                   </p>
