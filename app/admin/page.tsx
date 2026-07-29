@@ -1015,7 +1015,7 @@ export default function AdminDashboardPage() {
       colors: p.colorIds || p.colors || [],
       sizes: p.sizeIds || p.sizes || [],
       description: p.description || '',
-      collections: p.collections || [],
+      collections: p.collectionIds || p.collections || [],
       isBestseller: p.isBestseller || false,
       sizeGuideId: p.sizeGuideId || ''
     });

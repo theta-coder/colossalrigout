@@ -301,7 +301,7 @@ function ShopContent() {
   const dynamicCollections = useMemo(() => {
     const productCols = (products || []).flatMap((p) => p.collections || []);
     const configuredNames = storeCollections.map((item) => item.name).filter(Boolean);
-    const merged = Array.from(new Set([...configuredNames, ...productCols])).filter(Boolean);
+    const merged = Array.from(new Set(configuredNames.length > 0 ? configuredNames : productCols)).filter(Boolean);
     return merged;
   }, [products, storeCollections]);
 
