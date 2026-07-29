@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { collection, getDocs, getDoc, setDoc, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { ShopCategory } from '../../../lib/category';
 
 const categoryCollection = 'shop-categories';
 const categoryImageCollection = 'shop-category-images';
+
+const noStoreHeaders = {
+  'Cache-Control': 'no-store, max-age=0',
+};
+
+function revalidateCategoryStorefront() {
+  revalidateTag('homepage:categories');
+  revalidateTag('homepage');
+  revalidatePath('/');
+  revalidatePath('/shop');
+}
 
 // GET: Fetch active (or all) categories ordered by 'order'
 export async function GET(req: NextRequest) {
@@ -54,7 +66,7 @@ export async function GET(req: NextRequest) {
       data: resultData,
       message: 'Categories retrieved successfully',
       source: 'firestore'
-    });
+    }, { headers: noStoreHeaders });
   } catch (error: any) {
     console.error("[API GET /api/categories] Error fetching categories:", error);
     return NextResponse.json({
@@ -62,7 +74,7 @@ export async function GET(req: NextRequest) {
       data: [],
       message: 'Failed to retrieve categories from the database',
       error: error.message
-    }, { status: 500 });
+    }, { status: 500, headers: noStoreHeaders });
   }
 }
 
@@ -168,6 +180,7 @@ export async function POST(req: NextRequest) {
         updatedAt: now
       })
     ]);
+    revalidateCategoryStorefront();
     console.log(`[API POST /api/categories] Created/Updated category "${formattedCategory.name}" (${docId})`);
 
     return NextResponse.json({
@@ -235,6 +248,7 @@ export async function PUT(req: NextRequest) {
       }));
     }
     await Promise.all(writes);
+    revalidateCategoryStorefront();
     console.log(`[API PUT /api/categories] Updated category ${category.id}`);
 
     return NextResponse.json({
@@ -286,6 +300,7 @@ export async function DELETE(req: NextRequest) {
       deleteDoc(doc(db, categoryCollection, id)),
       deleteDoc(doc(db, categoryImageCollection, id))
     ]);
+    revalidateCategoryStorefront();
     console.log(`[API DELETE /api/categories] Deleted category ${id}`);
 
     return NextResponse.json({

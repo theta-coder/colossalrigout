@@ -690,7 +690,7 @@ export default function AdminDashboardPage() {
   const fetchCategories = async () => {
     setCategoriesLoading(true);
     try {
-      const res = await fetch('/api/categories?all=true');
+      const res = await fetch('/api/categories?all=true', { cache: 'no-store' });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         setCategoriesList(data.data);
