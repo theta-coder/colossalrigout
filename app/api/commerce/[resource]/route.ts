@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase';
 
@@ -8,6 +9,14 @@ const collections: Record<string, string> = {
 };
 
 const cleanId = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '');
+
+function revalidateCommerceResource(resource: string) {
+  if (resource !== 'collections') return;
+  revalidateTag('homepage:collections');
+  revalidateTag('homepage');
+  revalidatePath('/');
+  revalidatePath('/shop');
+}
 
 const DEFAULT_SIZE_GUIDES = [
   {
@@ -110,6 +119,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ re
       updatedAt: now
     };
     await setDoc(doc(db, collectionName, id), saved);
+    revalidateCommerceResource(resource);
     return NextResponse.json({ success: true, data: saved });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -127,6 +137,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ res
     const current = await getDoc(doc(db, collectionName, record.id));
     const saved = { ...(current.exists() ? current.data() : {}), ...record, updatedAt: new Date().toISOString() };
     await setDoc(doc(db, collectionName, record.id), saved);
+    revalidateCommerceResource(resource);
     return NextResponse.json({ success: true, data: saved });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
@@ -140,6 +151,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   if (!collectionName || !id) return NextResponse.json({ success: false, message: 'Resource and ID are required' }, { status: 400 });
   try {
     await deleteDoc(doc(db, collectionName, id));
+    revalidateCommerceResource(resource);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

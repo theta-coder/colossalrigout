@@ -11,7 +11,7 @@ import { Product as CatalogProduct } from '../../lib/products';
 import { Heart, SlidersHorizontal, Star, X, ChevronDown } from 'lucide-react';
 import { ShopCategory } from '../../lib/category';
 import { AudienceGroup } from '../../lib/audience-group';
-import { ColorDocument } from '../../types/commerce';
+import { CollectionDocument, ColorDocument } from '../../types/commerce';
 import { formatPkr } from '../../lib/utils';
 import {
   getEffectiveProductPrice,
@@ -54,6 +54,7 @@ function ShopContent() {
   const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [audienceGroups, setAudienceGroups] = useState<AudienceGroup[]>([]);
+  const [storeCollections, setStoreCollections] = useState<CollectionDocument[]>([]);
 
   // Dynamic colors & banner states
   const [availableColors, setAvailableColors] = useState<ColorDocument[]>([]);
@@ -123,6 +124,18 @@ function ShopContent() {
         );
       })
       .catch(() => setAvailableColors([]));
+
+    fetch('/api/commerce/collections', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((payload) => {
+        const collectionList = Array.isArray(payload.data) ? payload.data : [];
+        setStoreCollections(
+          collectionList
+            .filter((item: CollectionDocument) => item.active !== false)
+            .sort((a: CollectionDocument, b: CollectionDocument) => (a.order || 0) - (b.order || 0))
+        );
+      })
+      .catch(() => setStoreCollections([]));
 
     fetch('/api/shop-page-settings')
       .then((res) => res.json())
@@ -285,16 +298,25 @@ function ShopContent() {
     return outSet;
   }, [inventoryVariants]);
 
-  const DEFAULT_EXPLORE_COLLECTIONS = useMemo(
-    () => ['The Everyday Edit', 'Power Look', 'Weekend Vibes', 'Date Night'],
-    []
-  );
-
   const dynamicCollections = useMemo(() => {
     const productCols = (products || []).flatMap((p) => p.collections || []);
-    const merged = Array.from(new Set([...DEFAULT_EXPLORE_COLLECTIONS, ...productCols])).filter(Boolean);
+    const configuredNames = storeCollections.map((item) => item.name).filter(Boolean);
+    const merged = Array.from(new Set([...configuredNames, ...productCols])).filter(Boolean);
     return merged;
-  }, [products, DEFAULT_EXPLORE_COLLECTIONS]);
+  }, [products, storeCollections]);
+
+  const selectedCollectionAliases = useMemo(() => {
+    if (!selectedCollection) return new Set<string>();
+    const selected = selectedCollection.trim().toLowerCase();
+    const configured = storeCollections.find((item) =>
+      [item.id, item.slug, item.name].some((value) => String(value || '').trim().toLowerCase() === selected)
+    );
+    return new Set(
+      [selectedCollection, configured?.id, configured?.slug, configured?.name]
+        .filter(Boolean)
+        .map((value) => String(value).trim().toLowerCase())
+    );
+  }, [selectedCollection, storeCollections]);
 
   const productsSource = campaignProducts !== null ? campaignProducts : products;
 
@@ -516,7 +538,7 @@ function ShopContent() {
       if (
         selectedCollection &&
         !(product.collectionIds || product.collections || []).some(
-          (c: string) => String(c).toLowerCase() === selectedCollection.toLowerCase()
+          (c: string) => selectedCollectionAliases.has(String(c).trim().toLowerCase())
         )
       ) {
         return false;
@@ -539,6 +561,7 @@ function ShopContent() {
     selectedSubCat,
     specialTag,
     selectedCollection,
+    selectedCollectionAliases,
     selectedSize,
     selectedColorId,
     availableColors,

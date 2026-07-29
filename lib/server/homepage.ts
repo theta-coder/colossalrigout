@@ -111,6 +111,7 @@ export interface HomepageCollection {
   subtitle?: string;
   slug: string;
   img: string;
+  order: number;
 }
 
 export interface HomepageReview {
@@ -444,10 +445,11 @@ export async function getFeaturedCollections(): Promise<HomepageCollection[]> {
         subtitle: data.subtitle || '',
         slug: data.slug || '',
         img: isBase64Image(data.imageData) ? homepageImageUrl('collection', d.id) : '/colossal-rigout-logo.png',
+        order: Number(data.order) || 0,
       });
     }
 
-    colls.sort((a, b) => Number((a as any).order || 0) - Number((b as any).order || 0));
+    colls.sort((a, b) => a.order - b.order);
     return colls;
   } catch (e) {
     console.error('[homepage] getFeaturedCollections error:', e);
