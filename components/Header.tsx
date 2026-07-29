@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, Search, Heart, ShoppingBag, MapPin, HelpCircle, User } from 'lucide-react';
+import { Menu, X, Search, Heart, ShoppingBag, HelpCircle, User } from 'lucide-react';
 
 import { AnnouncementSettings, DEFAULT_ANNOUNCEMENT_SETTINGS } from '../lib/storefront-settings';
 
@@ -88,9 +88,6 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
               )}
             </p>
             <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-300">
-              <span className="hover:text-white cursor-pointer flex items-center gap-1">
-                <MapPin className="w-3 h-3" /> Store Locator
-              </span>
               <Link href="/faq" className="hover:text-white flex items-center gap-1">
                 <HelpCircle className="w-3 h-3" /> Help
               </Link>
