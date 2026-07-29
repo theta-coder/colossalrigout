@@ -13,7 +13,6 @@ import {
   Mail, 
   ShoppingBag, 
   Layers, 
-  Database,
   Plus,
   ChevronsUpDown,
   BookOpen
@@ -71,7 +70,6 @@ export default function ReviewsAdminModule() {
   const [modifyingId, setModifyingId] = useState<string | null>(null);
   const [noteEditId, setNoteEditId] = useState<string | null>(null);
   const [tempNote, setTempNote] = useState('');
-  const [seeding, setSeeding] = useState(false);
 
   // Fetch products for dropdowns
   useEffect(() => {
@@ -134,30 +132,6 @@ export default function ReviewsAdminModule() {
     setProductFilter('All');
     setPage(1);
     setStatusTab('pending');
-  };
-
-  // Handle seed reviews
-  const handleSeedReviews = async () => {
-    if (!confirm('Are you sure you want to seed the 5 standard mock reviews? Existing reviews with duplicate IDs will be updated.')) return;
-    setSeeding(true);
-    try {
-      const headers = await adminHeaders();
-      const res = await fetch('/api/admin/reviews/seed', {
-        method: 'POST',
-        headers
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(data.message || 'Seeded reviews successfully!');
-        fetchReviews();
-      } else {
-        alert(data.message || 'Failed to seed reviews.');
-      }
-    } catch (err: any) {
-      alert(err.message || 'Error occurred while seeding.');
-    } finally {
-      setSeeding(false);
-    }
   };
 
   // Handle moderation status change
@@ -285,7 +259,7 @@ export default function ReviewsAdminModule() {
     <div className="space-y-6">
       
       {/* 1. STATS BANNER / CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-neutral-200/60 rounded-xl p-4 shadow-sm flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
             <RotateCcw className="w-5 h-5 animate-pulse" />
@@ -316,21 +290,6 @@ export default function ReviewsAdminModule() {
           </div>
         </div>
 
-        {/* DEMO / SEEDING WORKSPACE */}
-        <div className="bg-[#fcfcfb] border border-neutral-200 rounded-xl p-4 shadow-sm flex flex-col justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-neutral-500" />
-            <span className="text-[10px] uppercase font-bold text-neutral-500">Seed Simulation</span>
-          </div>
-          <button
-            onClick={handleSeedReviews}
-            disabled={seeding}
-            className="w-full bg-black text-white hover:bg-neutral-900 transition rounded-lg py-2 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <Database className="w-3.5 h-3.5" />
-            {seeding ? 'Seeding...' : 'Seed 5 Test Reviews'}
-          </button>
-        </div>
       </div>
 
       {/* 2. SUBMISSION FORM OVERLAY */}
