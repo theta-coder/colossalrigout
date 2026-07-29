@@ -3,6 +3,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { requireAdmin } from '../../../lib/serverAuth';
+import { createHash } from 'node:crypto';
 
 const productPlaceholder = '/product-placeholder.png';
 const isManagedImage = (value: unknown): value is string => typeof value === 'string' && value.startsWith('data:image/webp;base64,') && value.length <= 750_000;
@@ -77,14 +78,18 @@ async function saveImages(productId: string, values: unknown[], colorGalleries: 
   Object.entries(colorGalleries).forEach(([colorId, gallery]) => {
     if (!Array.isArray(gallery)) return;
     const validGallery = gallery.filter((image) => isManagedImage(image?.dataUrl || image?.url)).slice(0, 8);
-    validGallery.forEach((image, index) => pending.push({
-      id: `${productId}-${colorId}-image-${index + 1}`,
-      dataUrl: image.dataUrl || image.url,
-      colorId,
-      altText: String(image.altText || '').trim().slice(0, 180),
-      role: image.role === 'primary' || index === 0 && !validGallery.some((entry) => entry.role === 'primary') ? 'primary' : 'gallery',
-      order: index,
-    }));
+    validGallery.forEach((image, index) => {
+      const dataUrl = image.dataUrl || image.url;
+      const contentHash = createHash('sha256').update(dataUrl).digest('hex').slice(0, 10);
+      pending.push({
+        id: `${productId}-${colorId}-image-${index + 1}-${contentHash}`,
+        dataUrl,
+        colorId,
+        altText: String(image.altText || '').trim().slice(0, 180),
+        role: image.role === 'primary' || index === 0 && !validGallery.some((entry) => entry.role === 'primary') ? 'primary' : 'gallery',
+        order: index,
+      });
+    });
   });
   const valid = values.filter(isManagedImage);
   if (pending.length === 0) valid.forEach((dataUrl, order) => pending.push({ id: `${productId}-image-${order + 1}`, dataUrl, colorId: null, altText: '', role: order === 0 ? 'primary' : 'gallery', order }));

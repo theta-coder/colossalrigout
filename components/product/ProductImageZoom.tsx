@@ -52,6 +52,7 @@ export default function ProductImageZoom({
         alt={alt}
         fill
         priority
+        unoptimized
         sizes="(max-width: 1024px) 100vw, 50vw"
         className={`object-cover transition-opacity duration-300 ${
           isOutOfStock ? 'opacity-80' : 'opacity-100'
