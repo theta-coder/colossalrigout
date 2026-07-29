@@ -104,7 +104,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
         className="border-b border-white/50 sticky top-0 bg-white/82 backdrop-blur-md shadow-[0_1px_12px_rgba(0,0,0,0.04)] z-40"
         suppressHydrationWarning
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 md:py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Hamburger button */}
             <button
@@ -117,20 +117,17 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
             <Link
               href="/"
               aria-label="Colossal Rigout home"
-              className="group flex items-center gap-2 sm:gap-3"
+              className="group flex items-center"
             >
-              <span className="relative block h-10 w-10 sm:h-12 sm:w-12 shrink-0 overflow-hidden rounded-lg bg-black shadow-sm ring-1 ring-black/10 transition-transform group-hover:scale-105">
+              <span className="relative block h-14 w-28 sm:h-16 sm:w-32 shrink-0 transition-transform duration-200 group-hover:scale-[1.02]">
                 <Image
                   src="/colossal-rigout-logo.png"
-                  alt=""
+                  alt="Colossal Rigout"
                   fill
                   priority
-                  sizes="(max-width: 640px) 40px, 48px"
-                  className="object-cover scale-[1.75]"
+                  sizes="(max-width: 640px) 112px, 128px"
+                  className="object-contain object-left"
                 />
-              </span>
-              <span className="font-display text-lg sm:text-2xl font-bold tracking-tight whitespace-nowrap">
-                Colossal<span className="text-neutral-400">Rigout</span>
               </span>
             </Link>
           </div>
