@@ -16,7 +16,7 @@ import RecentlyViewedProducts, { recordRecentlyViewed } from '@/components/produ
 import { ShippingPolicySettings } from '@/lib/shipping-policy';
 import { ReturnsPolicySettings } from '@/lib/returns-policy';
 import ProductImageGallery, { GalleryItem } from '@/components/product/ProductImageGallery';
-import { Star, Heart, Check, ChevronDown, Sparkles, AlertTriangle, ShieldCheck, Camera, Upload, X } from 'lucide-react';
+import { Star, Heart, ChevronDown, Sparkles, AlertTriangle, ShieldCheck, Camera, Upload, X } from 'lucide-react';
 
 interface ProductDetailsClientProps {
   product: CatalogProduct;
@@ -614,19 +614,10 @@ export default function ProductDetailsClient({
 
           {/* Stock Warning & Quantity Control */}
           <div className="space-y-4 pt-2">
-            {isCurrentVariantOutOfStock ? (
+            {isCurrentVariantOutOfStock && (
               <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs text-red-800 font-semibold">
                 <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
                 This color and size combination is currently Out of Stock.
-              </div>
-            ) : (
-              <div className="flex items-center justify-between text-xs font-medium text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-lg border border-emerald-200">
-                <span className="flex items-center gap-1.5 font-semibold">
-                  <Check className="w-4 h-4 text-emerald-600" /> In Stock &amp; Ready to Ship
-                </span>
-                <span className="text-[11px] text-emerald-800 font-mono font-bold">
-                  {availableStock} available
-                </span>
               </div>
             )}
 
