@@ -103,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         try {
           const savedCart = localStorage.getItem('cr_cart');
           const savedWishlist = localStorage.getItem('cr_wishlist');
-          
+
           if (savedCart) setCart(JSON.parse(savedCart));
           if (savedWishlist) setWishlist(JSON.parse(savedWishlist));
         } catch (e) {
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const q = query(collection(db, 'orders'), where('ownerId', '==', firebaseUser.uid));
           const querySnapshot = await getDocs(q);
           const loadedOrders: Order[] = [];
-          
+
           querySnapshot.forEach((docSnap) => {
             loadedOrders.push(docSnap.data() as Order);
           });
@@ -332,7 +332,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         message: 'An offer has already been applied. Only one promotion can be used at a time.',
       };
     }
-    
+
     try {
       // 1. Verify eligibility first
       const token = await auth.currentUser?.getIdToken();
@@ -406,8 +406,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const finalTotal = Math.max(subtotal + shipCost - discount, 0);
 
     const orderId = `CR-${Math.floor(100000 + Math.random() * 900000)}`;
-    const isExpress = shipCost === 12.00;
-    const deliveryDays = isExpress ? 2 : 6;
+    const deliveryDays = 6;
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
     const deliveryStr = deliveryDate.toLocaleDateString('en-US', {

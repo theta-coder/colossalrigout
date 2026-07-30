@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     if (body.settings) {
       const pageTitle = String(body.settings.pageTitle || '').trim();
       const intro = String(body.settings.intro || '').trim();
-      const freeShippingThreshold = Number(body.settings.freeShippingThreshold ?? 5000);
-      const flatRate = Number(body.settings.flatRate ?? 500);
+      const freeShippingThreshold = Number(body.settings.freeShippingThreshold ?? 2500);
+      const flatRate = Number(body.settings.flatRate ?? 250);
       const deliveryMinBusinessDays = Math.floor(Number(body.settings.deliveryMinBusinessDays ?? 4));
       const deliveryMaxBusinessDays = Math.floor(Number(body.settings.deliveryMaxBusinessDays ?? 6));
       const productPageNote = String(body.settings.productPageNote || '').trim();

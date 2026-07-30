@@ -115,7 +115,7 @@ export default function TermsClient() {
               Deliveries are fulfilled nationwide across Pakistan:
             </p>
             <ul className="space-y-2 text-sm text-neutral-600 list-disc pl-5 font-light">
-              <li>Shipping is <strong className="font-semibold text-neutral-800">FREE across Pakistan</strong> on all products. There are no hidden delivery fees or minimum order thresholds.</li>
+              <li>Standard shipping is <strong className="font-semibold text-neutral-800">Rs. 250</strong> across Pakistan. Shipping is <strong className="font-semibold text-neutral-800">free</strong> on all orders of <strong className="font-semibold text-neutral-800">Rs. 2,500</strong> or more.</li>
               <li>Orders are shipped through <strong className="font-semibold text-neutral-800">TCS</strong> and are generally delivered within <strong className="font-semibold text-neutral-800">3 to 7 business days</strong>.</li>
               <li>Delivery times may occasionally be affected by circumstances outside our control, including public holidays, harsh weather, remote locations, or courier transit delays.</li>
               <li>For complete logistics guidelines, please consult our official <Link href="/shipping-policy" className="underline font-medium hover:text-black">Shipping Policy</Link>.</li>

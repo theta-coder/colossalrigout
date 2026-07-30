@@ -202,7 +202,7 @@ async function optimizeProductImage(file: File): Promise<string> {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { products, loading: productsLoading, addProduct, updateProduct, deleteProduct, resetProducts, refreshProducts } = useProducts();
-  
+
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'add-product' | 'orders' | 'promos' | 'campaigns' | 'campaign-cards' | 'promotions' | 'stores' | 'hero' | 'categories' | 'colors' | 'sizes' | 'size-guides' | 'collections' | 'reviews' | 'inventory' | 'trust-benefits' | 'about-page' | 'shipping-policy' | 'returns-policy' | 'faq-manager' | 'contact-inquiries' | 'storefront-content'>('overview');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
     setCommerceColors((results[0].data || []).filter((item: any) => item.active !== false));
     setCommerceSizes((results[1].data || []).filter((item: any) => item.active !== false));
     setCommerceCollections((results[2].data || []).filter((item: any) => item.active !== false));
-    
+
     const loadedGuides = (results[3].data || []).filter((item: any) => item.active !== false);
     if (loadedGuides.length === 0) {
       setCommerceSizeGuides([
@@ -413,7 +413,7 @@ export default function AdminDashboardPage() {
     try {
       const colRef = collection(db, 'orders');
       const snapshot = await getDocs(colRef);
-      
+
       if (snapshot.empty) {
         setOrders([]);
       } else {
@@ -421,7 +421,7 @@ export default function AdminDashboardPage() {
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const customer = data.customer || {};
-          
+
           const canonicalToAdmin: Record<string, Order['status']> = {
             placed: 'Placed', confirmed: 'Processed', processing: 'Processed', packed: 'Processed',
             shipped: 'Shipped', 'in-transit': 'Shipped', 'out-for-delivery': 'Out for Delivery', delivered: 'Delivered',
@@ -432,12 +432,12 @@ export default function AdminDashboardPage() {
           let computedStatus: Order['status'] = statusRank[legacyStatus] > statusRank[canonicalStatus] ? legacyStatus : canonicalStatus;
           if (!data.currentStatus && !data.status && typeof data.statusIndex === 'number') {
             const index = data.statusIndex;
-            computedStatus = 
+            computedStatus =
               index === 0 ? 'Placed' :
-              index === 1 ? 'Processed' :
-              index === 2 ? 'Shipped' :
-              index === 3 ? 'Out for Delivery' :
-              index === 4 ? 'Delivered' : 'Placed';
+                index === 1 ? 'Processed' :
+                  index === 2 ? 'Shipped' :
+                    index === 3 ? 'Out for Delivery' :
+                      index === 4 ? 'Delivered' : 'Placed';
           }
 
           loaded.push({
@@ -984,7 +984,7 @@ export default function AdminDashboardPage() {
       setAdminColorGalleries({});
 
       triggerToast(`Successfully added dynamic product "${added.name}"!`);
-      
+
       // Reset form
       setProdForm({
         name: '',
@@ -1000,7 +1000,7 @@ export default function AdminDashboardPage() {
         isBestseller: false,
         sizeGuideId: ''
       });
-      
+
       setActiveTab('products');
     } catch (err) {
       console.error("Error creating product:", err);
@@ -1074,7 +1074,7 @@ export default function AdminDashboardPage() {
   const handleUpdateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
-    
+
     setActionLoading(true);
 
     try {
@@ -1118,7 +1118,7 @@ export default function AdminDashboardPage() {
       triggerToast(`Product "${prodForm.name}" updated successfully!`);
       setEditingProduct(null);
       setAdminColorGalleries({});
-      
+
       // Reset form
       setProdForm({
         name: '',
@@ -1134,7 +1134,7 @@ export default function AdminDashboardPage() {
         isBestseller: false,
         sizeGuideId: ''
       });
-      
+
       setActiveTab('products');
     } catch (err) {
       console.error("Error updating product:", err);
@@ -1188,11 +1188,11 @@ export default function AdminDashboardPage() {
 
       const payload = await response.json();
       if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to update tracking status.');
-      
+
       setOrders((prev) =>
         prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord))
       );
-      
+
       triggerToast(`Order ${orderId} marked as "${newStatus}"!`);
     } catch (err: any) {
       console.error("Error updating order status:", err);
@@ -1231,9 +1231,9 @@ export default function AdminDashboardPage() {
 
   // Inventory Filtering & Search
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(invSearch.toLowerCase()) || 
-                          p.cat.toLowerCase().includes(invSearch.toLowerCase()) || 
-                          p.description?.toLowerCase().includes(invSearch.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(invSearch.toLowerCase()) ||
+      p.cat.toLowerCase().includes(invSearch.toLowerCase()) ||
+      p.description?.toLowerCase().includes(invSearch.toLowerCase());
     const matchesCategory = invCategory === 'All' || p.cat === invCategory;
     return matchesSearch && matchesCategory;
   });
@@ -1254,7 +1254,7 @@ export default function AdminDashboardPage() {
     const totalOrdersCount = orders.length;
     const totalProductsCount = products.length;
     const pendingFulfill = orders.filter((o) => o.status === 'Placed' || o.status === 'Processed').length;
-    
+
     return {
       revenue: totalRevenue,
       orders: totalOrdersCount,
@@ -1276,7 +1276,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7f6] flex flex-col md:flex-row font-sans text-neutral-900">
-      
+
       {/* MOBILE STICKY HEADER (Visible on screens < md) */}
       <header className="md:hidden bg-black text-white px-4 py-3 border-b border-neutral-800 flex items-center justify-between z-40 sticky top-0 shadow-md">
         <div>
@@ -1285,7 +1285,7 @@ export default function AdminDashboardPage() {
             {isDemoMode ? '⚡ Sandbox Mode' : '🔐 Secured'}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -1304,9 +1304,8 @@ export default function AdminDashboardPage() {
           <nav className="space-y-1">
             <button
               onClick={() => { setActiveTab('overview'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'overview' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'overview' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <LayoutDashboard className="w-4 h-4" />
               Dashboard Overview
@@ -1314,9 +1313,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('products'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'products' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'products' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <Package className="w-4 h-4" />
               Manage Inventory
@@ -1324,9 +1322,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('add-product'); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'add-product' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'add-product' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <PlusCircle className="w-4 h-4" />
               {editingProduct ? 'Edit Selected Product' : 'Add New Product'}
@@ -1334,9 +1331,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('orders'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'orders' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'orders' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <ShoppingBag className="w-4 h-4" />
               Order fulfillment
@@ -1349,9 +1345,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('promotions'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <Ticket className="w-4 h-4" />
               Promotions & Rules
@@ -1359,9 +1354,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('campaigns'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'campaigns' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'campaigns' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <Megaphone className="w-4 h-4" />
               Promo Campaigns
@@ -1369,9 +1363,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('campaign-cards'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <CreditCard className="w-4 h-4" />
               Campaign Cards
@@ -1379,9 +1372,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('stores'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <MapPin className="w-4 h-4" />
               Store Locations
@@ -1389,9 +1381,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('hero'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'hero' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'hero' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <LayoutTemplate className="w-4 h-4" />
               Hero Slides
@@ -1399,9 +1390,8 @@ export default function AdminDashboardPage() {
 
             <button
               onClick={() => { setActiveTab('categories'); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === 'categories' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'categories' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <Grid className="w-4 h-4" />
               Shop Categories
@@ -1425,9 +1415,8 @@ export default function AdminDashboardPage() {
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setEditingProduct(null); setIsMobileMenuOpen(false); }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                  activeTab === tab ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === tab ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -1460,9 +1449,8 @@ export default function AdminDashboardPage() {
         <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           <button
             onClick={() => { setActiveTab('overview'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'overview' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'overview' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard Overview
@@ -1470,9 +1458,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('products'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'products' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'products' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <Package className="w-4 h-4" />
             Manage Inventory
@@ -1480,9 +1467,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => setActiveTab('add-product')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'add-product' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'add-product' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <PlusCircle className="w-4 h-4" />
             {editingProduct ? 'Edit Selected Product' : 'Add New Product'}
@@ -1490,9 +1476,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('orders'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'orders' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'orders' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <ShoppingBag className="w-4 h-4" />
             Order fulfillment
@@ -1505,9 +1490,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('promotions'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'promotions' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <Ticket className="w-4 h-4" />
             Promotions & Rules
@@ -1515,9 +1499,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('campaigns'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'campaigns' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'campaigns' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <Megaphone className="w-4 h-4" />
             Promo Campaigns
@@ -1525,9 +1508,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('campaign-cards'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'campaign-cards' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <CreditCard className="w-4 h-4" />
             Campaign Cards
@@ -1535,9 +1517,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('stores'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'stores' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <MapPin className="w-4 h-4" />
             Store Locations
@@ -1545,9 +1526,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('hero'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'hero' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'hero' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <LayoutTemplate className="w-4 h-4" />
             Hero Slides
@@ -1555,9 +1535,8 @@ export default function AdminDashboardPage() {
 
           <button
             onClick={() => { setActiveTab('categories'); setEditingProduct(null); }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-              activeTab === 'categories' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === 'categories' ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+              }`}
           >
             <Grid className="w-4 h-4" />
             Shop Categories
@@ -1581,9 +1560,8 @@ export default function AdminDashboardPage() {
             <button
               key={tab}
               onClick={() => { setActiveTab(tab); setEditingProduct(null); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${
-                activeTab === tab ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition ${activeTab === tab ? 'bg-white text-black font-extrabold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white'
+                }`}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -1612,7 +1590,7 @@ export default function AdminDashboardPage() {
 
       {/* MAIN LAYOUT CONTENT */}
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        
+
         {/* TOAST SYSTEM */}
         {successMsg && (
           <div className="fixed top-4 right-4 z-50 bg-black text-white text-xs font-bold px-4 py-3 rounded-lg shadow-xl flex items-center gap-2 border border-neutral-800 animate-slide-in">
@@ -1796,13 +1774,12 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-5 font-bold text-neutral-900">{formatPkr(Number(o.total || 0))}</td>
                           <td className="py-3.5 px-5">
-                            <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
-                              o.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                              o.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                              o.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                              o.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                              'bg-green-100 text-green-800'
-                            }`}>
+                            <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${o.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                                o.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
+                                  o.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                    o.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                      'bg-green-100 text-green-800'
+                              }`}>
                               {o.status}
                             </span>
                           </td>
@@ -1844,7 +1821,7 @@ export default function AdminDashboardPage() {
         {/* 2. TAB: INVENTORY CATALOG */}
         {activeTab === 'products' && (
           <div className="space-y-6 animate-fade-up">
-            
+
             {/* SEARCH AND FILTERS BAR */}
             <div className="bg-white border border-neutral-200/65 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row gap-3 items-center">
               <div className="relative flex-1 w-full">
@@ -2022,7 +1999,7 @@ export default function AdminDashboardPage() {
         {/* 3. TAB: ADD / EDIT PRODUCT FORM */}
         {activeTab === 'add-product' && (
           <div className="bg-white border border-neutral-200/65 rounded-xl shadow-sm p-6 sm:p-8 max-w-4xl mx-auto animate-fade-up">
-            
+
             <div className="flex items-center justify-between border-b border-neutral-200 pb-4 mb-6">
               <div>
                 <h3 className="font-display font-extrabold text-lg text-neutral-900 tracking-wide uppercase">
@@ -2043,7 +2020,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <form onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct} className="space-y-6">
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Product Title */}
                 <div>
@@ -2261,7 +2238,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mt-5 mb-2">Size Guide</label>
-                <select value={prodForm.sizeGuideId} onChange={e => setProdForm({...prodForm, sizeGuideId:e.target.value})} className="w-full px-3.5 py-2.5 text-sm border rounded-lg">
+                <select value={prodForm.sizeGuideId} onChange={e => setProdForm({ ...prodForm, sizeGuideId: e.target.value })} className="w-full px-3.5 py-2.5 text-sm border rounded-lg">
                   <option value="">No size guide</option>
                   {commerceSizeGuides.map(guide => <option key={guide.id} value={guide.id}>{guide.name}</option>)}
                 </select>
@@ -2318,7 +2295,7 @@ export default function AdminDashboardPage() {
         {/* 4. TAB: ORDERS MANAGEMENT */}
         {activeTab === 'orders' && (
           <div className="space-y-6 animate-fade-up">
-            
+
             {/* ORDERS FILTER TABS */}
             <div className="bg-white border border-neutral-200/65 rounded-xl p-4 shadow-sm flex flex-wrap gap-1.5">
               {(['All', 'Placed', 'Processed', 'Shipped', 'Delivered'] as const).map((flt) => {
@@ -2327,11 +2304,10 @@ export default function AdminDashboardPage() {
                   <button
                     key={flt}
                     onClick={() => { setOrderFilter(flt); setOrdersPage(1); }}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition cursor-pointer ${
-                      orderFilter === flt
+                    className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition cursor-pointer ${orderFilter === flt
                         ? 'bg-black text-white shadow-sm'
                         : 'bg-neutral-50 border text-neutral-600 hover:bg-neutral-100'
-                    }`}
+                      }`}
                   >
                     {flt} ({count})
                   </button>
@@ -2363,13 +2339,12 @@ export default function AdminDashboardPage() {
                           <span className="font-display font-extrabold text-neutral-900 text-sm">
                             ORDER {ord.id}
                           </span>
-                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${
-                            ord.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                            ord.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                            ord.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
-                            ord.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                            'bg-green-100 text-green-800'
-                          }`}>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${ord.status === 'Placed' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                              ord.status === 'Processed' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
+                                ord.status === 'Shipped' ? 'bg-amber-50 text-amber-600 border border-amber-200' :
+                                  ord.status === 'Out for Delivery' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                    'bg-green-100 text-green-800'
+                            }`}>
                             {ord.status}
                           </span>
                         </div>
@@ -2392,7 +2367,7 @@ export default function AdminDashboardPage() {
 
                       {/* Content inside card */}
                       <div className="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs">
-                        
+
                         {/* Products List inside order */}
                         <div className="lg:col-span-6 space-y-3">
                           <p className="font-bold text-[10px] text-neutral-400 uppercase tracking-widest pb-1 border-b">
@@ -2450,21 +2425,21 @@ export default function AdminDashboardPage() {
                           <div className="space-y-1.5 text-neutral-600 font-medium">
                             <div className="flex justify-between">
                               <span>Subtotal:</span>
-                              <span>${ord.subtotal?.toFixed(2)}</span>
+                              <span>{formatPkr(ord.subtotal ?? 0)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Fulfillment Shipping:</span>
-                              <span>{ord.shippingCost === 0 ? 'FREE' : `$${ord.shippingCost?.toFixed(2)}`}</span>
+                              <span>{ord.shippingCost === 0 ? 'FREE' : formatPkr(ord.shippingCost ?? 0)}</span>
                             </div>
                             {ord.promoApplied && (
                               <div className="flex justify-between text-emerald-600 font-semibold">
                                 <span>Promo ({ord.promoApplied}):</span>
-                                <span>-${ord.promoDiscount?.toFixed(2)}</span>
+                                <span>-{formatPkr(ord.promoDiscount ?? 0)}</span>
                               </div>
                             )}
                             <div className="border-t pt-1.5 flex justify-between font-bold text-neutral-900 text-sm">
                               <span>Total Charged:</span>
-                              <span>${ord.total?.toFixed(2)}</span>
+                              <span>{formatPkr(ord.total ?? 0)}</span>
                             </div>
                           </div>
 
@@ -2499,12 +2474,12 @@ export default function AdminDashboardPage() {
         {/* 5. TAB: PROMO CODES MANAGEMENT */}
         {activeTab === 'promos' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-up">
-            
+
             {/* Create Promo Code Form */}
             <div className="bg-white border border-neutral-200/65 rounded-xl shadow-sm p-6 lg:p-7 self-start">
               <h3 className="font-display font-extrabold text-xs tracking-wider uppercase mb-1">Create Promo Code</h3>
               <p className="text-[11px] text-neutral-500 mb-5">Define custom discounts and requirements for customer checkout systems.</p>
-              
+
               <form onSubmit={handleCreatePromo} className="space-y-4 text-xs">
                 <div>
                   <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Promo Code *</label>
@@ -2620,11 +2595,10 @@ export default function AdminDashboardPage() {
                               {promo.minOrder > 0 ? `$${promo.minOrder.toFixed(2)}` : 'None'}
                             </td>
                             <td className="py-4 px-5">
-                              <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                                promo.status === 'Active'
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${promo.status === 'Active'
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : 'bg-neutral-100 text-neutral-500 border'
-                              }`}>
+                                }`}>
                                 {promo.status}
                               </span>
                             </td>
@@ -2652,7 +2626,7 @@ export default function AdminDashboardPage() {
         {/* 6. TAB: HERO SLIDES MANAGEMENT */}
         {activeTab === 'hero' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-up">
-            
+
             {/* Create or Edit Hero Slide Form */}
             <div className="bg-white border border-neutral-200/65 rounded-xl shadow-sm p-6 lg:p-7 self-start">
               <div className="flex items-center justify-between mb-1">
@@ -2686,7 +2660,7 @@ export default function AdminDashboardPage() {
               <p className="text-[11px] text-neutral-500 mb-5">
                 Upload custom background images and customize hero taglines, order, and CTA buttons.
               </p>
-              
+
               <form onSubmit={handleCreateOrUpdateHeroSlide} className="space-y-4 text-xs">
                 {/* Hero Image File Selector & Preview */}
                 <div>
@@ -3188,13 +3162,13 @@ export default function AdminDashboardPage() {
                               className="hidden"
                             />
                           </label>
-                          
+
                           {categoryImageFile && (
                             <span className="text-xs font-medium text-neutral-500 truncate max-w-xs">
                               {categoryImageFile.name} ({(categoryImageFile.size / 1024 / 1024).toFixed(2)} MB)
                             </span>
                           )}
-                          
+
                           {categoryImagePreview && (
                             <div className="w-16 h-16 rounded-xl bg-neutral-100 overflow-hidden relative shrink-0 border border-neutral-200 shadow-inner">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -3286,9 +3260,8 @@ export default function AdminDashboardPage() {
                   {categoriesList.slice((categoriesPage - 1) * 8, categoriesPage * 8).map((cat, idx) => (
                     <div
                       key={cat.id}
-                      className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition ${
-                        !cat.active ? 'bg-neutral-50/70 opacity-75' : 'hover:bg-neutral-50/50'
-                      }`}
+                      className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition ${!cat.active ? 'bg-neutral-50/70 opacity-75' : 'hover:bg-neutral-50/50'
+                        }`}
                     >
                       {/* Left: Thumbnail & Details */}
                       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -3338,9 +3311,8 @@ export default function AdminDashboardPage() {
                             <span className="font-mono text-[10px] bg-neutral-100 text-neutral-600 px-2 py-0.5 rounded uppercase font-semibold">
                               {cat.slug}
                             </span>
-                            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${
-                              cat.style === 'sale' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-neutral-100 text-neutral-700'
-                            }`}>
+                            <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${cat.style === 'sale' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-neutral-100 text-neutral-700'
+                              }`}>
                               {cat.style}
                             </span>
                           </div>
@@ -3357,11 +3329,10 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => handleToggleCategoryActive(cat)}
                           disabled={actionLoading}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
-                            cat.active
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${cat.active
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                               : 'bg-neutral-100 text-neutral-500 border-neutral-300 hover:bg-neutral-200'
-                          }`}
+                            }`}
                         >
                           {cat.active ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5" />}
                           {cat.active ? 'Active' : 'Hidden'}

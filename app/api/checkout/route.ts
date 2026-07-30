@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (requestedOwnerId && requestedOwnerId !== ownerId) {
       return NextResponse.json({ error: 'Your login session could not be verified. Please sign in again.' }, { status: 401 });
     }
-    
+
     const normalizedCheckoutEmail = toNormalizedEmail(shippingInfo.email);
     items.forEach((item: any) => {
       if (!item.variantId) {
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       for (const item of items) {
         const productRef = doc(db, 'products', String(item.id));
         const variantRef = item.variantId ? doc(db, 'product-variants', item.variantId) : null;
-        
+
         const productSnapshot = await transaction.get(productRef);
         const variantSnapshot = variantRef ? await transaction.get(variantRef) : null;
 
@@ -295,9 +295,9 @@ export async function POST(request: NextRequest) {
       if (matchedCouponPromo) {
         const minOrder = Number(matchedCouponPromo.minimumOrder || 0);
         if (minOrder > 0 && eligibleSubtotalForCoupon < minOrder) {
-          throw new Error(`Minimum order of $${minOrder.toFixed(2)} is required for coupon ${matchedCouponPromo.couponCode}.`);
+          throw new Error(`Minimum order of PKR ${minOrder.toFixed(2)} is required for coupon ${matchedCouponPromo.couponCode}.`);
         }
-        
+
         // Coupon price is already applied to eligible lines. Keep the saving for
         // the order audit and never subtract the same discount a second time.
         discountAmount = couponSavings;
@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
       }
 
       const finalSubtotal = Math.max(0, rawSubtotal);
-      
+
       // Authoritatively fetch shipping settings and calculate shipping fee on server
       const shipSnap = await transaction.get(doc(db, 'shipping-policy', 'settings'));
       const shippingSettings = shipSnap.exists()
@@ -354,7 +354,7 @@ export async function POST(request: NextRequest) {
       const isFreeShippingPromo = matchedCouponPromo?.discountType === 'free-shipping';
       const serverShippingCost = calculateShippingFee(finalSubtotal, shippingSettings, isFreeShippingPromo);
       const deliveryDays = 6;
-      const deliveryDate = new Date(); 
+      const deliveryDate = new Date();
       deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
       const estimatedDeliveryAt = deliveryDate.toISOString();
       const publicTrackingId = generatePublicTrackingId(orderId);

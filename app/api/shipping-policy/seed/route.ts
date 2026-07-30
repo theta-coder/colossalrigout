@@ -4,11 +4,11 @@ import { db } from '../../../../lib/firebase';
 import { requireAdmin } from '../../../../lib/serverAuth';
 
 const defaults = [
-  ['Delivery Times','Orders are shipped through TCS and are generally delivered within 3–7 business days across Pakistan.','truck'],
-  ['Shipping Charges','We offer free delivery across Pakistan on all products. There are no delivery charges or minimum purchase thresholds.','dollar'],
-  ['Order Tracking','Once your order is placed, use your tracking ID together with your checkout email address on our Track Order page to follow real-time status updates.','package'],
-  ['Nationwide Shipping','Colossal Rigout ships nationwide across Pakistan only via TCS.','globe'],
-  ['Delays & Exceptions','Delivery times may occasionally be affected by circumstances outside our control, including public holidays, harsh weather, remote locations, or courier transit delays.','alert'],
+  ['Delivery Times', 'Orders are shipped through TCS and are generally delivered within 3–7 business days across Pakistan.', 'truck'],
+  ['Shipping Charges', 'Standard shipping is Rs. 250 across Pakistan. Free nationwide shipping is available on all orders of Rs. 2,500 or more.', 'dollar'],
+  ['Order Tracking', 'Once your order is placed, use your tracking ID together with your checkout email address on our Track Order page to follow real-time status updates.', 'package'],
+  ['Nationwide Shipping', 'Colossal Rigout ships nationwide across Pakistan only via TCS.', 'globe'],
+  ['Delays & Exceptions', 'Delivery times may occasionally be affected by circumstances outside our control, including public holidays, harsh weather, remote locations, or courier transit delays.', 'alert'],
 ] as const;
 
 export async function POST(request: NextRequest) {
