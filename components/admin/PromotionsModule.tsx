@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminApiFetch } from '../../lib/admin-api';
+import { formatPkr } from '../../lib/utils';
 import { Trash2, Edit2, Plus, X, Search, Tag, CheckCircle, AlertCircle, Eye, Users, Gift, Ticket, RefreshCw } from 'lucide-react';
 
 interface Promotion {
@@ -744,11 +745,11 @@ export default function PromotionsModule() {
                           {p.discountType === 'percentage'
                             ? `${p.discountValue}%`
                             : p.discountType === 'fixed'
-                            ? `$${p.discountValue.toFixed(2)}`
+                            ? formatPkr(p.discountValue)
                             : 'Free'}
                         </td>
                         <td className="py-4 px-5">
-                          <div>Min: ${p.minimumOrder.toFixed(2)}</div>
+                          <div>Min: {formatPkr(p.minimumOrder)}</div>
                           <div className="text-[10px] text-neutral-400">Target: {p.targetType.replace('-', ' ')}</div>
                         </td>
                         <td className="py-4 px-5 capitalize">{p.channel}</td>

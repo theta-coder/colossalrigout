@@ -405,7 +405,7 @@ export async function getActiveCampaignCards(): Promise<HomepageCampaignCard[]> 
         ? promotion.discountType === 'percentage'
           ? `${Number(promotion.discountValue || 0)}% OFF`
           : promotion.discountType === 'fixed'
-            ? `$${Number(promotion.discountValue || 0)} OFF`
+            ? `Rs. ${Number(promotion.discountValue || 0).toLocaleString('en-PK')} OFF`
             : 'FREE SHIPPING'
         : '';
       const tokens: Record<string, string> = {

@@ -662,7 +662,7 @@ export default function PromoCampaignsModule() {
                     {/* Meta tags */}
                     <div className="flex flex-wrap gap-2 text-[10px]">
                       <span className="bg-neutral-100 text-neutral-600 px-2 py-1 rounded font-semibold">
-                        {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `$${c.discountValue} OFF`}
+                        {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `${formatPkr(Number(c.discountValue))} OFF`}
                       </span>
                       <span className="bg-neutral-100 text-neutral-600 px-2 py-1 rounded font-semibold capitalize">
                         {c.discountMode}

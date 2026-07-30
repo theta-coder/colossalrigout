@@ -2589,10 +2589,10 @@ export default function AdminDashboardPage() {
                             </td>
                             <td className="py-4 px-5 capitalize">{promo.type} Discount</td>
                             <td className="py-4 px-5 font-bold text-neutral-900">
-                              {promo.type === 'percentage' ? `${promo.value}%` : `$${promo.value.toFixed(2)}`}
+                              {promo.type === 'percentage' ? `${promo.value}%` : formatPkr(promo.value)}
                             </td>
                             <td className="py-4 px-5 font-bold text-neutral-500">
-                              {promo.minOrder > 0 ? `$${promo.minOrder.toFixed(2)}` : 'None'}
+                              {promo.minOrder > 0 ? formatPkr(promo.minOrder) : 'None'}
                             </td>
                             <td className="py-4 px-5">
                               <span className={`inline-flex px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${promo.status === 'Active'
