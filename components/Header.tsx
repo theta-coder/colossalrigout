@@ -52,7 +52,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
     <>
       {/* TOP ANNOUNCEMENT BAR */}
       {announcement?.enabled !== false && (
-        <div className="bg-black text-white text-[11px] sm:text-xs">
+        <div className="bg-white text-black border-b border-neutral-200 text-[11px] sm:text-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
             <span className="hidden sm:block"></span>
             <p className="mx-auto tracking-wide font-normal truncate px-2">
@@ -86,9 +86,9 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
                 </>
               )}
             </p>
-            <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-300">
-              <Link href="/faq" className="hover:text-white flex items-center gap-1">
-                <HelpCircle className="w-3 h-3" /> Help
+            <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-600">
+              <Link href="/faq" className="hover:text-black flex items-center gap-1">
+                <HelpCircle className="w-3 h-3 text-neutral-500" /> Help
               </Link>
             </div>
           </div>
