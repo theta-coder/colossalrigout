@@ -75,8 +75,6 @@ export default function HomePageSkeleton() {
     <div className="flex flex-col" aria-busy="true" aria-live="polite">
       <span className="sr-only">Loading the Colossal Rigout homepage</span>
 
-      <HeroSkeleton />
-
       <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:py-16">
         <SectionHeadingSkeleton />
         <CategoriesSkeleton />

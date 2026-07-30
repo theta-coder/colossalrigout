@@ -1,5 +1,4 @@
 import React, { Suspense } from 'react';
-import HeroSection from '@/components/home/HeroSection';
 import CategorySection from '@/components/home/CategorySection';
 import ProductSection from '@/components/home/ProductSection';
 import PromoCampaignSection from '@/components/home/PromoCampaignSection';
@@ -10,7 +9,6 @@ import TrustBenefitsSection from '@/components/home/TrustBenefitsSection';
 import NewsletterFormClient from '@/components/home/NewsletterFormClient';
 import { getNewsletterSettings } from '@/lib/server/storefront-settings';
 
-import { HeroSkeleton } from '@/components/home/skeletons/HeroSkeleton';
 import { CategoriesSkeleton } from '@/components/home/skeletons/CategoriesSkeleton';
 import { ProductRowSkeleton } from '@/components/home/skeletons/ProductRowSkeleton';
 import { PromoSkeleton } from '@/components/home/skeletons/PromoSkeleton';
@@ -51,52 +49,47 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-0">
-      {/* 1. HERO SECTION */}
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroSection />
-      </Suspense>
-
-      {/* 2. SHOP BY CATEGORY */}
+      {/* 1. SHOP BY CATEGORY */}
       <Suspense fallback={<CategoriesSkeleton />}>
         <CategorySection />
       </Suspense>
 
-      {/* 3. NEW ARRIVALS */}
+      {/* 2. NEW ARRIVALS */}
       <Suspense fallback={<ProductRowSkeleton />}>
         <ProductSection type="new-arrivals" />
       </Suspense>
 
-      {/* 4. DYNAMIC PROMO CAMPAIGN BANNER */}
+      {/* 3. DYNAMIC PROMO CAMPAIGN BANNER */}
       <Suspense fallback={<PromoSkeleton />}>
         <PromoCampaignSection />
       </Suspense>
 
-      {/* 5. BEST SELLERS */}
+      {/* 4. BEST SELLERS */}
       <Suspense fallback={<ProductRowSkeleton />}>
         <ProductSection type="best-sellers" />
       </Suspense>
 
-      {/* 6. PROMO CAMPAIGN CARDS CAROUSEL */}
+      {/* 5. PROMO CAMPAIGN CARDS CAROUSEL */}
       <Suspense fallback={null}>
         <CampaignCardsSection />
       </Suspense>
 
-      {/* 7. EXPLORE COLLECTIONS */}
+      {/* 6. EXPLORE COLLECTIONS */}
       <Suspense fallback={<CollectionsSkeleton />}>
         <CollectionsSection />
       </Suspense>
 
-      {/* 8. REVIEWS / TESTIMONIALS */}
+      {/* 7. REVIEWS / TESTIMONIALS */}
       <Suspense fallback={<ReviewsSkeleton />}>
         <ReviewsSection />
       </Suspense>
 
-      {/* 9. TRUST BENEFITS STRIP */}
+      {/* 8. TRUST BENEFITS STRIP */}
       <Suspense fallback={<TrustBenefitsSkeleton />}>
         <TrustBenefitsSection />
       </Suspense>
 
-      {/* 10. NEWSLETTER */}
+      {/* 9. NEWSLETTER */}
       <NewsletterFormClient settings={newsletterSettings} />
     </div>
   );
