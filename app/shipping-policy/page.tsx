@@ -6,11 +6,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 
 export const metadata: Metadata = {
   title: 'Shipping & Delivery Policy | Colossal Rigout',
-  description: 'Learn about Colossal Rigout free nationwide shipping policy in Pakistan on all products, delivered via TCS in 3–7 business days.',
+  description: 'Learn about Colossal Rigout nationwide shipping policy in Pakistan. Standard shipping Rs. 250; free delivery on orders of Rs. 2,500 or more via TCS.',
   keywords: [
     'Shipping Policy Pakistan',
     'Colossal Rigout Delivery',
-    'Free Shipping Pakistan',
+    'Free Shipping Over 2500',
     'Order Dispatch Timelines',
   ],
   alternates: {

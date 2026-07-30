@@ -7,6 +7,7 @@ import {
   CheckCircle, AlertCircle, Search, Calendar, Megaphone
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
+import { formatPkr } from '../../lib/utils';
 
 async function adminHeaders(includeJson = false): Promise<HeadersInit> {
   const token = await auth.currentUser?.getIdToken();
@@ -444,7 +445,7 @@ export default function PromoCampaignsModule() {
                   <select value={form.discountType} onChange={e => setForm({ ...form, discountType: e.target.value as any })}
                     className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-black transition cursor-pointer text-xs font-semibold">
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount ($)</option>
+                    <option value="fixed">Fixed Amount (PKR)</option>
                   </select>
                 </div>
                 <div>
@@ -464,7 +465,7 @@ export default function PromoCampaignsModule() {
               )}
 
               <div className="mt-3">
-                <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Minimum Order ($)</label>
+                <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Minimum Order (PKR)</label>
                 <input type="number" min="0" step="1" value={form.minimumOrder}
                   onChange={e => setForm({ ...form, minimumOrder: e.target.value })}
                   placeholder="0 for no minimum" className="w-full px-3 py-2 border rounded-lg outline-none focus:border-black transition text-xs" />
@@ -499,7 +500,7 @@ export default function PromoCampaignsModule() {
                         <input type="checkbox" checked={form.productIds.includes(p.id)} onChange={() => toggleProductId(p.id)}
                           className="accent-black" />
                         <span className="font-medium truncate flex-1">{p.name}</span>
-                        <span className="text-neutral-400 text-[10px]">${p.retailPrice}</span>
+                        <span className="text-neutral-400 text-[10px]">{formatPkr(p.retailPrice)}</span>
                       </label>
                     ))}
                     {filteredProducts.length === 0 && <p className="text-center py-4 text-neutral-400 text-[11px]">No products found</p>}

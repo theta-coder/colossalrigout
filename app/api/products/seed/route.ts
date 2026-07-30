@@ -32,8 +32,8 @@ export async function POST() {
       const productId = String(1001 + index);
       const category = categories[index % categories.length];
       const colorIds = [colors[index % colors.length], colors[(index + 2) % colors.length]];
-      const retailPrice = 24 + (index % 12) * 3;
-      const discountPrice = index % 3 === 0 ? retailPrice - 5 : null;
+      const retailPrice = 2499 + (index % 12) * 500;
+      const discountPrice = index % 3 === 0 ? retailPrice - 500 : null;
       let totalStock = 0;
 
       colorIds.forEach((colorId, colorIndex) => {
@@ -67,7 +67,7 @@ export async function POST() {
         cat: category.slug,
         retailPrice,
         discountPrice,
-        currency: 'USD',
+        currency: 'PKR',
         imageIds: [],
         primaryImageId: null,
         colorIds,

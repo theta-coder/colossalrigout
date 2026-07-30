@@ -6,6 +6,7 @@ import { generatePublicTrackingId, toNormalizedEmail } from '../../../lib/order-
 import { queueOrderNotification } from '../../../lib/server/orders';
 import { checkoutInputSchema } from '../../../lib/validations/api-schemas';
 import { sendCustomerOrderReceipt, sendAdminOrderNotification } from '../../../lib/server/email';
+import { defaultShippingSettings, calculateShippingFee } from '../../../lib/shipping-policy';
 
 const PROMOTIONS_COL = 'promotions';
 const REDEMPTIONS_COL = 'promotion-redemptions';
@@ -344,7 +345,14 @@ export async function POST(request: NextRequest) {
       }
 
       const finalSubtotal = Math.max(0, rawSubtotal);
-      const serverShippingCost = typeof shipCost === 'number' ? Math.max(0, Number(shipCost)) : 0;
+      
+      // Authoritatively fetch shipping settings and calculate shipping fee on server
+      const shipSnap = await transaction.get(doc(db, 'shipping-policy', 'settings'));
+      const shippingSettings = shipSnap.exists()
+        ? { ...defaultShippingSettings, ...shipSnap.data() }
+        : defaultShippingSettings;
+      const isFreeShippingPromo = matchedCouponPromo?.discountType === 'free-shipping';
+      const serverShippingCost = calculateShippingFee(finalSubtotal, shippingSettings, isFreeShippingPromo);
       const deliveryDays = 6;
       const deliveryDate = new Date(); 
       deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);

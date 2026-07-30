@@ -40,7 +40,7 @@ export default function FaqPage() {
         name: 'What are the delivery charges and shipping times across Pakistan?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We offer free delivery across Pakistan on all products. Orders are shipped through TCS and delivered within 3–7 business days.',
+          text: 'Standard shipping is Rs. 250 across Pakistan. We offer free nationwide shipping on all orders of Rs. 2,500 or more. Orders are shipped through TCS and delivered within 3–7 business days.',
         },
       },
       {

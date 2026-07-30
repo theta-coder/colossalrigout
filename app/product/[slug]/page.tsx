@@ -109,7 +109,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         '@type': 'OfferShippingDetails',
         shippingRate: {
           '@type': 'MonetaryAmount',
-          value: '0',
+          value: effPrice >= 2500 ? '0' : '250',
           currency: 'PKR',
         },
         shippingDestination: {

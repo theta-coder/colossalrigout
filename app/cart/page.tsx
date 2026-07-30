@@ -11,17 +11,17 @@ import { ColorDocument } from '@/types/commerce';
 import RelatedProducts from '@/components/product/RelatedProducts';
 import RecentlyViewedProducts from '@/components/product/RecentlyViewedProducts';
 import CartSkeleton from '@/components/cart/CartSkeleton';
-import { defaultShippingSettings, ShippingPolicySettings } from '@/lib/shipping-policy';
+import { defaultShippingSettings, ShippingPolicySettings, calculateShippingFee, calculateRemainingForFreeShipping } from '@/lib/shipping-policy';
 
 export default function CartPage() {
   const {
     cart, changeQty, removeFromCart, promoCodeApplied, promoDiscountAmount, quotedSubtotal, quotedItems,
     appliedPromotions, applyPromo, removePromo, isLoaded,
   } = useCart();
-  const [mounted, setMounted] = useState(false);
   const [promoInput, setPromoInput] = useState('');
   const [promoMessage, setPromoMessage] = useState('');
 
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -33,12 +33,12 @@ export default function CartPage() {
 
   const totalQty = cart.reduce((total, item) => total + item.qty, 0);
   const subtotal = cart.reduce((total, item) => total + item.price * item.qty, 0);
-  const freeThreshold = shippingSettings.freeShippingEnabled ? Number(shippingSettings.freeShippingThreshold || 0) : 0;
-  const qualifiesForFreeShipping = subtotal === 0 || (freeThreshold > 0 && subtotal >= freeThreshold);
-  const shipping = qualifiesForFreeShipping ? 0 : shippingSettings.flatRateEnabled ? Number(shippingSettings.flatRate || 0) : 0;
+  const hasFreeShippingPromo = appliedPromotions.some((p) => p.discountType === 'free-shipping');
+  const shipping = calculateShippingFee(subtotal, shippingSettings, hasFreeShippingPromo);
+  const freeThreshold = shippingSettings.freeShippingThreshold ?? defaultShippingSettings.freeShippingThreshold ?? 2500;
   const discountedSubtotal = quotedSubtotal === null ? Math.max(0, subtotal - promoDiscountAmount) : quotedSubtotal;
   const total = Math.max(0, discountedSubtotal + shipping);
-  const remainingForFreeShipping = Math.max(0, freeThreshold - subtotal);
+  const remainingForFreeShipping = calculateRemainingForFreeShipping(subtotal, shippingSettings);
 
   const colorsById = useMemo(() => new Map(colors.map((color) => [color.id, color])), [colors]);
   const displayCart = useMemo(() => cart.map((item) => quotedItems.find((quoted) => quoted.variantId && quoted.variantId === item.variantId) || item), [cart, quotedItems]);

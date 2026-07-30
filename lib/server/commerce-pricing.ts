@@ -7,7 +7,7 @@
 
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { defaultShippingSettings, ShippingPolicySettings } from '@/lib/shipping-policy';
+import { defaultShippingSettings, ShippingPolicySettings, calculateShippingFee, calculateRemainingForFreeShipping } from '@/lib/shipping-policy';
 
 export interface CartQuoteInputItem {
   variantId?: string;
@@ -69,7 +69,7 @@ export async function calculateCartQuote(
   const [prodSnap, invSnap, shipSnap, promoSnap] = await Promise.all([
     getDocs(collection(db, 'products')),
     getDocs(collection(db, 'commerce/inventory')),
-    getDoc(doc(db, 'shipping-policy-settings', 'settings')),
+    getDoc(doc(db, 'shipping-policy', 'settings')),
     getDocs(collection(db, 'promotions')),
   ]);
 
@@ -84,8 +84,7 @@ export async function calculateCartQuote(
     shippingSettings = { ...defaultShippingSettings, ...shipSnap.data() };
   }
 
-  const freeThreshold = shippingSettings.freeShippingThreshold ?? 0;
-  const flatRate = shippingSettings.flatRate ?? 0;
+  const freeThreshold = shippingSettings.freeShippingThreshold ?? defaultShippingSettings.freeShippingThreshold ?? 2500;
 
   const lines: QuotedCartLine[] = [];
   let totalQty = 0;
@@ -151,6 +150,7 @@ export async function calculateCartQuote(
   const appliedPromotions: AppliedPromotionDetail[] = [];
   let totalDiscountAmount = 0;
   let couponStatus: { code: string; valid: boolean; message: string } | undefined;
+  let hasFreeShippingPromo = false;
 
   const nowMs = Date.now();
   let activeAutoPromo: any = null;
@@ -203,6 +203,8 @@ export async function calculateCartQuote(
           calcAmount = Math.round((subtotal * discValue) / 100);
         } else if (discType === 'fixed') {
           calcAmount = Math.min(subtotal, discValue);
+        } else if (discType === 'free-shipping') {
+          hasFreeShippingPromo = true;
         }
 
         totalDiscountAmount = calcAmount;
@@ -216,21 +218,21 @@ export async function calculateCartQuote(
           discountType: discType,
           discountValue: discValue,
           discountAmount: calcAmount,
-          publicMessage: `${pubName} applied (${discType === 'percentage' ? `${discValue}% OFF` : `PKR ${discValue} OFF`})`,
+          publicMessage: `${pubName} applied (${discType === 'percentage' ? `${discValue}% OFF` : discType === 'fixed' ? `PKR ${discValue} OFF` : 'Free Shipping'})`,
         });
 
         couponStatus = {
           code: normalizedCode,
           valid: true,
-          message: `Coupon '${normalizedCode}' applied successfully! Saved PKR ${calcAmount.toLocaleString()}.`,
+          message: `Coupon '${normalizedCode}' applied successfully!${calcAmount > 0 ? ` Saved PKR ${calcAmount.toLocaleString()}.` : ''}`,
         };
       }
     }
   }
 
-  // Shipping calculation (Free delivery across Pakistan on all orders)
-  const remainingForFreeShipping = 0;
-  const shippingAmount = 0;
+  // Calculate authoritative shipping amount & remaining amount for free shipping
+  const shippingAmount = calculateShippingFee(subtotal, shippingSettings, hasFreeShippingPromo);
+  const remainingForFreeShipping = calculateRemainingForFreeShipping(subtotal, shippingSettings);
 
   const total = Math.max(0, subtotal + shippingAmount - totalDiscountAmount);
 

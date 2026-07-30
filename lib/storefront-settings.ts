@@ -75,7 +75,7 @@ export interface StorefrontSettingsBundle {
 export const DEFAULT_ANNOUNCEMENT_SETTINGS: AnnouncementSettings = {
   id: 'announcement',
   enabled: true,
-  message: 'FREE NATIONWIDE SHIPPING ON ALL ORDERS',
+  message: 'FREE NATIONWIDE SHIPPING ON ORDERS OVER RS. 2,500',
   secondaryMessage: 'EASY RETURNS',
   separator: '|',
   linkLabel: '',
@@ -171,8 +171,8 @@ export function interpolateNewsletterMessage(
     formattedValue = `${discountValue}%`;
     discountLabel = `${discountValue}% off`;
   } else if (discountType === 'fixed') {
-    formattedValue = `$${discountValue}`;
-    discountLabel = `$${discountValue} off`;
+    formattedValue = `PKR ${discountValue}`;
+    discountLabel = `PKR ${discountValue} off`;
   } else {
     formattedValue = '';
     discountLabel = 'special offer';
@@ -189,9 +189,10 @@ export function interpolateNewsletterMessage(
 export function normalizeAnnouncementSettings(data: any): AnnouncementSettings {
   if (!data || typeof data !== 'object') return { ...DEFAULT_ANNOUNCEMENT_SETTINGS };
   const storedMessage = typeof data.message === 'string' ? data.message.trim() : '';
-  const message = (storedMessage === 'FREE SHIPPING ON ORDERS OVER $75' || storedMessage.includes('$75'))
+  const isOldMessage = !storedMessage || storedMessage.includes('$75') || storedMessage === 'FREE SHIPPING ON ORDERS OVER $75' || storedMessage === 'FREE NATIONWIDE SHIPPING ON ALL ORDERS';
+  const message = isOldMessage
     ? DEFAULT_ANNOUNCEMENT_SETTINGS.message
-    : storedMessage.replace(/\$75/g, 'PKR 5,000') || DEFAULT_ANNOUNCEMENT_SETTINGS.message;
+    : storedMessage.replace(/\$75/g, 'Rs. 2,500').replace(/\$/g, 'Rs. ') || DEFAULT_ANNOUNCEMENT_SETTINGS.message;
 
   return {
     id: 'announcement',

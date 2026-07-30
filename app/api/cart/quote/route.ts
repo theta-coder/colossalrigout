@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { POST as applyPromotions } from '@/app/api/promotions/apply/route';
-import { defaultShippingSettings } from '@/lib/shipping-policy';
+import { defaultShippingSettings, calculateShippingFee, calculateRemainingForFreeShipping } from '@/lib/shipping-policy';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,17 +70,24 @@ export async function POST(request: NextRequest) {
 
     const validLines = lines.filter(Boolean);
     const settings = { ...defaultShippingSettings, ...(shippingSnapshot.exists() ? shippingSnapshot.data() : {}) };
+    const rawSubtotal = Number(pricing.subtotal || 0);
     const discountedSubtotal = Number(pricing.finalSubtotal || 0);
-    const freeThreshold = settings.freeShippingEnabled ? Number(settings.freeShippingThreshold || 0) : 0;
-    const free = discountedSubtotal === 0 || (freeThreshold > 0 && discountedSubtotal >= freeThreshold);
-    const shippingAmount = free ? 0 : settings.flatRateEnabled ? Number(settings.flatRate || 0) : 0;
+    const freeThreshold = settings.freeShippingEnabled ? Number(settings.freeShippingThreshold || 2500) : 2500;
+    const isFreeShippingPromo = pricing.appliedPromotion?.discountType === 'free-shipping';
+    const shippingAmount = calculateShippingFee(rawSubtotal, settings, isFreeShippingPromo);
+    const remainingForFreeShipping = calculateRemainingForFreeShipping(rawSubtotal, settings);
 
     return NextResponse.json({
       ...pricing,
       success: true,
       currency: 'PKR',
       items: validLines,
-      shipping: { amount: shippingAmount, free, threshold: freeThreshold, remainingForFreeShipping: Math.max(0, freeThreshold - discountedSubtotal) },
+      shipping: {
+        amount: shippingAmount,
+        free: shippingAmount === 0,
+        threshold: freeThreshold,
+        remainingForFreeShipping
+      },
       total: Number((discountedSubtotal + shippingAmount).toFixed(2)),
       quotedAt: new Date().toISOString(),
     });

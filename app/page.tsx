@@ -24,7 +24,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
 
 export const metadata: Metadata = {
   title: 'Colossal Rigout | Premium Men Fashion & Apparel in Pakistan',
-  description: 'Shop modern menswear, luxury casuals, shirts, t-shirts, and bottoms online in Pakistan. Free shipping across Pakistan on all orders delivered via TCS in 3–7 business days.',
+  description: 'Shop modern menswear, luxury casuals, shirts, t-shirts, and bottoms online in Pakistan. Free nationwide shipping on orders over Rs. 2,500 delivered via TCS in 3–7 business days.',
   alternates: {
     canonical: siteUrl,
   },

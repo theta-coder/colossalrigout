@@ -48,7 +48,7 @@ export default function ProductPolicySummary({
             <Truck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="font-semibold text-neutral-900">
-                Free Nationwide Delivery Across Pakistan
+                Shipping Rs. 250. Free nationwide shipping on orders of Rs. 2,500 or more.
               </p>
               <p className="text-neutral-500 font-light leading-relaxed">
                 Shipped through TCS. Standard delivery within {minDays}–{maxDays} business days.

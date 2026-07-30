@@ -40,7 +40,7 @@ import {
   Check,
   RefreshCw,
   TrendingUp,
-  DollarSign,
+  Banknote,
   Truck,
   Users,
   AlertCircle,
@@ -1697,13 +1697,13 @@ export default function AdminDashboardPage() {
               <div className="bg-white border border-neutral-200/65 p-5 rounded-xl shadow-sm flex items-center justify-between">
                 <div>
                   <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Gross Sales</p>
-                  <p className="font-display font-extrabold text-2xl tracking-tight mt-1">${stats.revenue.toFixed(2)}</p>
+                  <p className="font-display font-extrabold text-2xl tracking-tight mt-1">{formatPkr(stats.revenue)}</p>
                   <span className="text-[10px] text-emerald-500 font-bold flex items-center gap-1 mt-1.5">
                     <TrendingUp className="w-3 h-3" /> +14.5% this week
                   </span>
                 </div>
                 <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-800">
-                  <DollarSign className="w-6 h-6" />
+                  <Banknote className="w-6 h-6" />
                 </div>
               </div>
 
@@ -1953,7 +1953,7 @@ export default function AdminDashboardPage() {
                             </div>
                           </td>
                           <td className="py-3 px-5 text-neutral-600 font-semibold">{p.cat}</td>
-                          <td className="py-3 px-5 font-bold text-neutral-900">${p.price.toFixed(2)}</td>
+                          <td className="py-3 px-5 font-bold text-neutral-900">{formatPkr(p.price)}</td>
                           <td className="py-3 px-5">
                             <p className="font-semibold text-neutral-800">{p.sold || '0 sold'}</p>
                             <p className="text-[9px] text-amber-600 font-medium flex items-center gap-0.5 mt-0.5">
@@ -2063,12 +2063,12 @@ export default function AdminDashboardPage() {
                 {/* Price */}
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
-                    Retail Price ($ USD) *
+                    Retail Price (PKR) *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 45.00"
+                    placeholder="e.g. 2499"
                     value={prodForm.price}
                     onChange={(e) => setProdForm({ ...prodForm, price: e.target.value })}
                     className="w-full px-3.5 py-2.5 text-sm border border-neutral-300 rounded-lg outline-none focus:border-black transition"
@@ -2077,7 +2077,7 @@ export default function AdminDashboardPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 uppercase tracking-wider mb-2">
-                    Discount Price ($ USD)
+                    Discount Price (PKR)
                   </label>
                   <input
                     type="number"
@@ -2526,7 +2526,7 @@ export default function AdminDashboardPage() {
                     className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-black transition cursor-pointer font-semibold text-xs"
                   >
                     <option value="percentage">Percentage Discount (%)</option>
-                    <option value="fixed">Fixed Cash Discount ($ USD)</option>
+                    <option value="fixed">Fixed Cash Discount (PKR)</option>
                   </select>
                 </div>
 
@@ -2543,10 +2543,10 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Minimum Order Amount ($ USD)</label>
+                  <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Minimum Order Amount (PKR)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 50 (0 for none)"
+                    placeholder="e.g. 2500 (0 for none)"
                     value={promoForm.minOrder}
                     onChange={(e) => setPromoForm({ ...promoForm, minOrder: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg outline-none focus:border-black transition font-semibold text-xs"

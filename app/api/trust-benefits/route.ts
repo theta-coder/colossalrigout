@@ -7,7 +7,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 const COLLECTION = 'trust-benefits';
 const ICONS = ['truck', 'returns', 'shield', 'store', 'support', 'gift'] as const;
 const defaults = [
-  { id: 'free-shipping', title: 'Free Shipping', subtitle: 'On orders over Rs.2500', icon: 'truck', order: 1, active: true },
+  { id: 'free-shipping', title: 'Free Shipping', subtitle: 'On orders over Rs. 2,500', icon: 'truck', order: 1, active: true },
   { id: 'easy-returns', title: 'Easy Returns', subtitle: '2-day return policy', icon: 'returns', order: 2, active: true },
   { id: 'secure-payment', title: 'Secure Payment', subtitle: 'Cash on Delivery', icon: 'shield', order: 3, active: true },
 ];

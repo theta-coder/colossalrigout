@@ -8,11 +8,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Lock, CheckCircle2, User } from 'lucide-react';
 import { formatPkr } from '../../lib/utils';
-import { defaultShippingSettings, ShippingPolicySettings } from '../../lib/shipping-policy';
+import { defaultShippingSettings, ShippingPolicySettings, calculateShippingFee } from '../../lib/shipping-policy';
 import CheckoutSkeleton from '@/components/checkout/CheckoutSkeleton';
 
 export default function Checkout() {
-  const { cart, promoDiscount, placeOrder, isLoaded } = useCart();
+  const { cart, promoDiscount, appliedPromotions, placeOrder, isLoaded } = useCart();
   const { currentUser } = useAuth();
   const { showToast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -78,9 +78,8 @@ export default function Checkout() {
 
   // Computations
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
-  const freeThreshold = shippingSettings.freeShippingEnabled ? Number(shippingSettings.freeShippingThreshold || 0) : 0;
-  const qualifiesForFreeShipping = freeThreshold > 0 && subtotal >= freeThreshold;
-  const finalShipCost = qualifiesForFreeShipping ? 0 : shippingSettings.flatRateEnabled ? Number(shippingSettings.flatRate || 0) : 0;
+  const hasFreeShippingPromo = (appliedPromotions || []).some((p: any) => p.discountType === 'free-shipping');
+  const finalShipCost = calculateShippingFee(subtotal, shippingSettings, hasFreeShippingPromo);
   const discount = subtotal * promoDiscount;
   const total = Math.max(subtotal + finalShipCost - discount, 0);
 

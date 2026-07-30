@@ -24,13 +24,13 @@ export async function getProductPolicySummary(): Promise<ProductPolicySummary> {
     const shipping = shippingSnap?.exists() ? { ...defaultShippingSettings, ...shippingSnap.data() } : defaultShippingSettings;
     const returns = returnsSnap?.exists() ? { ...defaultReturnsSettings, ...returnsSnap.data() } : defaultReturnsSettings;
 
-    const freeShippingThreshold = Number(shipping.freeShippingThreshold ?? 0);
-    const flatRate = Number(shipping.flatRate ?? 0);
+    const freeShippingThreshold = Number(shipping.freeShippingThreshold ?? 2500);
+    const flatRate = Number(shipping.flatRate ?? 250);
     const deliveryMinDays = Number(shipping.deliveryMinBusinessDays ?? 3);
     const deliveryMaxDays = Number(shipping.deliveryMaxBusinessDays ?? 7);
     const returnWindowDays = Number(returns.returnWindowDays ?? 2);
 
-    const shippingText = `Free nationwide delivery across Pakistan on all orders via TCS. Delivered within ${deliveryMinDays}–${deliveryMaxDays} business days.`;
+    const shippingText = `Shipping Rs. ${flatRate}. Free nationwide shipping on orders of Rs. ${freeShippingThreshold.toLocaleString()} or more via TCS. Delivered within ${deliveryMinDays}–${deliveryMaxDays} business days.`;
     const returnsText = `Easy ${returnWindowDays}-day returns & exchanges — item must meet our return conditions with original tags attached.`;
 
     return {
@@ -44,10 +44,10 @@ export async function getProductPolicySummary(): Promise<ProductPolicySummary> {
     };
   } catch {
     return {
-      shippingText: 'Free nationwide delivery across Pakistan on all orders via TCS. Delivered within 3–7 business days.',
+      shippingText: 'Shipping Rs. 250. Free nationwide shipping on orders of Rs. 2,500 or more.',
       returnsText: 'Easy 2-day returns & exchanges — item must meet our return conditions with original tags attached.',
-      freeShippingThreshold: 0,
-      flatRate: 0,
+      freeShippingThreshold: 2500,
+      flatRate: 250,
       deliveryMinDays: 3,
       deliveryMaxDays: 7,
       returnWindowDays: 2,

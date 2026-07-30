@@ -11,7 +11,7 @@ import {
   AlertTriangle,
   XCircle,
   RotateCcw,
-  DollarSign,
+  Banknote,
   Check
 } from 'lucide-react';
 import { OrderTrackingEvent, CanonicalOrderStatus, STATUS_DISPLAY_MAP } from '../lib/order-tracking';
@@ -58,7 +58,7 @@ export default function OrderTrackingTimeline({ timeline, currentStatus }: Props
       case 'returned':
         return <RotateCcw className="w-4 h-4" />;
       case 'refunded':
-        return <DollarSign className="w-4 h-4" />;
+        return <Banknote className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
     }

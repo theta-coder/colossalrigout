@@ -418,7 +418,7 @@ export default function PromotionsModule() {
                           className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-black transition cursor-pointer"
                         >
                           <option value="percentage">Percentage (%)</option>
-                          <option value="fixed">Fixed Cash ($)</option>
+                          <option value="fixed">Fixed Cash (PKR)</option>
                           <option value="free-shipping">Free Shipping</option>
                         </select>
                       </div>
@@ -436,7 +436,7 @@ export default function PromotionsModule() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Min. Order Subtotal ($)</label>
+                        <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Min. Order Subtotal (PKR)</label>
                         <input
                           type="number"
                           value={form.minimumOrder}
@@ -445,7 +445,7 @@ export default function PromotionsModule() {
                         />
                       </div>
                       <div>
-                        <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Max. Discount Cap ($)</label>
+                        <label className="block font-bold text-neutral-700 uppercase tracking-wider mb-1.5">Max. Discount Cap (PKR)</label>
                         <input
                           type="number"
                           placeholder="None"
@@ -851,7 +851,7 @@ export default function PromotionsModule() {
                           <div className="text-[10px] text-neutral-400">{r.storeName}</div>
                         )}
                       </td>
-                      <td className="py-4 px-5 font-bold text-emerald-600">${r.discountAmount.toFixed(2)}</td>
+                      <td className="py-4 px-5 font-bold text-emerald-600">Rs. {r.discountAmount.toLocaleString()}</td>
                       <td className="py-4 px-5 text-neutral-500">
                         {new Date(r.redeemedAt).toLocaleString()}
                       </td>

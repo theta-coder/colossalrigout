@@ -2,10 +2,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AlertTriangle, DollarSign, Globe, PackageOpen, RefreshCw, Truck } from 'lucide-react';
+import { AlertTriangle, Banknote, Globe, PackageOpen, RefreshCw, Truck } from 'lucide-react';
 import { ShippingPolicySection, ShippingPolicySettings } from '../../lib/shipping-policy';
 
-const iconMap = { truck: Truck, dollar: DollarSign, package: PackageOpen, globe: Globe, alert: AlertTriangle };
+const iconMap = { truck: Truck, dollar: Banknote, package: PackageOpen, globe: Globe, alert: AlertTriangle };
 
 export default function ShippingPolicyClient() {
   const [settings, setSettings] = useState<ShippingPolicySettings>({ id: 'settings', pageTitle: 'SHIPPING POLICY', intro: '' });
