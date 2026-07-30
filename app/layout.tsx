@@ -26,7 +26,6 @@ const playfairDisplay = Playfair_Display({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://colossalrigout.pk';
-const brandLogoUrl = `${siteUrl}/colossal-rigout-logo-2026.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -75,9 +74,9 @@ export const metadata: Metadata = {
     description: 'Trendy pieces, timeless style. Wear your confidence with premium fashion apparel from Colossal Rigout in Pakistan.',
     images: [
       {
-        url: brandLogoUrl,
-        width: 1536,
-        height: 1536,
+        url: `${siteUrl}/colossal-rigout-logo.png`,
+        width: 1200,
+        height: 630,
         alt: 'Colossal Rigout Logo',
       },
     ],
@@ -86,15 +85,11 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Colossal Rigout | Wear Your Confidence',
     description: 'Trendy pieces, timeless style. Wear your confidence with premium fashion apparel from Colossal Rigout in Pakistan.',
-    images: [brandLogoUrl],
+    images: [`${siteUrl}/colossal-rigout-logo.png`],
   },
   icons: {
-    icon: [
-      { url: '/favicon-48.png', type: 'image/png', sizes: '48x48' },
-      { url: '/colossal-rigout-logo-2026.png', type: 'image/png', sizes: '1536x1536' },
-    ],
-    shortcut: '/favicon-48.png',
-    apple: [{ url: '/apple-touch-icon.png', type: 'image/png', sizes: '180x180' }],
+    icon: '/colossal-rigout-logo.png',
+    apple: '/colossal-rigout-logo.png',
   },
   verification: {
     google: [
@@ -117,7 +112,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     '@type': 'Organization',
     name: 'Colossal Rigout',
     url: siteUrl,
-    logo: brandLogoUrl,
+    logo: `${siteUrl}/colossal-rigout-logo.png`,
     sameAs: ['https://instagram.com/colossalrigout', 'https://www.facebook.com/share/1HXHpwQMHp/'],
     address: {
       '@type': 'PostalAddress',
