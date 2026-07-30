@@ -39,10 +39,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
   const totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
 
   const navLinks = [
-    { label: 'NEW IN', href: '/shop?cat=new-arrival' },
     { label: 'MEN', href: '/shop?cat=men' },
-    { label: 'KIDS', href: '/shop?cat=kids' },
-    { label: 'SALE', href: '/shop?cat=sale', isSale: true },
   ];
 
   if (pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin')) {
@@ -135,11 +132,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
               <Link
                 key={idx}
                 href={link.href}
-                className={`transition ${
-                  link.isSale
-                    ? 'text-red-600 hover:text-red-700 font-semibold'
-                    : 'text-neutral-900 hover:text-neutral-500'
-                }`}
+                className="text-neutral-900 hover:text-neutral-500 transition"
               >
                 {link.label}
               </Link>
@@ -236,9 +229,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
                   key={idx}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`py-1 border-b border-neutral-200/50 ${
-                    link.isSale ? 'text-red-600 font-semibold' : 'text-neutral-800'
-                  }`}
+                  className="py-1 border-b border-neutral-200/50 text-neutral-800"
                 >
                   {link.label}
                 </Link>

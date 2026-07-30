@@ -10,7 +10,6 @@ import { useProducts } from '../../context/ProductsContext';
 import { Product as CatalogProduct } from '../../lib/products';
 import { Heart, SlidersHorizontal, Star, X, ChevronDown } from 'lucide-react';
 import { ShopCategory } from '../../lib/category';
-import { AudienceGroup } from '../../lib/audience-group';
 import { CollectionDocument, ColorDocument } from '../../types/commerce';
 import { formatPkr } from '../../lib/utils';
 import {
@@ -35,7 +34,7 @@ function ShopContent() {
   const router = useRouter();
 
   // Filters State
-  const [selectedGroup, setSelectedGroup] = useState<string>('All');
+  const [selectedGroup, setSelectedGroup] = useState<string>('men');
   const [selectedSubCat, setSelectedSubCat] = useState<string>('All');
   const [specialTag, setSpecialTag] = useState<string>('All');
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -53,7 +52,6 @@ function ShopContent() {
 
   const [categories, setCategories] = useState<ShopCategory[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [audienceGroups, setAudienceGroups] = useState<AudienceGroup[]>([]);
   const [storeCollections, setStoreCollections] = useState<CollectionDocument[]>([]);
 
   // Dynamic colors & banner states
@@ -101,13 +99,6 @@ function ShopContent() {
       })
       .catch((err) => console.error('Error loading categories in Shop:', err))
       .finally(() => setCategoriesLoading(false));
-
-    fetch('/api/audience-groups')
-      .then((res) => res.json())
-      .then((payload) => {
-        if (payload.success && Array.isArray(payload.data)) setAudienceGroups(payload.data);
-      })
-      .catch(() => setAudienceGroups([]));
 
     fetch('/api/colors')
       .then((res) => res.json())
@@ -214,45 +205,45 @@ function ShopContent() {
       setSelectedCollection(collectionQuery || '');
 
       if (groupQuery) {
-        setSelectedGroup(groupQuery.toLowerCase());
+        setSelectedGroup('men');
         setSelectedSubCat('All');
         setSpecialTag('All');
       } else if (catQuery) {
         const queryLower = catQuery.toLowerCase();
         if (['men', 'boys', 'kids'].includes(queryLower)) {
-          setSelectedGroup(queryLower);
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('All');
         } else if (queryLower === 'new-arrival' || queryLower === 'new' || queryLower === 'newarrivals' || queryLower === 'new-arrivals') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('New Arrivals');
         } else if (queryLower === 'sale' || queryLower === 'sales') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Sale');
         } else if (queryLower === 'best-seller' || queryLower === 'bestseller' || queryLower === 'best-sellers') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Best Seller');
         } else if (queryLower === 'the-everyday-edit' || queryLower === 'everyday' || queryLower === 'everyday-edit') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('The Everyday Edit');
         } else if (queryLower === 'weekend-vibes' || queryLower === 'weekend') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Weekend Vibes');
         } else if (queryLower === 'date-night' || queryLower === 'datenight') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Date Night');
         } else if (queryLower === 'power-look' || queryLower === 'powerlook') {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Power Look');
         } else {
-          setSelectedGroup('All');
+          setSelectedGroup('men');
           setSelectedSubCat(queryLower);
           setSpecialTag('All');
         }
@@ -264,8 +255,8 @@ function ShopContent() {
     }, 0);
   }, [searchParams, router]);
 
-  const quickChips = [{ slug: 'All', name: 'All' }, ...audienceGroups.map((group) => ({ slug: group.slug, name: group.name }))];
-  const selectedGroupName = selectedGroup === 'All' ? 'All' : audienceGroups.find((group) => group.slug === selectedGroup)?.name || selectedGroup;
+  const quickChips = [{ slug: 'men', name: 'Men' }];
+  const selectedGroupName = 'Men';
 
   const [quickAddProduct, setQuickAddProduct] = useState<CatalogProduct | null>(null);
   const [quickSize, setQuickSize] = useState<string>('M');
@@ -597,9 +588,6 @@ function ShopContent() {
     if (searchQuery) {
       list.push({ id: 'search', label: `Search: "${searchQuery}"`, clear: () => setSearchQuery('') });
     }
-    if (selectedGroup !== 'All') {
-      list.push({ id: 'group', label: `Section: ${selectedGroupName}`, clear: () => setSelectedGroup('All') });
-    }
     if (selectedSubCat !== 'All') {
       const catName = categories.find((c) => c.slug === selectedSubCat)?.name || selectedSubCat;
       list.push({ id: 'subcat', label: `Category: ${catName}`, clear: () => setSelectedSubCat('All') });
@@ -637,7 +625,6 @@ function ShopContent() {
   }, [
     searchQuery,
     selectedGroup,
-    selectedGroupName,
     selectedSubCat,
     categories,
     specialTag,
@@ -681,7 +668,7 @@ function ShopContent() {
     : null;
 
   const handleClearFilters = () => {
-    setSelectedGroup('All');
+    setSelectedGroup('men');
     setSelectedSubCat('All');
     setSpecialTag('All');
     setSelectedSize(null);
@@ -778,32 +765,6 @@ function ShopContent() {
             })}
           </div>
 
-          <span className="text-neutral-300 hidden sm:inline">|</span>
-
-          <div className="flex gap-2 overflow-x-auto cat-scroll pb-1 sm:pb-0">
-            {[
-              { label: '★ New Arrivals', value: 'New Arrivals' as const, bg: 'hover:border-blue-500 hover:text-blue-600', active: 'bg-blue-50 border-blue-500 text-blue-600 font-bold' },
-              { label: '🏷️ Sales', value: 'Sale' as const, bg: 'hover:border-emerald-500 hover:text-emerald-600', active: 'bg-emerald-50 border-emerald-500 text-emerald-600 font-bold' },
-              { label: '🔥 Best Sellers', value: 'Best Seller' as const, bg: 'hover:border-amber-500 hover:text-amber-600', active: 'bg-amber-50 border-amber-500 text-amber-600 font-bold' },
-            ].map((col) => {
-              const isSelected = specialTag === col.value;
-              return (
-                <button
-                  key={col.value}
-                  onClick={() => {
-                    setSpecialTag(isSelected ? 'All' : col.value);
-                    setIsFromHome(false);
-                    setVisibleCount(6);
-                  }}
-                  className={`flex-none border rounded-full px-4 py-1.5 text-xs font-medium whitespace-nowrap transition cursor-pointer ${
-                    isSelected ? col.active : `border-neutral-300 text-neutral-600 bg-white ${col.bg}`
-                  }`}
-                >
-                  {col.label}
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
 

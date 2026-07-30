@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AudienceGroup } from '../lib/audience-group';
 import { FooterSettings, DEFAULT_FOOTER_SETTINGS, isValidUrlOrPath } from '../lib/storefront-settings';
 
 interface FooterProps {
@@ -62,16 +61,6 @@ function SocialMediaIcon({ platform, label }: { platform: string; label: string 
 
 export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterProps) {
   const pathname = usePathname();
-  const [shopGroups, setShopGroups] = useState<AudienceGroup[]>([]);
-
-  useEffect(() => {
-    fetch('/api/audience-groups')
-      .then((response) => response.json())
-      .then((payload) => {
-        if (payload.success && Array.isArray(payload.data)) setShopGroups(payload.data);
-      })
-      .catch(() => setShopGroups([]));
-  }, []);
 
   if (pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin')) {
     return null;
@@ -157,16 +146,11 @@ export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterPro
           <div>
             <p className="font-semibold mb-4 tracking-wider">SHOP</p>
             <ul className="space-y-2 text-neutral-400 text-xs">
-              {shopGroups.map((group) => (
-                <li key={group.id}>
-                  <Link
-                    href={`/shop?group=${encodeURIComponent(group.slug)}`}
-                    className="hover:text-white transition"
-                  >
-                    {group.name}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/shop?cat=men" className="hover:text-white transition">
+                  Men
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
