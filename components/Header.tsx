@@ -52,7 +52,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
     <>
       {/* TOP ANNOUNCEMENT BAR */}
       {announcement?.enabled !== false && (
-        <div className="bg-white text-black border-b border-neutral-200 text-[11px] sm:text-xs">
+        <div className="bg-black text-white text-[11px] sm:text-xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
             <span className="hidden sm:block"></span>
             <p className="mx-auto tracking-wide font-normal truncate px-2">
@@ -86,9 +86,9 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
                 </>
               )}
             </p>
-            <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-600">
-              <Link href="/faq" className="hover:text-black flex items-center gap-1">
-                <HelpCircle className="w-3 h-3 text-neutral-500" /> Help
+            <div className="hidden sm:flex items-center gap-4 whitespace-nowrap text-neutral-300">
+              <Link href="/faq" className="hover:text-white flex items-center gap-1">
+                <HelpCircle className="w-3 h-3" /> Help
               </Link>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
 
       {/* STICKY MAIN HEADER */}
       <header
-        className="border-b border-neutral-800 sticky top-0 bg-black/95 backdrop-blur-md shadow-[0_1px_12px_rgba(0,0,0,0.4)] z-40"
+        className="border-b border-white/50 sticky top-0 bg-white/82 backdrop-blur-md shadow-[0_1px_12px_rgba(0,0,0,0.04)] z-40"
         suppressHydrationWarning
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
@@ -105,10 +105,10 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
             {/* Hamburger button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden -ml-1 p-1 hover:bg-neutral-800/80 rounded-md transition text-white"
+              className="lg:hidden -ml-1 p-1 hover:bg-neutral-200/50 rounded-md transition"
               aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
             <Link
               href="/"
@@ -122,19 +122,19 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
                   fill
                   priority
                   sizes="(max-width: 640px) 112px, 128px"
-                  className="object-contain object-left filter brightness-110"
+                  className="object-contain object-left"
                 />
               </span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold tracking-wide">
+          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium tracking-wide">
             {navLinks.map((link, idx) => (
               <Link
                 key={idx}
                 href={link.href}
-                className="text-white hover:text-neutral-300 transition"
+                className="text-neutral-900 hover:text-neutral-500 transition"
               >
                 {link.label}
               </Link>
@@ -144,22 +144,22 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
           {/* Header Action Icons */}
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Search Input Box */}
-            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center border border-neutral-700 rounded-full px-3 py-1.5 w-40 lg:w-56 bg-neutral-900/90">
+            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center border border-neutral-300 rounded-full px-3 py-1.5 w-40 lg:w-56 bg-neutral-100/50">
               <input
                 type="text"
                 placeholder="Search items..."
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                className="outline-none text-xs w-full bg-transparent text-white placeholder-neutral-400"
+                className="outline-none text-xs w-full bg-transparent text-neutral-800"
               />
               <button type="submit" aria-label="Search" className="focus:outline-none cursor-pointer">
-                <Search className="w-4 h-4 text-neutral-400 flex-none hover:text-white transition" />
+                <Search className="w-4 h-4 text-neutral-500 flex-none hover:text-black transition" />
               </button>
             </form>
 
             {/* Mobile / General Search Icon */}
-            <button className="md:hidden p-1 hover:bg-neutral-800/80 rounded-full transition">
-              <Search className="w-5 h-5 text-white" />
+            <button className="md:hidden p-1 hover:bg-neutral-200/50 rounded-full transition">
+              <Search className="w-5 h-5 text-neutral-900" />
             </button>
 
             {/* Wishlist Icon */}
@@ -168,16 +168,16 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
               return (
                 <Link
                   href="/wishlist"
-                  className="relative p-1 hover:bg-neutral-800/80 rounded-full transition"
+                  className="relative p-1 hover:bg-neutral-200/50 rounded-full transition"
                   title="View Wishlist"
                 >
                   <Heart
                     className={`w-5 h-5 ${
-                      uniqueWishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-white'
+                      uniqueWishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-neutral-900'
                     }`}
                   />
                   {uniqueWishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
                       {uniqueWishlistCount}
                     </span>
                   )}
@@ -188,24 +188,24 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
             {/* User Account / Order History Icon */}
             <Link
               href="/order-history"
-              className="relative p-1 hover:bg-neutral-800/80 rounded-full transition flex items-center gap-1"
+              className="relative p-1 hover:bg-neutral-200/50 rounded-full transition flex items-center gap-1"
               title={activeUser ? `Logged in as ${activeUser.name}` : 'Order History & Login'}
               suppressHydrationWarning
             >
-              <User className={`w-5 h-5 ${activeUser ? 'text-white fill-white/20' : 'text-white'}`} />
+              <User className={`w-5 h-5 ${activeUser ? 'text-neutral-900 fill-neutral-900/10' : 'text-neutral-900'}`} />
               {activeUser && (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-400 rounded-full ring-2 ring-black"></span>
+                <span className="absolute top-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-[#f4f4f3]"></span>
               )}
             </Link>
 
             {/* Shopping Bag Icon */}
             <Link
               href="/cart"
-              className="relative p-1 hover:bg-neutral-800/80 rounded-full transition"
+              className="relative p-1 hover:bg-neutral-200/50 rounded-full transition"
             >
-              <ShoppingBag className="w-5 h-5 text-white" />
+              <ShoppingBag className="w-5 h-5 text-neutral-900" />
               {totalQty > 0 && (
-                <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] rounded-full w-4.5 h-4.5 flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-4.5 h-4.5 flex items-center justify-center font-bold">
                   {totalQty}
                 </span>
               )}
@@ -215,20 +215,20 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-neutral-800 bg-neutral-950 px-4 py-4 absolute w-full left-0 shadow-xl animate-fade-in text-white">
+          <div className="lg:hidden border-t border-neutral-200 bg-[#f4f4f3] px-4 py-4 absolute w-full left-0 shadow-lg animate-fade-in">
             <form onSubmit={(e) => {
               handleSearchSubmit(e);
               setMobileMenuOpen(false);
-            }} className="flex items-center border border-neutral-700 bg-neutral-900 rounded-full px-3 py-2 mb-4">
+            }} className="flex items-center border border-neutral-300 rounded-full px-3 py-2 mb-4">
               <input
                 type="text"
                 placeholder="Search for items, brands..."
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                className="outline-none text-sm w-full bg-transparent text-white placeholder-neutral-400"
+                className="outline-none text-sm w-full bg-transparent"
               />
               <button type="submit" aria-label="Search" className="focus:outline-none cursor-pointer">
-                <Search className="w-4 h-4 text-neutral-400 flex-none hover:text-white transition" />
+                <Search className="w-4 h-4 text-neutral-500 flex-none hover:text-black transition" />
               </button>
             </form>
             <nav className="flex flex-col gap-4 text-sm font-medium tracking-wide">
@@ -237,7 +237,7 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
                   key={idx}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="py-1 border-b border-neutral-800/80 text-white font-medium"
+                  className="py-1 border-b border-neutral-200/50 text-neutral-800"
                 >
                   {link.label}
                 </Link>
@@ -245,21 +245,21 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
               <Link
                 href="/faq"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1 border-b border-neutral-800/80 text-neutral-400 text-xs hover:text-white"
+                className="py-1 border-b border-neutral-200/50 text-neutral-600 text-xs"
               >
                 Help & FAQs
               </Link>
               <Link
                 href="/track-order"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1 border-b border-neutral-800/80 text-neutral-400 text-xs hover:text-white"
+                className="py-1 border-b border-neutral-200/50 text-neutral-600 text-xs"
               >
                 Track My Order
               </Link>
               <Link
                 href="/order-history"
                 onClick={() => setMobileMenuOpen(false)}
-                className="py-1 border-b border-neutral-800/80 text-white font-semibold text-xs flex items-center gap-1.5"
+                className="py-1 border-b border-neutral-200/50 text-neutral-900 font-semibold text-xs flex items-center gap-1.5"
                 suppressHydrationWarning
               >
                 <User className="w-3.5 h-3.5" /> {activeUser ? `Order History (${activeUser.name})` : 'Order History / Login'}
