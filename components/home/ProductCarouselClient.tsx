@@ -10,6 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import type { ProductCardData } from '@/lib/server/homepage';
 import { Product } from '@/lib/products';
 import { formatPkr } from '@/lib/utils';
+import { productIsWishlisted } from '@/lib/wishlist';
 
 const QuickAddModal = dynamic(() => import('@/components/QuickAddModal'), { ssr: false });
 
@@ -158,13 +159,7 @@ export default function ProductCarouselClient({
   }, []);
 
   const renderProductCard = (product: ProductCardData) => {
-    const isWishlisted = mounted
-      ? wishlist.some(
-          (wId) =>
-            String(wId) === String(product.id) ||
-            (product.slug && String(wId) === product.slug)
-        )
-      : false;
+    const isWishlisted = mounted ? productIsWishlisted(wishlist, product) : false;
 
     const strId = String(product.id);
     const isOutOfStock =

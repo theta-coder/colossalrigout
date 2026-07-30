@@ -9,6 +9,7 @@ import { Product as CatalogProduct } from '@/lib/products';
 import { ColorDocument, ReviewDocument } from '@/types/commerce';
 import { formatPkr } from '@/lib/utils';
 import { getEffectiveProductPrice } from '@/lib/shop-filters';
+import { productIsWishlisted } from '@/lib/wishlist';
 import ColorSwatch from '@/components/ui/ColorSwatch';
 import ProductPolicySummary from '@/components/product/ProductPolicySummary';
 import RelatedProducts from '@/components/product/RelatedProducts';
@@ -487,7 +488,7 @@ export default function ProductDetailsClient({
           >
             <Heart
               className={`w-5 h-5 ${
-                wishlist.includes(product.id) ? 'fill-red-500 text-red-500' : 'text-neutral-700'
+                productIsWishlisted(wishlist, product) ? 'fill-red-500 text-red-500' : 'text-neutral-700'
               }`}
             />
           </button>
@@ -657,22 +658,14 @@ export default function ProductDetailsClient({
                 onClick={() => toggleWishlist(product.id)}
                 className="w-12 h-12 border border-neutral-300 rounded-xl flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition shrink-0 cursor-pointer"
                 title={
-                  wishlist.some(
-                    (wId) =>
-                      String(wId) === String(product.id) ||
-                      (product.slug && String(wId) === product.slug)
-                  )
+                  productIsWishlisted(wishlist, product)
                     ? 'Remove from Wishlist'
                     : 'Add to Wishlist'
                 }
               >
                 <Heart
                   className={`w-5 h-5 ${
-                    wishlist.some(
-                      (wId) =>
-                        String(wId) === String(product.id) ||
-                        (product.slug && String(wId) === product.slug)
-                    )
+                    productIsWishlisted(wishlist, product)
                       ? 'fill-red-500 text-red-500'
                       : 'text-neutral-600'
                   }`}

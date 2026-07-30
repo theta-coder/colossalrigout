@@ -25,6 +25,7 @@ import { ShopBannerSettings, DEFAULT_SHOP_BANNER_SETTINGS } from '../../lib/shop
 import PriceRangeFilter from '../../components/shop/PriceRangeFilter';
 import PromoCampaignClient from '../../components/home/PromoCampaignClient';
 import ShopSkeleton from '../../components/shop/ShopSkeleton';
+import { productIsWishlisted } from '../../lib/wishlist';
 
 function ShopContent() {
   const { toggleWishlist, wishlist, addToCart } = useCart();
@@ -1238,11 +1239,7 @@ function ShopContent() {
                       >
                         <Heart
                           className={`w-4 h-4 ${
-                            wishlist.some(
-                              (wId) =>
-                                String(wId) === String(p.id) ||
-                                (p.slug && String(wId) === p.slug)
-                            )
+                            productIsWishlisted(wishlist, p)
                               ? 'fill-red-500 text-red-500'
                               : 'text-neutral-600'
                           }`}

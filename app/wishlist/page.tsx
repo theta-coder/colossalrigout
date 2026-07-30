@@ -8,6 +8,7 @@ import { useProducts } from '../../context/ProductsContext';
 import { Product as CatalogProduct } from '../../lib/products';
 import { Heart, ShoppingBag, ArrowRight, Trash2, HelpCircle } from 'lucide-react';
 import { formatPkr } from '../../lib/utils';
+import { productIsWishlisted, wishlistIdMatchesProduct } from '../../lib/wishlist';
 
 const colorClasses: Record<string, string> = {
   Black: 'bg-black',
@@ -25,14 +26,13 @@ export default function WishlistPage() {
   const [addingId, setAddingId] = useState<number | string | null>(null);
 
   // Get the product details from the catalog for all items in the wishlist (supporting numeric, string, or hash IDs)
-  const wishlistProducts = products.filter((product) =>
-    wishlist.some(
-      (wId) =>
-        String(wId) === String(product.id) ||
-        (product.slug && String(wId) === product.slug) ||
-        (typeof product.id === 'number' && Number(wId) === product.id)
-    )
-  );
+  const wishlistProducts = products.filter((product) => productIsWishlisted(wishlist, product));
+
+  const removeFromWishlist = (product: CatalogProduct) => {
+    wishlist
+      .filter((savedId) => wishlistIdMatchesProduct(savedId, product))
+      .forEach((savedId) => toggleWishlist(savedId));
+  };
 
   const handleAddToCart = (product: CatalogProduct) => {
     setAddingId(product.id);
@@ -126,7 +126,7 @@ export default function WishlistPage() {
 
                 {/* Remove from Wishlist Toggle Button */}
                 <button
-                  onClick={() => toggleWishlist(p.id)}
+                  onClick={() => removeFromWishlist(p)}
                   title="Remove from Wishlist"
                   className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-sm shadow hover:bg-neutral-100 hover:text-red-500 active:scale-90 transition z-10"
                 >
