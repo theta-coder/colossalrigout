@@ -22,14 +22,21 @@ const colorClasses: Record<string, string> = {
 export default function WishlistPage() {
   const { wishlist, toggleWishlist, addToCart } = useCart();
   const { products } = useProducts();
-  const [addingId, setAddingId] = useState<number | null>(null);
+  const [addingId, setAddingId] = useState<number | string | null>(null);
 
-  // Get the product details from the catalog for all items in the wishlist
-  const wishlistProducts = products.filter((product) => wishlist.includes(product.id));
+  // Get the product details from the catalog for all items in the wishlist (supporting numeric, string, or hash IDs)
+  const wishlistProducts = products.filter((product) =>
+    wishlist.some(
+      (wId) =>
+        String(wId) === String(product.id) ||
+        (product.slug && String(wId) === product.slug) ||
+        (typeof product.id === 'number' && Number(wId) === product.id)
+    )
+  );
 
   const handleAddToCart = (product: CatalogProduct) => {
     setAddingId(product.id);
-    window.location.href = `/product?id=${product.id}`;
+    window.location.href = `/product/${product.slug || product.id}`;
   };
 
   return (
@@ -106,7 +113,7 @@ export default function WishlistPage() {
                 )}
                 
                 {/* Product Link Image */}
-                <Link href={`/product?id=${p.id}`} className="absolute inset-0 block cursor-pointer z-0">
+                <Link href={`/product/${p.slug || p.id}`} className="absolute inset-0 block cursor-pointer z-0">
                   <Image
                     src={p.img}
                     alt={p.name}
@@ -130,7 +137,7 @@ export default function WishlistPage() {
               {/* Product Metadata info */}
               <div className="mt-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <Link href={`/product?id=${p.id}`} className="block text-xs sm:text-sm font-semibold text-neutral-900 hover:underline line-clamp-1 leading-snug">
+                  <Link href={`/product/${p.slug || p.id}`} className="block text-xs sm:text-sm font-semibold text-neutral-900 hover:underline line-clamp-1 leading-snug">
                     {p.name}
                   </Link>
                   

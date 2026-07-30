@@ -163,21 +163,27 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
             </button>
 
             {/* Wishlist Icon */}
-            <Link
-              href="/wishlist"
-              className="relative p-1 hover:bg-neutral-200/50 rounded-full transition"
-            >
-              <Heart
-                className={`w-5 h-5 ${
-                  wishlist.length > 0 ? 'fill-red-500 text-red-500' : 'text-neutral-900'
-                }`}
-              />
-              {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
-                  {wishlist.length}
-                </span>
-              )}
-            </Link>
+            {(() => {
+              const uniqueWishlistCount = mounted ? new Set(wishlist.map((id) => String(id))).size : 0;
+              return (
+                <Link
+                  href="/wishlist"
+                  className="relative p-1 hover:bg-neutral-200/50 rounded-full transition"
+                  title="View Wishlist"
+                >
+                  <Heart
+                    className={`w-5 h-5 ${
+                      uniqueWishlistCount > 0 ? 'fill-red-500 text-red-500' : 'text-neutral-900'
+                    }`}
+                  />
+                  {uniqueWishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                      {uniqueWishlistCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })()}
 
             {/* User Account / Order History Icon */}
             <Link

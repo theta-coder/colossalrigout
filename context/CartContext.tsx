@@ -61,8 +61,8 @@ interface CartContextType {
   removeFromCart: (id: number, size: string, color: string) => void;
   changeQty: (id: number, size: string, color: string, delta: number) => void;
   clearCart: () => void;
-  wishlist: number[];
-  toggleWishlist: (id: number) => void;
+  wishlist: (number | string)[];
+  toggleWishlist: (id: number | string) => void;
   promoDiscount: number;
   promoCodeApplied: string;
   promoDiscountAmount: number;
@@ -86,7 +86,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<number[]>([]);
+  const [wishlist, setWishlist] = useState<(number | string)[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoCodeApplied, setPromoCodeApplied] = useState('');
@@ -243,10 +243,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setAppliedPromotions([]);
   };
 
-  const toggleWishlist = (id: number) => {
-    setWishlist((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const toggleWishlist = (id: number | string) => {
+    setWishlist((prev) => {
+      const idStr = String(id);
+      const exists = prev.some((item) => String(item) === idStr);
+      if (exists) {
+        return prev.filter((item) => String(item) !== idStr);
+      }
+      return [...prev, id];
+    });
   };
 
   // Recalculate promo discount when cart or authentication changes

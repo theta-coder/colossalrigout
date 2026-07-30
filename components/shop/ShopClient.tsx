@@ -1223,7 +1223,7 @@ function ShopContent() {
                           BESTSELLER
                         </span>
                       ) : null}
-                      <Link href={`/product?id=${p.id}`} className="absolute inset-0 block cursor-pointer z-0">
+                      <Link href={`/product/${p.slug || p.id}`} className="absolute inset-0 block cursor-pointer z-0">
                         <Image
                           src={p.img}
                           alt={p.name}
@@ -1238,7 +1238,13 @@ function ShopContent() {
                       >
                         <Heart
                           className={`w-4 h-4 ${
-                            wishlist.includes(p.id) ? 'fill-red-500 text-red-500' : 'text-neutral-600'
+                            wishlist.some(
+                              (wId) =>
+                                String(wId) === String(p.id) ||
+                                (p.slug && String(wId) === p.slug)
+                            )
+                              ? 'fill-red-500 text-red-500'
+                              : 'text-neutral-600'
                           }`}
                         />
                       </button>
@@ -1260,7 +1266,7 @@ function ShopContent() {
                       )}
                     </div>
 
-                    <Link href={`/product?id=${p.id}`} className="mt-2 text-sm font-semibold text-neutral-900 hover:underline truncate">
+                    <Link href={`/product/${p.slug || p.id}`} className="mt-2 text-sm font-semibold text-neutral-900 hover:underline truncate">
                       {p.name}
                     </Link>
 

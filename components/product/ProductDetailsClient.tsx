@@ -651,6 +651,33 @@ export default function ProductDetailsClient({
               >
                 {isCurrentVariantOutOfStock ? 'OUT OF STOCK' : `ADD TO CART — ${formatPkr(effPrice * quantity)}`}
               </button>
+
+              <button
+                type="button"
+                onClick={() => toggleWishlist(product.id)}
+                className="w-12 h-12 border border-neutral-300 rounded-xl flex items-center justify-center hover:bg-neutral-100 active:scale-95 transition shrink-0 cursor-pointer"
+                title={
+                  wishlist.some(
+                    (wId) =>
+                      String(wId) === String(product.id) ||
+                      (product.slug && String(wId) === product.slug)
+                  )
+                    ? 'Remove from Wishlist'
+                    : 'Add to Wishlist'
+                }
+              >
+                <Heart
+                  className={`w-5 h-5 ${
+                    wishlist.some(
+                      (wId) =>
+                        String(wId) === String(product.id) ||
+                        (product.slug && String(wId) === product.slug)
+                    )
+                      ? 'fill-red-500 text-red-500'
+                      : 'text-neutral-600'
+                  }`}
+                />
+              </button>
             </div>
           </div>
 

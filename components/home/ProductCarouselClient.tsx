@@ -158,8 +158,13 @@ export default function ProductCarouselClient({
   }, []);
 
   const renderProductCard = (product: ProductCardData) => {
-    const numericId = toNumericProductId(product.id);
-    const isWishlisted = mounted ? wishlist.includes(numericId) : false;
+    const isWishlisted = mounted
+      ? wishlist.some(
+          (wId) =>
+            String(wId) === String(product.id) ||
+            (product.slug && String(wId) === product.slug)
+        )
+      : false;
 
     const strId = String(product.id);
     const isOutOfStock =
@@ -181,7 +186,7 @@ export default function ProductCarouselClient({
               BESTSELLER
             </span>
           ) : null}
-          <Link href={`/product?id=${product.id}`} className="absolute inset-0 block cursor-pointer z-0">
+          <Link href={`/product/${product.slug || product.id}`} className="absolute inset-0 block cursor-pointer z-0">
             <ImageWithFallback
               src={product.img}
               alt={product.name}
@@ -191,7 +196,7 @@ export default function ProductCarouselClient({
             />
           </Link>
           <button
-            onClick={() => toggleWishlist(numericId)}
+            onClick={() => toggleWishlist(product.id)}
             className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-sm shadow hover:bg-neutral-100 active:scale-90 transition z-10 cursor-pointer"
             aria-label="Wishlist"
           >
@@ -218,7 +223,7 @@ export default function ProductCarouselClient({
             </div>
           )}
         </div>
-        <Link href={`/product?id=${product.id}`} className="mt-2 text-sm font-medium text-neutral-900 hover:underline">
+        <Link href={`/product/${product.slug || product.id}`} className="mt-2 text-sm font-medium text-neutral-900 hover:underline">
           {product.name}
         </Link>
         <div className="flex items-center gap-2 mt-1">
