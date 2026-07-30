@@ -159,6 +159,8 @@ function ShopContent() {
 
   useEffect(() => {
     const catQuery = searchParams.get('cat');
+    const filterQuery = searchParams.get('filter');
+    const tagQuery = searchParams.get('tag');
     const wishlistQuery = searchParams.get('wishlist');
     const fromHomeQuery = searchParams.get('fromHome') === 'true';
     const qQuery = searchParams.get('q');
@@ -204,47 +206,53 @@ function ShopContent() {
       }
       setSelectedCollection(collectionQuery || '');
 
+      const activeCategoryOrFilter = (catQuery || filterQuery || tagQuery || '').toLowerCase().trim();
+
       if (groupQuery) {
         setSelectedGroup('men');
         setSelectedSubCat('All');
         setSpecialTag('All');
-      } else if (catQuery) {
-        const queryLower = catQuery.toLowerCase();
-        if (['men', 'boys', 'kids'].includes(queryLower)) {
+      } else if (activeCategoryOrFilter) {
+        if (['men', 'boys', 'kids'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('All');
-        } else if (queryLower === 'new-arrival' || queryLower === 'new' || queryLower === 'newarrivals' || queryLower === 'new-arrivals') {
+        } else if (
+          ['new-arrival', 'new', 'newarrivals', 'new-arrivals', 'new_arrivals'].includes(activeCategoryOrFilter)
+        ) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('New Arrivals');
-        } else if (queryLower === 'sale' || queryLower === 'sales') {
+          setSortBy('Newest');
+        } else if (['sale', 'sales'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Sale');
-        } else if (queryLower === 'best-seller' || queryLower === 'bestseller' || queryLower === 'best-sellers') {
+        } else if (
+          ['best-seller', 'bestseller', 'best-sellers', 'bestsellers', 'best_sellers'].includes(activeCategoryOrFilter)
+        ) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Best Seller');
-        } else if (queryLower === 'the-everyday-edit' || queryLower === 'everyday' || queryLower === 'everyday-edit') {
+        } else if (['the-everyday-edit', 'everyday', 'everyday-edit'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('The Everyday Edit');
-        } else if (queryLower === 'weekend-vibes' || queryLower === 'weekend') {
+        } else if (['weekend-vibes', 'weekend'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Weekend Vibes');
-        } else if (queryLower === 'date-night' || queryLower === 'datenight') {
+        } else if (['date-night', 'datenight'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Date Night');
-        } else if (queryLower === 'power-look' || queryLower === 'powerlook') {
+        } else if (['power-look', 'powerlook'].includes(activeCategoryOrFilter)) {
           setSelectedGroup('men');
           setSelectedSubCat('All');
           setSpecialTag('Power Look');
         } else {
           setSelectedGroup('men');
-          setSelectedSubCat(queryLower);
+          setSelectedSubCat(activeCategoryOrFilter);
           setSpecialTag('All');
         }
       }

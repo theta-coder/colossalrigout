@@ -151,6 +151,16 @@ export default function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: FooterPro
                   Men
                 </Link>
               </li>
+              <li>
+                <Link href="/shop?cat=new-arrivals" className="hover:text-white transition">
+                  New Arrivals
+                </Link>
+              </li>
+              <li>
+                <Link href="/shop?cat=best-sellers" className="hover:text-white transition">
+                  Best Sellers
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

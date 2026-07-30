@@ -39,7 +39,9 @@ export default function Header({ announcement = DEFAULT_ANNOUNCEMENT_SETTINGS }:
   const totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
 
   const navLinks = [
-    { label: 'MEN', href: '/shop?cat=men' },
+    { label: 'MEN', href: '/shop?cat=men', key: 'men' },
+    { label: 'NEW ARRIVALS', href: '/shop?cat=new-arrivals', key: 'new-arrivals' },
+    { label: 'BEST SELLERS', href: '/shop?cat=best-sellers', key: 'best-sellers' },
   ];
 
   if (pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin')) {
