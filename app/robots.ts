@@ -6,9 +6,24 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
+        userAgent: 'Googlebot',
+        allow: ['/', '/api/homepage-image/'],
+        disallow: ['/admin/', '/checkout/'],
+      },
+      {
+        userAgent: 'Googlebot-Image',
+        allow: ['/', '/api/homepage-image/', '/_next/image/'],
+        disallow: ['/admin/', '/checkout/'],
+      },
+      {
+        userAgent: 'AdsBot-Google',
+        allow: ['/'],
+        disallow: ['/admin/', '/checkout/'],
+      },
+      {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/admin/', '/api/', '/checkout/'],
+        allow: ['/', '/api/homepage-image/'],
+        disallow: ['/admin/', '/checkout/'],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

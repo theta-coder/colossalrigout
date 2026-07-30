@@ -199,3 +199,36 @@ export async function fetchFirestoreRestCollection(options: FetchCollectionOptio
     }
   }
 }
+
+export async function fetchFirestoreRestDoc(collectionName: string, docId: string): Promise<Record<string, any> | null> {
+  const { projectId, firestoreDatabaseId, apiKey } = firebaseConfig;
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${firestoreDatabaseId}/documents/${collectionName}/${encodeURIComponent(docId)}?key=${apiKey}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      next: { tags: ['homepage'], revalidate: 3600 },
+    });
+    if (res.ok) {
+      const docObj = await res.json();
+      const parsed = parseFirestoreDocument(docObj);
+      return parsed ? parsed.data : null;
+    }
+  } catch (err) {
+    console.warn(`[firestore-rest] REST single doc fetch failed for ${collectionName}/${docId}:`, err);
+  }
+
+  try {
+    if (db) {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const snap = await getDoc(doc(db, collectionName, docId));
+      return snap.exists() ? snap.data() : null;
+    }
+  } catch (sdkErr) {
+    console.error(`[firestore-rest] SDK fallback doc fetch failed for ${collectionName}/${docId}:`, sdkErr);
+  }
+
+  return null;
+}
+

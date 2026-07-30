@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { fetchFirestoreRestDoc } from '@/lib/server/firestore-rest';
 
 const sources: Record<string, { collection: string; field: string; fallbackField?: string }> = {
   hero: { collection: 'hero-slide-images', field: 'dataUrl' },
@@ -21,8 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.redirect(fallbackUrl, 302);
     }
 
-    const snapshot = await getDoc(doc(db, source.collection, id));
-    const storedData = snapshot.exists() ? snapshot.data() : undefined;
+    const storedData = await fetchFirestoreRestDoc(source.collection, id);
     const dataUrl = String(storedData?.[source.field] || (source.fallbackField ? storedData?.[source.fallbackField] : '') || '');
     const match = /^data:image\/(jpeg|png|webp);base64,([a-zA-Z0-9+/=]+)$/.exec(dataUrl);
     if (!match || dataUrl.length > 800_000) {
