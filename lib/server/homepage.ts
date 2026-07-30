@@ -150,23 +150,40 @@ const homepageImageUrl = (kind: string, id: string) =>
 
 export async function getActiveHeroSlides(): Promise<HeroSlide[]> {
   try {
-    const docs = await fetchFirestoreRestCollection({
-      collectionName: 'hero-slides',
-      tags: ['homepage', 'homepage:hero'],
-    });
+    const [docs, imageDocs] = await Promise.all([
+      fetchFirestoreRestCollection({
+        collectionName: 'hero-slides',
+        tags: ['homepage', 'homepage:hero'],
+      }),
+      fetchFirestoreRestCollection({
+        collectionName: 'hero-slide-images',
+        tags: ['homepage', 'homepage:hero'],
+      }),
+    ]);
 
-    const slides: HeroSlide[] = docs.map(d => ({
-      id: d.id,
-      title: String(d.data.title || ''),
-      subtitle: String(d.data.subtitle || ''),
-      image: homepageImageUrl('hero', d.id),
-      mobileImage: homepageImageUrl('hero-mobile', d.id),
-      btn1Text: String(d.data.btn1Text || 'SHOP NOW'),
-      btn1Link: String(d.data.btn1Link || '/shop'),
-      btn2Text: String(d.data.btn2Text || ''),
-      btn2Link: String(d.data.btn2Link || ''),
-      order: Number(d.data.order) || 0,
-    }));
+    // Build a set of slide IDs that have a valid uploaded image
+    const slideIdsWithImage = new Set<string>();
+    for (const imgDoc of imageDocs) {
+      const dataUrl = String(imgDoc.data.dataUrl || '');
+      if (dataUrl.startsWith('data:image/')) {
+        slideIdsWithImage.add(imgDoc.id);
+      }
+    }
+
+    const slides: HeroSlide[] = docs
+      .filter(d => slideIdsWithImage.has(d.id))
+      .map(d => ({
+        id: d.id,
+        title: String(d.data.title || ''),
+        subtitle: String(d.data.subtitle || ''),
+        image: homepageImageUrl('hero', d.id),
+        mobileImage: homepageImageUrl('hero-mobile', d.id),
+        btn1Text: String(d.data.btn1Text || 'SHOP NOW'),
+        btn1Link: String(d.data.btn1Link || '/shop'),
+        btn2Text: String(d.data.btn2Text || ''),
+        btn2Link: String(d.data.btn2Link || ''),
+        order: Number(d.data.order) || 0,
+      }));
 
     slides.sort((a, b) => a.order - b.order);
     return slides;
