@@ -624,7 +624,6 @@ function ShopContent() {
     return list;
   }, [
     searchQuery,
-    selectedGroup,
     selectedSubCat,
     categories,
     specialTag,
